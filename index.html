@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>칼퇴 픽셀 로드 : 신입사원의 탈출기</title>
-  <!-- 레트로 픽셀 폰트 (Galmuri9) 로드 -->
+  <!-- 갈무리 픽셀 폰트 로드 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
   <style>
     * {
@@ -24,7 +24,7 @@
       color: #fff;
     }
 
-    /* 게임 화면 프레임 (4:3 레트로 비율) */
+    /* 게임 컨테이너 */
     #game-container {
       width: 640px;
       height: 480px;
@@ -36,17 +36,16 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
-    /* 상단 화면 영역 (사무실 배경) */
+    /* 상단 화면 영역 */
     #screen {
       width: 100%;
       height: 320px;
       position: relative;
       background-size: cover;
       background-position: center;
-      transition: filter 0.3s;
     }
 
-    /* 픽셀 오피스 격자 배경 */
+    /* 픽셀 오피스 배경 스타일 */
     .office-bg-1 {
       background: #3a3d52;
       background-image: 
@@ -65,21 +64,21 @@
       background-position: 0 0, 15px 15px;
     }
 
-    /* 룸 타이틀 파츠 */
+    /* 룸 타이틀 배지 */
     #room-badge {
       position: absolute;
       top: 12px;
       left: 12px;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.85);
       border: 2px solid #fff;
       padding: 6px 12px;
       border-radius: 4px;
       font-size: 14px;
       color: #ffd700;
-      z-index: 5;
+      z-index: 15;
     }
 
-    /* 픽셀 오브젝트 (캐릭터, 객체) */
+    /* 픽셀 오브젝트 (클릭 영역 최상위 보장) */
     .pixel-object {
       position: absolute;
       cursor: pointer;
@@ -87,35 +86,40 @@
       flex-direction: column;
       align-items: center;
       transition: transform 0.1s;
+      z-index: 20; /* 클릭 레이어 최상위 설정 */
     }
 
     .pixel-object:hover {
-      transform: scale(1.1);
+      transform: scale(1.15);
+    }
+
+    .pixel-object:active {
+      transform: scale(0.95);
     }
 
     .pixel-sprite {
       font-size: 42px;
-      filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.4));
+      filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.5));
     }
 
     .obj-label {
       background: #000;
       color: #fff;
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 3px;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 4px;
       margin-top: 2px;
       border: 1px solid #aaa;
       white-space: nowrap;
     }
 
     /* 위치 설정 */
-    #boss-npc { top: 60px; left: 280px; }
-    #memo-obj { top: 160px; left: 100px; }
-    #phone-obj { top: 160px; right: 100px; }
+    #boss-npc { top: 50px; left: 270px; }
+    #memo-obj { top: 160px; left: 80px; }
+    #phone-obj { top: 160px; right: 80px; }
     #door-obj { top: 20px; right: 30px; }
 
-    /* 하단 포켓몬 스타일 대사창 */
+    /* 하단 대사창 */
     #dialogue-box {
       width: 100%;
       height: 160px;
@@ -127,9 +131,9 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      z-index: 15;
     }
 
-    /* 액션 액자 테두리 (포켓몬 2중 테두리 감성) */
     #dialogue-frame {
       position: absolute;
       top: 6px; left: 6px; right: 6px; bottom: 6px;
@@ -142,23 +146,22 @@
       font-size: 14px;
       color: #d32f2f;
       font-weight: bold;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     #dialogue-text {
-      font-size: 16px;
-      line-height: 1.5;
+      font-size: 15px;
+      line-height: 1.4;
       color: #111;
-      height: 60px;
+      height: 55px;
       white-space: pre-line;
     }
 
-    /* 선택지 버튼 목록 */
+    /* 선택지 버튼 */
     #options-container {
       display: flex;
       gap: 10px;
-      margin-top: 6px;
-      z-index: 10;
+      z-index: 25;
     }
 
     .opt-btn {
@@ -178,12 +181,7 @@
       background: #ffe082;
     }
 
-    .opt-btn:active {
-      transform: translate(2px, 2px);
-      box-shadow: 0px 0px 0px #333;
-    }
-
-    /* 퀴즈 모달 (화면 중앙) */
+    /* 퀴즈 모달 */
     #quiz-modal {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -192,8 +190,8 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 30px;
-      z-index: 20;
+      padding: 20px;
+      z-index: 50;
     }
 
     .quiz-card {
@@ -201,6 +199,7 @@
       border: 4px solid #000;
       border-radius: 8px;
       width: 100%;
+      max-width: 500px;
       padding: 20px;
       color: #111;
     }
@@ -208,13 +207,13 @@
     .quiz-title {
       font-size: 16px;
       color: #1976d2;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       font-weight: bold;
     }
 
     .quiz-q {
-      font-size: 15px;
-      margin-bottom: 16px;
+      font-size: 14px;
+      margin-bottom: 14px;
       line-height: 1.4;
     }
 
@@ -226,7 +225,6 @@
       cursor: pointer;
       font-size: 13px;
       border-radius: 4px;
-      transition: background 0.2s;
     }
 
     .quiz-choice:hover {
@@ -234,15 +232,16 @@
       border-color: #1976d2;
     }
 
-    /* 페이드 트랜지션 (방 이동 효과) */
+    /* 방 이동 암전 페이드 */
     #overlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
       background: #000;
       opacity: 0;
+      display: none;
+      z-index: 100;
       pointer-events: none;
-      transition: opacity 0.5s;
-      z-index: 30;
+      transition: opacity 0.4s;
     }
   </style>
 </head>
@@ -251,51 +250,43 @@
   <div id="game-container">
     <div id="overlay"></div>
 
-    <!-- 룸 타이틀 -->
     <div id="room-badge">📍 1관: 영업부 사무실</div>
 
-    <!-- 메인 게임 씬 -->
     <div id="screen" class="office-bg-1">
-      <!-- NPC: 부장님 -->
-      <div class="pixel-object" id="boss-npc" ON-CLICK="clickBoss()">
+      <div class="pixel-object" id="boss-npc">
         <div class="pixel-sprite">👨‍💼</div>
         <div class="obj-label">김부장님</div>
       </div>
 
-      <!-- 오브젝트 1: 메모 -->
-      <div class="pixel-object" id="memo-obj" ON-CLICK="clickMemo()">
+      <div class="pixel-object" id="memo-obj">
         <div class="pixel-sprite">📝</div>
         <div class="obj-label">책상 메모 [퀴즈1]</div>
       </div>
 
-      <!-- 오브젝트 2: 전화기 -->
-      <div class="pixel-object" id="phone-obj" ON-CLICK="clickPhone()">
+      <div class="pixel-object" id="phone-obj">
         <div class="pixel-sprite">☎️</div>
         <div class="obj-label">사무실 전화 [퀴즈2]</div>
       </div>
 
-      <!-- 다음 방 문 -->
-      <div class="pixel-object" id="door-obj" ON-CLICK="clickDoor()" style="opacity: 0.4;">
+      <div class="pixel-object" id="door-obj" style="opacity: 0.5;">
         <div class="pixel-sprite">🚪</div>
         <div class="obj-label" id="door-label">🔒 다음 사무실</div>
       </div>
     </div>
 
-    <!-- 하단 포켓몬 대사창 -->
     <div id="dialogue-box">
       <div id="dialogue-frame"></div>
       <div>
         <div id="speaker-name">신입사원 (나)</div>
-        <div id="dialogue-text">오늘도 무사히 칼퇴할 수 있을까...? 책상과 전화기를 조사해보자.</div>
+        <div id="dialogue-text">오늘도 무사히 칼퇴할 수 있을까...? 책상 메모와 전화기를 조사해 보자.</div>
       </div>
       <div id="options-container"></div>
     </div>
 
-    <!-- 퀴즈 팝업 모달 -->
     <div id="quiz-modal">
       <div class="quiz-card">
         <div class="quiz-title" id="qz-title">📋 사무실 퀴즈</div>
-        <div class="quiz-q" id="qz-question">질문이 들어갑니다.</div>
+        <div class="quiz-q" id="qz-question">질문 내용</div>
         <div id="qz-choices"></div>
       </div>
     </div>
@@ -303,22 +294,30 @@
 
   <script>
     /* ==========================================
-       웹 오디오 API (레트로 비프음 사운드 효과)
+       안전한 오디오 효과음 (에러 방지 적용)
     ========================================== */
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
+    let audioCtx = null;
     function playBeep(freq = 440, duration = 0.08, type = 'square') {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        // 브라우저 오디오 제한 시 오디오만 차단하고 게임 진행은 유지
+      }
     }
 
     function playSuccess() {
@@ -333,16 +332,16 @@
     }
 
     /* ==========================================
-       게임 상태 및 데이터 관리
+       게임 데이터 및 상태
     ========================================== */
-    let currentRoom = 1; // 1: 영업부, 2: 임원실
+    let currentRoom = 1;
     let room1Solved = { memo: false, phone: false };
     let room2Solved = { memo: false, phone: false };
 
     const quizzes = {
       r1_memo: {
-        title: "📝 책상 위 메모 퀴즈",
-        question: "김부장님이 올바른 거래처 이메일 제목 양식을 물어보셨다. 가장 바른 제목은?",
+        title: "📝 책상 위 이메일 양식 퀴즈",
+        question: "김부장님이 거래처 이메일 제목 양식을 물어보셨다. 가장 올바른 제목은?",
         choices: [
           "안녕하세요 부장님 메일 드립니다",
           "[ABC상사] 2026년 3분기 프로젝트 정기보고서 제출건",
@@ -350,7 +349,7 @@
           "제출합니다."
         ],
         answer: 1,
-        successMsg: "정답이다! 비즈니스 이메일 양식을 완벽히 해결했다."
+        successMsg: "정답이다! 비즈니스 이메일 작성법을 완벽히 해결했다."
       },
       r1_phone: {
         title: "☎️ 외부 전화 응대 퀴즈",
@@ -377,7 +376,7 @@
         successMsg: "완벽하다! 이사님이 만족스러운 표정으로 결재 도장을 찍으셨다."
       },
       r2_phone: {
-        title: "🔐 퇴근 보안 암호 퀴즈",
+        title: "🔐 퇴근 보안 점검 퀴즈",
         question: "사무실 퇴근 전 확인해야 할 '보안 가이드' 중 틀린 것은?",
         choices: [
           "중요 서류는 캐비닛에 넣고 잠근다.",
@@ -391,7 +390,7 @@
     };
 
     /* ==========================================
-       UI 업데이트 함수
+       UI 및 대사 제어
     ========================================== */
     function setDialogue(speaker, text, options = []) {
       playBeep(600, 0.05);
@@ -405,7 +404,8 @@
         const btn = document.createElement('button');
         btn.className = 'opt-btn';
         btn.innerText = opt.label;
-        btn.ON-CLICK = () => {
+        btn.ON-CLICK = (e) => {
+          e.stopPropagation();
           playBeep(800, 0.05);
           opt.action();
         };
@@ -429,7 +429,7 @@
     }
 
     /* ==========================================
-       인터랙션 이벤트 handling
+       클릭 이벤트 핸들러
     ========================================== */
     function clickBoss() {
       if (currentRoom === 1) {
@@ -466,7 +466,7 @@
         if (room1Solved.memo && room1Solved.phone) {
           triggerRoomChange(2);
         } else {
-          setDialogue("경고", "방 안의 2가지 퀴즈(메모, 전화기)를 모두 풀어야 다음 방으로 갈 수 있습니다!");
+          setDialogue("경고", "사무실의 2가지 문제(메모, 전화기)를 모두 풀어야 다음 방으로 갈 수 있습니다!");
           playWrong();
         }
       } else {
@@ -480,7 +480,7 @@
     }
 
     /* ==========================================
-       퀴즈 실행 모달 로직
+       퀴즈 시스템
     ========================================== */
     function openQuiz(quizKey) {
       const qData = quizzes[quizKey];
@@ -494,7 +494,10 @@
         const div = document.createElement('div');
         div.className = 'quiz-choice';
         div.innerText = `${idx + 1}. ${choice}`;
-        div.ON-CLICK = () => submitAnswer(quizKey, idx);
+        div.ON-CLICK = (e) => {
+          e.stopPropagation();
+          submitAnswer(quizKey, idx);
+        };
         choicesDiv.appendChild(div);
       });
 
@@ -524,11 +527,12 @@
     }
 
     /* ==========================================
-       방 이동 및 엔딩 씬
+       방 이동 및 엔딩
     ========================================== */
     function triggerRoomChange(toRoom) {
       const overlay = document.getElementById('overlay');
-      overlay.style.opacity = '1';
+      overlay.style.display = 'block';
+      setTimeout(() => { overlay.style.opacity = '1'; }, 10);
 
       setTimeout(() => {
         currentRoom = toRoom;
@@ -541,12 +545,13 @@
           document.getElementById('boss-npc').querySelector('.obj-label').innerText = "박이사님";
           document.getElementById('boss-npc').querySelector('.pixel-sprite').innerText = "👨‍🦳";
           document.getElementById('door-label').innerText = "🔒 최종 퇴근문";
-          document.getElementById('door-obj').style.opacity = "0.4";
+          document.getElementById('door-obj').style.opacity = "0.5";
           
           setDialogue("시스템", "2관 [임원실]에 진입했다! 박이사님의 서류와 전화기를 조사하라.");
         }
 
         overlay.style.opacity = '0';
+        setTimeout(() => { overlay.style.display = 'none'; }, 400);
       }, 500);
     }
 
@@ -564,6 +569,16 @@
         { label: "처음부터 다시하기", action: () => location.reload() }
       ]);
     }
+
+    /* ==========================================
+       초기화 및 이벤트 리스너 바인딩
+    ========================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('boss-npc').addEventListener('click', clickBoss);
+      document.getElementById('memo-obj').addEventListener('click', clickMemo);
+      document.getElementById('phone-obj').addEventListener('click', clickPhone);
+      document.getElementById('door-obj').addEventListener('click', clickDoor);
+    });
   </script>
 </body>
 </html>
