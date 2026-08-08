@@ -24,7 +24,7 @@
       color: #fff;
     }
 
-    /* 게임 컨테이너 */
+    /* 게임 메인 프레임 */
     #game-container {
       width: 640px;
       height: 480px;
@@ -36,7 +36,7 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
-    /* 상단 화면 영역 */
+    /* 상단 오피스 화면 */
     #screen {
       width: 100%;
       height: 320px;
@@ -45,7 +45,6 @@
       background-position: center;
     }
 
-    /* 픽셀 오피스 배경 스타일 */
     .office-bg-1 {
       background: #3a3d52;
       background-image: 
@@ -75,10 +74,10 @@
       border-radius: 4px;
       font-size: 14px;
       color: #ffd700;
-      z-index: 15;
+      z-index: 10;
     }
 
-    /* 픽셀 오브젝트 (클릭 영역 최상위 보장) */
+    /* 픽셀 오브젝트 (클릭 영역 최상위 설정) */
     .pixel-object {
       position: absolute;
       cursor: pointer;
@@ -86,7 +85,7 @@
       flex-direction: column;
       align-items: center;
       transition: transform 0.1s;
-      z-index: 20; /* 클릭 레이어 최상위 설정 */
+      z-index: 20;
     }
 
     .pixel-object:hover {
@@ -113,13 +112,13 @@
       white-space: nowrap;
     }
 
-    /* 위치 설정 */
+    /* 오브젝트 좌표 */
     #boss-npc { top: 50px; left: 270px; }
     #memo-obj { top: 160px; left: 80px; }
     #phone-obj { top: 160px; right: 80px; }
     #door-obj { top: 20px; right: 30px; }
 
-    /* 하단 대사창 */
+    /* 하단 포켓몬스타일 대사창 */
     #dialogue-box {
       width: 100%;
       height: 160px;
@@ -131,7 +130,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      z-index: 15;
+      z-index: 10;
     }
 
     #dialogue-frame {
@@ -161,7 +160,7 @@
     #options-container {
       display: flex;
       gap: 10px;
-      z-index: 25;
+      z-index: 30;
     }
 
     .opt-btn {
@@ -181,7 +180,7 @@
       background: #ffe082;
     }
 
-    /* 퀴즈 모달 */
+    /* 퀴즈 모달 팝업 */
     #quiz-modal {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -191,7 +190,7 @@
       justify-content: center;
       align-items: center;
       padding: 20px;
-      z-index: 50;
+      z-index: 100;
     }
 
     .quiz-card {
@@ -232,14 +231,14 @@
       border-color: #1976d2;
     }
 
-    /* 방 이동 암전 페이드 */
+    /* 화면 암전 트랜지션 레이어 */
     #overlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
       background: #000;
       opacity: 0;
       display: none;
-      z-index: 100;
+      z-index: 200;
       pointer-events: none;
       transition: opacity 0.4s;
     }
@@ -253,27 +252,29 @@
     <div id="room-badge">📍 1관: 영업부 사무실</div>
 
     <div id="screen" class="office-bg-1">
-      <div class="pixel-object" id="boss-npc">
+      <!-- 직접 onclick을 부여하여 이벤트 바인딩 보장 -->
+      <div class="pixel-object" id="boss-npc" ON-CLICK="clickBoss()">
         <div class="pixel-sprite">👨‍💼</div>
         <div class="obj-label">김부장님</div>
       </div>
 
-      <div class="pixel-object" id="memo-obj">
+      <div class="pixel-object" id="memo-obj" ON-CLICK="clickMemo()">
         <div class="pixel-sprite">📝</div>
         <div class="obj-label">책상 메모 [퀴즈1]</div>
       </div>
 
-      <div class="pixel-object" id="phone-obj">
+      <div class="pixel-object" id="phone-obj" ON-CLICK="clickPhone()">
         <div class="pixel-sprite">☎️</div>
         <div class="obj-label">사무실 전화 [퀴즈2]</div>
       </div>
 
-      <div class="pixel-object" id="door-obj" style="opacity: 0.5;">
+      <div class="pixel-object" id="door-obj" ON-CLICK="clickDoor()" style="opacity: 0.5;">
         <div class="pixel-sprite">🚪</div>
         <div class="obj-label" id="door-label">🔒 다음 사무실</div>
       </div>
     </div>
 
+    <!-- 하단 대사창 -->
     <div id="dialogue-box">
       <div id="dialogue-frame"></div>
       <div>
@@ -283,6 +284,7 @@
       <div id="options-container"></div>
     </div>
 
+    <!-- 퀴즈 모달 -->
     <div id="quiz-modal">
       <div class="quiz-card">
         <div class="quiz-title" id="qz-title">📋 사무실 퀴즈</div>
@@ -294,7 +296,7 @@
 
   <script>
     /* ==========================================
-       안전한 오디오 효과음 (에러 방지 적용)
+       안전한 효과음 비프음 재생 함수
     ========================================== */
     let audioCtx = null;
     function playBeep(freq = 440, duration = 0.08, type = 'square') {
@@ -316,7 +318,7 @@
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
       } catch (e) {
-        // 브라우저 오디오 제한 시 오디오만 차단하고 게임 진행은 유지
+        // 브라우저 차단 시 소리만 끄고 게임 로직은 계속 실행
       }
     }
 
@@ -332,7 +334,7 @@
     }
 
     /* ==========================================
-       게임 데이터 및 상태
+       게임 데이터 및 상태 관리
     ========================================== */
     let currentRoom = 1;
     let room1Solved = { memo: false, phone: false };
@@ -390,7 +392,7 @@
     };
 
     /* ==========================================
-       UI 및 대사 제어
+       UI 및 대사 제어 함수
     ========================================== */
     function setDialogue(speaker, text, options = []) {
       playBeep(600, 0.05);
@@ -429,17 +431,17 @@
     }
 
     /* ==========================================
-       클릭 이벤트 핸들러
+       글로벌 클릭 이벤트 핸들러
     ========================================== */
-    function clickBoss() {
+    window.clickBoss = function() {
       if (currentRoom === 1) {
         setDialogue("김부장님", "어이 신입~ 오늘 칼퇴하고 싶나?\n책상의 이메일 메모랑 전화 응대 퀴즈부터 완료하게나!");
       } else {
         setDialogue("박이사님", "오~ 여기까지 왔군! 결재 서류와 퇴근 보안 점검을 마치면 보내주지!");
       }
-    }
+    };
 
-    function clickMemo() {
+    window.clickMemo = function() {
       const key = currentRoom === 1 ? 'r1_memo' : 'r2_memo';
       const isSolved = currentRoom === 1 ? room1Solved.memo : room2Solved.memo;
 
@@ -448,9 +450,9 @@
         return;
       }
       openQuiz(key);
-    }
+    };
 
-    function clickPhone() {
+    window.clickPhone = function() {
       const key = currentRoom === 1 ? 'r1_phone' : 'r2_phone';
       const isSolved = currentRoom === 1 ? room1Solved.phone : room2Solved.phone;
 
@@ -459,9 +461,9 @@
         return;
       }
       openQuiz(key);
-    }
+    };
 
-    function clickDoor() {
+    window.clickDoor = function() {
       if (currentRoom === 1) {
         if (room1Solved.memo && room1Solved.phone) {
           triggerRoomChange(2);
@@ -477,10 +479,10 @@
           playWrong();
         }
       }
-    }
+    };
 
     /* ==========================================
-       퀴즈 시스템
+       퀴즈 창 제어
     ========================================== */
     function openQuiz(quizKey) {
       const qData = quizzes[quizKey];
@@ -569,16 +571,6 @@
         { label: "처음부터 다시하기", action: () => location.reload() }
       ]);
     }
-
-    /* ==========================================
-       초기화 및 이벤트 리스너 바인딩
-    ========================================== */
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('boss-npc').addEventListener('click', clickBoss);
-      document.getElementById('memo-obj').addEventListener('click', clickMemo);
-      document.getElementById('phone-obj').addEventListener('click', clickPhone);
-      document.getElementById('door-obj').addEventListener('click', clickDoor);
-    });
   </script>
 </body>
 </html>
