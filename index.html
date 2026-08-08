@@ -51,13 +51,13 @@
     }
 
     #room-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: bold;
       color: #000;
     }
 
     #user-stats {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: bold;
       color: #1e3a8a;
       background: #fff;
@@ -73,7 +73,7 @@
 
     .nav-btn {
       background: #fff;
-      border: 3px solid #000;
+      border: 2px solid #000;
       padding: 4px 8px;
       font-size: 12px;
       font-weight: bold;
@@ -296,10 +296,10 @@
         <h2 style="font-size: 20px; color:#1e3a8a; text-align:center; margin-bottom:10px;">🚀 S1FA PJT 칼퇴 방탈출</h2>
         <p style="font-size: 13px; line-height: 1.4; color:#334155;">
           4개관의 파트장님과 PL님의 퀴즈를 모두 풀고 탈출하세요!<br>
-          <b>[점수 공식]</b> 정답 소요시간이 빠를수록 고득점! (오답 시 감점)
+          <b>[IP 자동저장]</b> 재접속 시 이전 진행 상태와 점수가 유지됩니다.
         </p>
         <input type="text" id="nickname-input" class="start-input" placeholder="참여자 닉네임 / 사번 입력..." maxlength="12">
-        <button class="start-btn" ON-CLICK="startGame()">게임 시작하기 ➔</button>
+        <button id="start-btn" class="start-btn">게임 시작하기 ➔</button>
       </div>
     </div>
 
@@ -308,16 +308,14 @@
       <div id="room-title">S1FA PJT : 1관 (김주헌 파트장님)</div>
       <div id="user-stats">점수: 0점</div>
       <div class="nav-btn-group">
-        <button class="nav-btn" ON-CLICK="prevRoom()">◄ 이전</button>
-        <button class="nav-btn" ON-CLICK="nextRoom()">다음 ►</button>
+        <button id="prev-btn" class="nav-btn">◄ 이전</button>
+        <button id="next-btn" class="nav-btn">다음 ►</button>
       </div>
     </div>
 
     <!-- 메인 픽셀 화면 -->
     <div id="screen">
-      <svg id="bg-svg" class="pixel-render" viewBox="0 0 320 200" preserveAspectRatio="none">
-        <!-- JS에서 방마다 동적으로 그려짐 -->
-      </svg>
+      <svg id="bg-svg" class="pixel-render" viewBox="0 0 320 200" preserveAspectRatio="none"></svg>
 
       <!-- NPC: 파트장님/PL님 -->
       <div class="pixel-object" id="boss-npc">
@@ -397,15 +395,16 @@
             <tbody id="leaderboard-body"></tbody>
           </table>
         </div>
-        <button class="start-btn" ON-CLICK="location.reload()">다시 도전하기 🔄</button>
+        <button id="restart-btn" class="start-btn">다시 도전하기 🔄</button>
       </div>
     </div>
   </div>
 
   <script>
     /* ==========================================
-       게임 데이터 및 글로벌 변수
+       글로벌 상태 변수 & IP 기반 세션 데이터
     ========================================== */
+    let userIp = "default_user";
     let playerNickname = "신입사원";
     let currentRoom = 1;
     let totalScore = 0;
@@ -413,7 +412,6 @@
     let quizStartTime = 0;
     let wrongAttempts = 0;
 
-    // 방별 퀴즈 해결 상태
     let roomSolved = {
       1: { memo: false, phone: false },
       2: { memo: false, phone: false },
@@ -421,35 +419,29 @@
       4: { memo: false, phone: false }
     };
 
-    // 방별 프로필 데이터
     const roomData = {
       1: {
         title: "S1FA PJT : 1관 (김주헌 파트장님)",
         bossName: "김주헌 파트장님",
-        bgType: "office1",
         welcomeMsg: "김주헌 파트장님: 어이 신입~ S1FA PJT 1관에 온 걸 환영하네! 메모와 전화기 퀴즈부터 풀게나."
       },
       2: {
         title: "S1FA PJT : 2관 (김진석 파트장님)",
         bossName: "김진석 파트장님",
-        bgType: "office2",
         welcomeMsg: "김진석 파트장님: 반가워요! 2관 개발 파트입니다. 코드 가이드와 업무 전화 퀴즈를 해결하세요."
       },
       3: {
         title: "S1FA PJT : 3관 (윤지혜 파트장님)",
         bossName: "윤지혜 파트장님",
-        bgType: "office3",
         welcomeMsg: "윤지혜 파트장님: 오셨군요! 3관 검증/디자인 파트입니다. 품질 이슈 퀴즈를 신속히 풀어주세요."
       },
       4: {
         title: "S1FA PJT : 4관 (손승준 PL님)",
         bossName: "손승준 PL님",
-        bgType: "office4",
         welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 최종 출하 리스크 퀴즈를 풀고 칼퇴하세요!"
       }
     };
 
-    // 총 8개 퀴즈 (방당 2개)
     const quizzes = {
       r1_memo: {
         title: "📝 1관: S1FA PJT 프로젝트 기획 퀴즈",
@@ -550,7 +542,54 @@
     };
 
     /* ==========================================
-       게임 시작 및 닉네임 처리
+       IP 주소 기반 실시간 자동저장 & 로드 시스템
+    ========================================== */
+    async function fetchUserIp() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const data = await res.json();
+        if (data && data.ip) {
+          userIp = data.ip.replace(/[^a-zA-Z0-9]/g, "_");
+        }
+      } catch (e) {
+        userIp = "local_browser_session";
+      }
+    }
+
+    function saveGameState() {
+      const state = {
+        userIp,
+        playerNickname,
+        currentRoom,
+        totalScore,
+        gameStartTime,
+        roomSolved,
+        lastUpdated: Date.now()
+      };
+      localStorage.setItem('s1fa_state_' + userIp, JSON.stringify(state));
+      localStorage.setItem('s1fa_latest_session', JSON.stringify(state));
+    }
+
+    function loadGameState() {
+      let saved = localStorage.getItem('s1fa_state_' + userIp);
+      if (!saved) {
+        saved = localStorage.getItem('s1fa_latest_session');
+      }
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    /* ==========================================
+       게임 시작 및 복구 제어
     ========================================== */
     function startGame() {
       const input = document.getElementById('nickname-input').value.trim();
@@ -559,21 +598,37 @@
         return;
       }
       playerNickname = input;
+      gameStartTime = Date.now();
+
       document.getElementById('player-tag').innerText = playerNickname;
       document.getElementById('start-modal').style.display = 'none';
-      
-      gameStartTime = Date.now();
+
+      saveGameState();
       updateScoreUI();
       renderRoomBackground(1);
       setDialogue(roomData[1].welcomeMsg);
     }
 
+    function restoreGame(savedState) {
+      playerNickname = savedState.playerNickname || "신입사원";
+      currentRoom = savedState.currentRoom || 1;
+      totalScore = savedState.totalScore || 0;
+      gameStartTime = savedState.gameStartTime || Date.now();
+      roomSolved = savedState.roomSolved || roomSolved;
+
+      document.getElementById('player-tag').innerText = playerNickname;
+      document.getElementById('start-modal').style.display = 'none';
+
+      updateScoreUI();
+      triggerRoomChange(currentRoom);
+      setDialogue(`[진행 상황 복구 완료]\n${playerNickname} 님, 이전 접속 위치(${currentRoom}관)에서 게임을 이어서 진행합니다!`);
+    }
+
     /* ==========================================
-       정밀 타임어택 점수 산출 로직
+       점수 계산 및 UI 렌더링
     ========================================== */
     function calculateQuizScore(timeTakenMs, wrongCount) {
       const timeInSec = timeTakenMs / 1000;
-      // 기본 10,000점에서 초당 차감 + 오답시 800점 차감 (밀리초 단위 계산으로 40명 변별력 100% 보장)
       let score = Math.max(100, Math.round(10000 - (timeInSec * 145) - (wrongCount * 800)));
       return score;
     }
@@ -582,9 +637,6 @@
       document.getElementById('user-stats').innerText = `점수: ${totalScore.toLocaleString()}점 | ${playerNickname}`;
     }
 
-    /* ==========================================
-       방별 픽셀 오피스 배경 드로잉 (4개관 테마)
-    ========================================== */
     function renderRoomBackground(roomNum) {
       const svg = document.getElementById('bg-svg');
       let content = `
@@ -593,7 +645,6 @@
         <path d="M 0,130 L 320,130" stroke="#475569" stroke-width="2"/>
         <path d="M 40,130 L 40,200 M 80,130 L 80,200 M 120,130 L 120,200 M 160,130 L 160,200 M 200,130 L 200,200 M 240,130 L 240,200 M 280,130 L 280,200" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2"/>
         
-        <!-- 삼성 S1FA PJT 화이트보드 -->
         <rect x="80" y="10" width="160" height="60" fill="#ffffff" stroke="#000" stroke-width="3"/>
         <rect x="185" y="15" width="48" height="10" fill="#1d4ed8" rx="2"/>
         <text x="188" y="22" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
@@ -601,26 +652,26 @@
         <path d="M 90,32 L 230,32 M 90,45 L 210,45" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,2"/>
       `;
 
-      if (roomNum === 1) { // 서버 랙 테마
+      if (roomNum === 1) {
         content += `
           <rect x="10" y="20" width="55" height="90" fill="#1e293b" stroke="#000" stroke-width="2"/>
           <circle cx="20" cy="30" r="2" fill="#22c55e"/><circle cx="28" cy="30" r="2" fill="#ef4444"/>
           <rect x="20" y="40" width="35" height="10" fill="#334155"/>
           <rect x="20" y="60" width="35" height="10" fill="#334155"/>
         `;
-      } else if (roomNum === 2) { // 매트릭스 개발 모니터 테마
+      } else if (roomNum === 2) {
         content += `
           <rect x="10" y="20" width="60" height="80" fill="#022c22" stroke="#000" stroke-width="2"/>
           <path d="M 15,30 L 60,30 M 15,45 L 50,45 M 15,60 L 55,60" stroke="#10b981" stroke-width="1.5"/>
         `;
-      } else if (roomNum === 3) { // UI/UX 디자인 보드 테마
+      } else if (roomNum === 3) {
         content += `
           <rect x="10" y="20" width="55" height="75" fill="#fbcfe8" stroke="#000" stroke-width="2"/>
           <rect x="15" y="25" width="15" height="15" fill="#f43f5e"/>
           <rect x="35" y="25" width="15" height="15" fill="#0ea5e9"/>
           <rect x="15" y="45" width="35" height="15" fill="#eab308"/>
         `;
-      } else if (roomNum === 4) { // 손승준 PL실 프레임
+      } else if (roomNum === 4) {
         content += `
           <rect x="10" y="15" width="60" height="90" fill="#312e81" stroke="#000" stroke-width="2"/>
           <circle cx="40" cy="40" r="12" fill="#fbbf24" stroke="#000" stroke-width="1.5"/>
@@ -628,7 +679,6 @@
         `;
       }
 
-      // 공통 U자형 책상 & 컴퓨터 3대
       content += `
         <path d="M 70,100 L 250,100 L 250,145 L 225,145 L 225,118 L 95,118 L 95,145 L 70,145 Z" fill="#e2e8f0" stroke="#000" stroke-width="2"/>
         <rect x="85" y="75" width="35" height="22" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
@@ -640,9 +690,6 @@
       renderBossNPC(roomNum);
     }
 
-    /* ==========================================
-       방별 파트장님/PL님 SVG 도트 캐릭터 생성
-    ========================================== */
     function renderBossNPC(roomNum) {
       const bossSvg = document.getElementById('boss-svg');
       const bossTag = document.getElementById('boss-tag');
@@ -691,9 +738,6 @@
       bossSvg.innerHTML = content;
     }
 
-    /* ==========================================
-       UI 및 대사 제어
-    ========================================== */
     function setDialogue(text) {
       document.getElementById('dialogue-text').innerText = text;
     }
@@ -710,9 +754,6 @@
       }
     }
 
-    /* ==========================================
-       퀴즈 시스템 및 점수 계산
-    ========================================== */
     function openQuiz(quizKey) {
       wrongAttempts = 0;
       quizStartTime = Date.now();
@@ -753,6 +794,7 @@
         if (quizKey.includes('memo')) roomSolved[currentRoom].memo = true;
         if (quizKey.includes('phone')) roomSolved[currentRoom].phone = true;
 
+        saveGameState();
         checkDoorStatus();
       } else {
         wrongAttempts++;
@@ -760,9 +802,6 @@
       }
     }
 
-    /* ==========================================
-       방 이동 및 씬 전환
-    ========================================== */
     function nextRoom() {
       const currentSolved = roomSolved[currentRoom];
       if (!currentSolved.memo || !currentSolved.phone) {
@@ -789,11 +828,9 @@
       renderRoomBackground(toRoom);
       checkDoorStatus();
       setDialogue(roomData[toRoom].welcomeMsg);
+      saveGameState();
     }
 
-    /* ==========================================
-       엔딩 & 점수 서버/로컬 저장 시스템
-    ========================================== */
     function showEnding() {
       const totalTimeSec = Math.round((Date.now() - gameStartTime) / 1000);
       const minutes = Math.floor(totalTimeSec / 60);
@@ -806,11 +843,7 @@
         총 소요시간: <b>${timeStr}</b>
       `;
 
-      // 로컬 스토리지 점수 저장
       saveScoreRecord(playerNickname, totalScore, timeStr);
-      // 서버 연동 전송 (Google Sheets / REST API 확장 가능)
-      sendScoreToServer(playerNickname, totalScore, timeStr);
-
       renderLeaderboard();
       document.getElementById('ending-modal').style.display = 'flex';
     }
@@ -830,7 +863,7 @@
       records.forEach((rec, idx) => {
         const tr = document.createElement('tr');
         if (rec.name === playerNickname && rec.score === totalScore) {
-          tr.style.background = '#fef08a'; // 현재 플레이어 강조
+          tr.style.background = '#fef08a';
         }
         tr.innerHTML = `
           <td><b>${idx + 1}위</b></td>
@@ -842,23 +875,37 @@
       });
     }
 
-    // 서버 전송 Webhook / API 확장용 함수
-    function sendScoreToServer(name, score, timeStr) {
-      console.log("서버 점수 저장 전송:", { name, score, timeStr });
-      /* 
-        [서버 연동 시 사용 가능 예시]
-        fetch('https://your-api-server.com/api/score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, score, timeStr })
-        });
-      */
-    }
-
     /* ==========================================
-       클릭 이벤트 리스너 바인딩
+       초기화 및 자동 로드 실행
     ========================================== */
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. IP 주소 가져오기
+      await fetchUserIp();
+
+      // 2. 버튼 이벤트 바인딩
+      const startBtn = document.getElementById('start-btn');
+      const nicknameInput = document.getElementById('nickname-input');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      const restartBtn = document.getElementById('restart-btn');
+
+      if (startBtn) startBtn.addEventListener('click', startGame);
+      if (nicknameInput) {
+        nicknameInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') startGame();
+        });
+      }
+      if (prevBtn) prevBtn.addEventListener('click', prevRoom);
+      if (nextBtn) nextBtn.addEventListener('click', nextRoom);
+      if (restartBtn) {
+        restartBtn.addEventListener('click', () => {
+          localStorage.removeItem('s1fa_state_' + userIp);
+          localStorage.removeItem('s1fa_latest_session');
+          location.reload();
+        });
+      }
+
+      // 3. 오브젝트 클릭 이벤트
       document.getElementById('boss-npc').addEventListener('click', () => {
         setDialogue(roomData[currentRoom].welcomeMsg);
       });
@@ -884,6 +931,12 @@
       document.getElementById('door-obj').addEventListener('click', () => {
         nextRoom();
       });
+
+      // 4. IP 세션에 따른 자동 진행상황 복구 체크
+      const savedState = loadGameState();
+      if (savedState && savedState.playerNickname) {
+        restoreGame(savedState);
+      }
     });
   </script>
 </body>
