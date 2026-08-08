@@ -51,7 +51,7 @@
     }
 
     #room-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
       color: #000;
     }
@@ -296,7 +296,7 @@
         <h2 style="font-size: 20px; color:#1e3a8a; text-align:center; margin-bottom:10px;">🚀 S1FA PJT 칼퇴 방탈출</h2>
         <p style="font-size: 13px; line-height: 1.4; color:#334155;">
           4개관의 파트장님과 PL님의 퀴즈를 모두 풀고 탈출하세요!<br>
-          <b>[IP 자동저장]</b> 재접속 시 이전 진행 상태와 점수가 유지됩니다.
+          <b>[실시간 감점]</b> 오답 선택 시 즉시 500점 차감 및 반영됩니다.
         </p>
         <input type="text" id="nickname-input" class="start-input" placeholder="참여자 닉네임 / 사번 입력..." maxlength="12">
         <button id="start-btn" class="start-btn">게임 시작하기 ➔</button>
@@ -305,7 +305,7 @@
 
     <!-- 상단 내비게이션 바 -->
     <div id="top-nav">
-      <div id="room-title">S1FA PJT : 1관 (김주헌 파트장님)</div>
+      <div id="room-title">S1FA PJT : 1관 EFA1 파트</div>
       <div id="user-stats">점수: 0점</div>
       <div class="nav-btn-group">
         <button id="prev-btn" class="nav-btn">◄ 이전</button>
@@ -421,22 +421,22 @@
 
     const roomData = {
       1: {
-        title: "S1FA PJT : 1관 (김주헌 파트장님)",
+        title: "S1FA PJT : 1관 EFA1 파트 (김주헌 파트장님)",
         bossName: "김주헌 파트장님",
-        welcomeMsg: "김주헌 파트장님: 어이 신입~ S1FA PJT 1관에 온 걸 환영하네! 메모와 전화기 퀴즈부터 풀게나."
+        welcomeMsg: "김주헌 파트장님: 어이 신입~ EFA1 파트에 온 걸 환영하네! 메모와 전화기 퀴즈부터 풀게나."
       },
       2: {
-        title: "S1FA PJT : 2관 (김진석 파트장님)",
+        title: "S1FA PJT : 2관 EFA2 파트 (김진석 파트장님)",
         bossName: "김진석 파트장님",
-        welcomeMsg: "김진석 파트장님: 반가워요! 2관 개발 파트입니다. 코드 가이드와 업무 전화 퀴즈를 해결하세요."
+        welcomeMsg: "김진석 파트장님: 반가워요! EFA2 개발 파트입니다. 코드 가이드와 업무 전화 퀴즈를 해결하세요."
       },
       3: {
-        title: "S1FA PJT : 3관 (윤지혜 파트장님)",
+        title: "S1FA PJT : 3관 PFA/VSEM 파트 (윤지혜 파트장님)",
         bossName: "윤지혜 파트장님",
-        welcomeMsg: "윤지혜 파트장님: 오셨군요! 3관 검증/디자인 파트입니다. 품질 이슈 퀴즈를 신속히 풀어주세요."
+        welcomeMsg: "윤지혜 파트장님: 오셨군요! PFA/VSEM 파트입니다. 품질 이슈 퀴즈를 신속히 풀어주세요."
       },
       4: {
-        title: "S1FA PJT : 4관 (손승준 PL님)",
+        title: "S1FA PJT : 4관 S1FA PL실 (손승준 PL님)",
         bossName: "손승준 PL님",
         welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 최종 출하 리스크 퀴즈를 풀고 칼퇴하세요!"
       }
@@ -444,7 +444,7 @@
 
     const quizzes = {
       r1_memo: {
-        title: "📝 1관: S1FA PJT 프로젝트 기획 퀴즈",
+        title: "📝 1관: EFA1 파트 기획 퀴즈",
         question: "김주헌 파트장님이 올바른 이메일 제목 양식을 물어보셨다. 가장 바른 제목은?",
         choices: [
           "안녕하세요 파트장님 메일 드립니다",
@@ -456,7 +456,7 @@
         successMsg: "김주헌 파트장님: 좋아! 비즈니스 이메일 규격을 잘 알고 있군."
       },
       r1_phone: {
-        title: "☎️ 1관: 긴급 이머전시 전화 응대 퀴즈",
+        title: "☎️ 1관: EFA1 파트 긴급 전화 응대 퀴즈",
         question: "파트장님 부재중일 때 외부 거래처 전화를 받았다. 가장 적절한 응대는?",
         choices: [
           "파트장님 지금 담배 피우러 나가셨는데요?",
@@ -468,7 +468,7 @@
         successMsg: "김주헌 파트장님: 깔끔한 응대야! 1관 미션 완수!"
       },
       r2_memo: {
-        title: "📝 2관: S1FA 코드 리뷰 및 품질 퀴즈",
+        title: "📝 2관: EFA2 파트 코드 리뷰 퀴즈",
         question: "김진석 파트장님과의 코드 리뷰 중이다. 상사 보고 시 '두괄식 작성'의 의미는?",
         choices: [
           "결론과 핵심 요약을 맨 앞에 먼저 작성한다.",
@@ -480,7 +480,7 @@
         successMsg: "김진석 파트장님: 가독성이 뛰어난 보고 방식입니다! 정답!"
       },
       r2_phone: {
-        title: "☎️ 2관: 개발 서버 장애 문의 응대 퀴즈",
+        title: "☎️ 2관: EFA2 파트 서버 장애 응대 퀴즈",
         question: "개발 서버 장애 발생 시 가장 먼저 조치해야 할 행동은?",
         choices: [
           "서버실 전원 코드를 뽑아버린다.",
@@ -492,7 +492,7 @@
         successMsg: "김진석 파트장님: 완벽한 장애 대응 프로세스입니다!"
       },
       r3_memo: {
-        title: "📝 3관: S1FA UX/UI 테스트 퀴즈",
+        title: "📝 3관: PFA/VSEM 파트 UX/검증 퀴즈",
         question: "윤지혜 파트장님이 UX 검증 기준을 물어보셨다. 가장 중요한 요소는?",
         choices: [
           "화려한 색상만 많이 사용하기",
@@ -504,7 +504,7 @@
         successMsg: "윤지혜 파트장님: 정확해요! 사용 편의성이 최우선이죠."
       },
       r3_phone: {
-        title: "☎️ 3관: 타 부서 협조 요청 응대 퀴즈",
+        title: "☎️ 3관: PFA/VSEM 파트 타부서 협조 퀴즈",
         question: "타 팀에서 긴급 데이터 검증을 요청할 때 올바른 태도는?",
         choices: [
           "우리 팀 업무가 아니니 거절한다.",
@@ -516,7 +516,7 @@
         successMsg: "윤지혜 파트장님: 협업 매너가 아주 훌륭합니다!"
       },
       r4_memo: {
-        title: "📝 4관: S1FA PJT 최종 리스크 관리 퀴즈",
+        title: "📝 4관: S1FA PL실 최종 리스크 관리 퀴즈",
         question: "손승준 PL님이 프로젝트 최종 출하 전 확인해야 할 핵심 리스크는?",
         choices: [
           "오늘 점심 메뉴판 확인하기",
@@ -528,7 +528,7 @@
         successMsg: "손승준 PL님: 훌륭합니다! 리스크 점검 완벽!"
       },
       r4_phone: {
-        title: "☎️ 4관: 최종 퇴근 보안점검 퀴즈",
+        title: "☎️ 4관: S1FA PL실 최종 퇴근 보안점검 퀴즈",
         question: "퇴근 전 사무실 보안 점검 사항 중 틀린 것은?",
         choices: [
           "중요 보안 서류는 캐비닛에 넣고 잠근다.",
@@ -625,11 +625,11 @@
     }
 
     /* ==========================================
-       점수 계산 및 UI 렌더링
+       점수 계산 및 UI 실시간 렌더링
     ========================================== */
     function calculateQuizScore(timeTakenMs, wrongCount) {
       const timeInSec = timeTakenMs / 1000;
-      let score = Math.max(100, Math.round(10000 - (timeInSec * 145) - (wrongCount * 800)));
+      let score = Math.max(100, Math.round(10000 - (timeInSec * 145)));
       return score;
     }
 
@@ -637,103 +637,218 @@
       document.getElementById('user-stats').innerText = `점수: ${totalScore.toLocaleString()}점 | ${playerNickname}`;
     }
 
+    /* ==========================================
+       4개관 사무실 개별 테마 배경 드로잉
+    ========================================== */
     function renderRoomBackground(roomNum) {
       const svg = document.getElementById('bg-svg');
-      let content = `
-        <rect x="0" y="0" width="320" height="130" fill="${roomNum === 4 ? '#1e1b4b' : (roomNum === 3 ? '#312e81' : (roomNum === 2 ? '#064e3b' : '#334155'))}"/>
-        <rect x="0" y="130" width="320" height="70" fill="#cbd5e1"/>
-        <path d="M 0,130 L 320,130" stroke="#475569" stroke-width="2"/>
-        <path d="M 40,130 L 40,200 M 80,130 L 80,200 M 120,130 L 120,200 M 160,130 L 160,200 M 200,130 L 200,200 M 240,130 L 240,200 M 280,130 L 280,200" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2"/>
-        
-        <rect x="80" y="10" width="160" height="60" fill="#ffffff" stroke="#000" stroke-width="3"/>
-        <rect x="185" y="15" width="48" height="10" fill="#1d4ed8" rx="2"/>
-        <text x="188" y="22" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
-        <text x="90" y="24" fill="#000" font-size="9" font-weight="bold">S1FA PJT : ${roomNum}관</text>
-        <path d="M 90,32 L 230,32 M 90,45 L 210,45" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,2"/>
-      `;
+      let content = "";
 
-      if (roomNum === 1) {
-        content += `
-          <rect x="10" y="20" width="55" height="90" fill="#1e293b" stroke="#000" stroke-width="2"/>
-          <circle cx="20" cy="30" r="2" fill="#22c55e"/><circle cx="28" cy="30" r="2" fill="#ef4444"/>
-          <rect x="20" y="40" width="35" height="10" fill="#334155"/>
-          <rect x="20" y="60" width="35" height="10" fill="#334155"/>
+      if (roomNum === 1) { // 1관: EFA1 (다크 블루 서버 & 오실로스코프)
+        content = `
+          <rect x="0" y="0" width="320" height="130" fill="#1e293b"/>
+          <rect x="0" y="130" width="320" height="70" fill="#475569"/>
+          <path d="M 0,130 L 320,130" stroke="#0f172a" stroke-width="2"/>
+          
+          <!-- 화이트보드 -->
+          <rect x="80" y="10" width="160" height="55" fill="#ffffff" stroke="#0f172a" stroke-width="2.5"/>
+          <rect x="185" y="14" width="48" height="10" fill="#1d4ed8" rx="2"/>
+          <text x="188" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
+          <text x="90" y="24" fill="#0f172a" font-size="8" font-weight="bold">S1FA PJT : 1관 EFA1 파트</text>
+          <path d="M 90,32 L 230,32 M 90,42 L 210,42" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+          <!-- 좌측: 서버 랙 캐비닛 -->
+          <rect x="10" y="20" width="55" height="90" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+          <circle cx="20" cy="30" r="2" fill="#22c55e"/><circle cx="28" cy="30" r="2" fill="#ef4444"/><circle cx="36" cy="30" r="2" fill="#3b82f6"/>
+          <rect x="20" y="38" width="35" height="8" fill="#334155"/>
+          <rect x="20" y="50" width="35" height="8" fill="#334155"/>
+          <rect x="20" y="62" width="35" height="8" fill="#334155"/>
+          <rect x="20" y="74" width="35" height="8" fill="#334155"/>
+
+          <!-- 우측: EFA 장비 & 오실로스코프 화면 -->
+          <rect x="255" y="25" width="55" height="85" fill="#334155" stroke="#0f172a" stroke-width="2"/>
+          <rect x="262" y="35" width="40" height="25" fill="#0284c7"/>
+          <path d="M 262,47 Q 272,35 282,47 T 302,47" stroke="#38bdf8" fill="none" stroke-width="1.5"/>
+          <circle cx="268" cy="70" r="3" fill="#f59e0b"/>
+          <circle cx="280" cy="70" r="3" fill="#10b981"/>
+
+          <!-- 메인 책상 & 컴피선 -->
+          <path d="M 70,105 L 250,105 L 250,145 L 225,145 L 225,120 L 95,120 L 95,145 L 70,145 Z" fill="#cbd5e1" stroke="#0f172a" stroke-width="2"/>
+          <rect x="85" y="80" width="35" height="22" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+          <rect x="130" y="75" width="50" height="28" fill="#0f172a" stroke="#22c55e" stroke-width="2"/>
+          <rect x="190" y="80" width="35" height="22" fill="#0f172a" stroke="#ef4444" stroke-width="2"/>
         `;
-      } else if (roomNum === 2) {
-        content += `
-          <rect x="10" y="20" width="60" height="80" fill="#022c22" stroke="#000" stroke-width="2"/>
-          <path d="M 15,30 L 60,30 M 15,45 L 50,45 M 15,60 L 55,60" stroke="#10b981" stroke-width="1.5"/>
+      } else if (roomNum === 2) { // 2관: EFA2 (에머랄드 SW 오피스 & 커피 머신)
+        content = `
+          <rect x="0" y="0" width="320" height="130" fill="#064e3b"/>
+          <rect x="0" y="130" width="320" height="70" fill="#115e59"/>
+          <path d="M 0,130 L 320,130" stroke="#022c22" stroke-width="2"/>
+
+          <!-- 화이트보드 -->
+          <rect x="80" y="10" width="160" height="55" fill="#ffffff" stroke="#022c22" stroke-width="2.5"/>
+          <rect x="185" y="14" width="48" height="10" fill="#1d4ed8" rx="2"/>
+          <text x="188" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
+          <text x="90" y="24" fill="#022c22" font-size="8" font-weight="bold">S1FA PJT : 2관 EFA2 파트</text>
+          <path d="M 90,32 L 230,32 M 90,42 L 210,42" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+          <!-- 좌측: 에스프레소 커피 머신 및 선반 -->
+          <rect x="10" y="30" width="55" height="75" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+          <rect x="20" y="40" width="35" height="30" fill="#1e293b"/>
+          <rect x="30" y="62" width="15" height="8" fill="#ffffff"/> <!-- 스팀 컵 -->
+          <path d="M 32,38 Q 37,32 42,38" stroke="#f1f5f9" fill="none" stroke-width="1.5"/> <!-- 김 모락모락 -->
+
+          <!-- 우측: 멀티 매트릭스 코드 모니터 -->
+          <rect x="250" y="20" width="60" height="85" fill="#022c22" stroke="#10b981" stroke-width="2"/>
+          <path d="M 255,30 L 305,30 M 255,40 L 290,40 M 255,50 L 300,50 M 255,60 L 280,60" stroke="#34d399" stroke-width="1.5"/>
+
+          <!-- 메인 책상 -->
+          <path d="M 70,105 L 250,105 L 250,145 L 225,145 L 225,120 L 95,120 L 95,145 L 70,145 Z" fill="#a7f3d0" stroke="#022c22" stroke-width="2"/>
+          <rect x="85" y="80" width="35" height="22" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+          <rect x="130" y="75" width="50" height="28" fill="#0f172a" stroke="#34d399" stroke-width="2"/>
+          <rect x="190" y="80" width="35" height="22" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
         `;
-      } else if (roomNum === 3) {
-        content += `
-          <rect x="10" y="20" width="55" height="75" fill="#fbcfe8" stroke="#000" stroke-width="2"/>
-          <rect x="15" y="25" width="15" height="15" fill="#f43f5e"/>
-          <rect x="35" y="25" width="15" height="15" fill="#0ea5e9"/>
-          <rect x="15" y="45" width="35" height="15" fill="#eab308"/>
+      } else if (roomNum === 3) { // 3관: PFA/VSEM (바이올렛 Cleanroom & 전자현미경 장비)
+        content = `
+          <rect x="0" y="0" width="320" height="130" fill="#4c1d95"/>
+          <rect x="0" y="130" width="320" height="70" fill="#a5f3fc"/>
+          <path d="M 0,130 L 320,130" stroke="#312e81" stroke-width="2"/>
+
+          <!-- 화이트보드 -->
+          <rect x="80" y="10" width="160" height="55" fill="#ffffff" stroke="#312e81" stroke-width="2.5"/>
+          <rect x="185" y="14" width="48" height="10" fill="#1d4ed8" rx="2"/>
+          <text x="188" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
+          <text x="90" y="24" fill="#312e81" font-size="8" font-weight="bold">S1FA PJT : 3관 PFA/VSEM 파트</text>
+          <path d="M 90,32 L 230,32 M 90,42 L 210,42" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+          <!-- 좌측: VSEM 전자현미경 검사 기기 -->
+          <rect x="10" y="20" width="55" height="85" fill="#f8fafc" stroke="#312e81" stroke-width="2"/>
+          <circle cx="37" cy="45" r="14" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+          <rect x="25" y="70" width="25" height="18" fill="#f59e0b"/> <!-- 웨이퍼 케리어 박스 -->
+
+          <!-- 우측: PFA 분석 모니터 & 공기청정 화분 -->
+          <rect x="255" y="25" width="55" height="80" fill="#f8fafc" stroke="#312e81" stroke-width="2"/>
+          <rect x="262" y="35" width="40" height="30" fill="#e0e7ff"/>
+          <!-- 화분 -->
+          <rect x="270" y="75" width="15" height="15" fill="#b45309"/>
+          <circle cx="277" cy="70" r="10" fill="#22c55e"/>
+
+          <!-- 메인 책상 -->
+          <path d="M 70,105 L 250,105 L 250,145 L 225,145 L 225,120 L 95,120 L 95,145 L 70,145 Z" fill="#e9d5ff" stroke="#312e81" stroke-width="2"/>
+          <rect x="85" y="80" width="35" height="22" fill="#0f172a" stroke="#c084fc" stroke-width="2"/>
+          <rect x="130" y="75" width="50" height="28" fill="#0f172a" stroke="#c084fc" stroke-width="2"/>
+          <rect x="190" y="80" width="35" height="22" fill="#0f172a" stroke="#c084fc" stroke-width="2"/>
         `;
-      } else if (roomNum === 4) {
-        content += `
-          <rect x="10" y="15" width="60" height="90" fill="#312e81" stroke="#000" stroke-width="2"/>
-          <circle cx="40" cy="40" r="12" fill="#fbbf24" stroke="#000" stroke-width="1.5"/>
-          <text x="35" y="44" fill="#000" font-size="10" font-weight="bold">PL</text>
+      } else if (roomNum === 4) { // 4관: PL실 (로열 인디고 & 프리미엄 목재 오피스)
+        content = `
+          <rect x="0" y="0" width="320" height="130" fill="#1e1b4b"/>
+          <rect x="0" y="130" width="320" height="70" fill="#92400e"/>
+          <path d="M 0,130 L 320,130" stroke="#451a03" stroke-width="2"/>
+
+          <!-- 화이트보드 -->
+          <rect x="80" y="10" width="160" height="55" fill="#ffffff" stroke="#312e81" stroke-width="2.5"/>
+          <rect x="185" y="14" width="48" height="10" fill="#1d4ed8" rx="2"/>
+          <text x="188" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
+          <text x="90" y="24" fill="#312e81" font-size="8" font-weight="bold">S1FA PJT : 4관 S1FA PL실</text>
+          <path d="M 90,32 L 230,32 M 90,42 L 210,42" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+          <!-- 좌측: 트로피 & 상장 수장고 -->
+          <rect x="10" y="15" width="55" height="90" fill="#312e81" stroke="#fbbf24" stroke-width="2"/>
+          <circle cx="37" cy="35" r="12" fill="#fbbf24" stroke="#000" stroke-width="1.5"/>
+          <text x="32" y="39" fill="#000" font-size="9" font-weight="bold">PL</text>
+          <rect x="20" y="60" width="35" height="12" fill="#d97706"/>
+          <rect x="20" y="80" width="35" height="12" fill="#d97706"/>
+
+          <!-- 우측: S1FA 로드맵 로드 보드 -->
+          <rect x="255" y="20" width="55" height="85" fill="#312e81" stroke="#fbbf24" stroke-width="2"/>
+          <path d="M 260,35 L 305,35 M 260,55 L 305,55 M 260,75 L 305,75" stroke="#fef08a" stroke-width="1.5"/>
+
+          <!-- 메인 고급 원목 책상 -->
+          <path d="M 70,105 L 250,105 L 250,145 L 225,145 L 225,120 L 95,120 L 95,145 L 70,145 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2"/>
+          <rect x="85" y="80" width="35" height="22" fill="#0f172a" stroke="#fbbf24" stroke-width="2"/>
+          <rect x="130" y="75" width="50" height="28" fill="#0f172a" stroke="#fbbf24" stroke-width="2"/>
+          <rect x="190" y="80" width="35" height="22" fill="#0f172a" stroke="#fbbf24" stroke-width="2"/>
         `;
       }
-
-      content += `
-        <path d="M 70,100 L 250,100 L 250,145 L 225,145 L 225,118 L 95,118 L 95,145 L 70,145 Z" fill="#e2e8f0" stroke="#000" stroke-width="2"/>
-        <rect x="85" y="75" width="35" height="22" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
-        <rect x="130" y="70" width="50" height="28" fill="#0f172a" stroke="#22c55e" stroke-width="2"/>
-        <rect x="190" y="75" width="35" height="22" fill="#0f172a" stroke="#ef4444" stroke-width="2"/>
-      `;
 
       svg.innerHTML = content;
       renderBossNPC(roomNum);
     }
 
+    /* ==========================================
+       방별 파트장님/PL님 SVG 도트 캐릭터 생성
+    ========================================== */
     function renderBossNPC(roomNum) {
       const bossSvg = document.getElementById('boss-svg');
       const bossTag = document.getElementById('boss-tag');
       bossTag.innerText = roomData[roomNum].bossName;
 
-      let hairColor = "#1e293b";
-      let glasses = true;
-      let suitColor = "#0f172a";
+      let content = "";
 
-      if (roomNum === 2) { suitColor = "#064e3b"; glasses = false; }
-      else if (roomNum === 3) { suitColor = "#831843"; hairColor = "#451a03"; }
-      else if (roomNum === 4) { suitColor = "#312e81"; }
-
-      let content = `
-        <rect x="8" y="2" width="14" height="6" fill="${hairColor}"/>
-        <rect x="6" y="4" width="18" height="5" fill="${hairColor}"/>
-        <rect x="7" y="8" width="16" height="12" fill="#fde047"/>
-        <path d="M 9,10 L 13,12 M 21,10 L 17,12" stroke="#0f172a" stroke-width="1.2"/>
-      `;
-
-      if (glasses) {
-        content += `
-          <rect x="8" y="11" width="6" height="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
-          <rect x="16" y="11" width="6" height="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
-          <line x1="14" y1="12" x2="16" y2="12" stroke="#0f172a" stroke-width="1"/>
+      if (roomNum === 3) {
+        // 윤지혜 파트장님 (여성 픽셀 캐릭터)
+        content = `
+          <!-- 긴 갈색 헤어 -->
+          <rect x="6" y="2" width="18" height="6" fill="#582f0e"/>
+          <rect x="4" y="4" width="22" height="22" fill="#582f0e"/>
+          <!-- 얼굴 -->
+          <rect x="8" y="7" width="14" height="11" fill="#fde047"/>
+          <!-- 예쁜 눈과 속눈썹 -->
+          <rect x="9" y="10" width="3" height="3" fill="#0f172a"/>
+          <rect x="18" y="10" width="3" height="3" fill="#0f172a"/>
+          <rect x="9" y="9" width="4" height="1" fill="#0f172a"/>
+          <rect x="17" y="9" width="4" height="1" fill="#0f172a"/>
+          <!-- 미소 입 -->
+          <line x1="12" y1="15" x2="16" y2="15" stroke="#be185d" stroke-width="1.2"/>
+          <!-- 자줏빛 재킷 & 흰 블라우스 -->
+          <rect x="6" y="19" width="18" height="13" fill="#be185d"/>
+          <polygon points="12,19 18,19 17,26 13,26" fill="#ffffff"/>
+          <!-- 스커트 & 구두 -->
+          <rect x="8" y="32" width="5" height="6" fill="#831843"/>
+          <rect x="17" y="32" width="5" height="6" fill="#831843"/>
+          <rect x="7" y="37" width="6" height="3" fill="#000"/>
+          <rect x="17" y="37" width="6" height="3" fill="#000"/>
         `;
       } else {
+        // 남성 파트장님/PL님
+        let hairColor = "#1e293b";
+        let glasses = true;
+        let suitColor = "#0f172a";
+
+        if (roomNum === 2) { suitColor = "#064e3b"; glasses = false; }
+        else if (roomNum === 4) { suitColor = "#312e81"; }
+
+        content = `
+          <rect x="8" y="2" width="14" height="6" fill="${hairColor}"/>
+          <rect x="6" y="4" width="18" height="5" fill="${hairColor}"/>
+          <rect x="7" y="8" width="16" height="12" fill="#fde047"/>
+          <path d="M 9,10 L 13,12 M 21,10 L 17,12" stroke="#0f172a" stroke-width="1.2"/>
+        `;
+
+        if (glasses) {
+          content += `
+            <rect x="8" y="11" width="6" height="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+            <rect x="16" y="11" width="6" height="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+            <line x1="14" y1="12" x2="16" y2="12" stroke="#0f172a" stroke-width="1"/>
+          `;
+        } else {
+          content += `
+            <rect x="10" y="12" width="3" height="3" fill="#000"/>
+            <rect x="17" y="12" width="3" height="3" fill="#000"/>
+          `;
+        }
+
         content += `
-          <rect x="10" y="12" width="3" height="3" fill="#000"/>
-          <rect x="17" y="12" width="3" height="3" fill="#000"/>
+          <line x1="12" y1="17" x2="18" y2="17" stroke="#0f172a" stroke-width="1"/>
+          <rect x="5" y="20" width="20" height="12" fill="${suitColor}"/>
+          <polygon points="13,20 17,20 16,28 14,28" fill="#dc2626"/>
+          <polygon points="10,20 13,20 12,27" fill="#ffffff"/>
+          <polygon points="20,20 17,20 18,27" fill="#ffffff"/>
+          <rect x="7" y="32" width="6" height="7" fill="#1e293b"/>
+          <rect x="17" y="32" width="6" height="7" fill="#1e293b"/>
+          <rect x="6" y="37" width="7" height="3" fill="#000"/>
+          <rect x="17" y="37" width="7" height="3" fill="#000"/>
         `;
       }
-
-      content += `
-        <line x1="12" y1="17" x2="18" y2="17" stroke="#0f172a" stroke-width="1"/>
-        <rect x="5" y="20" width="20" height="12" fill="${suitColor}"/>
-        <polygon points="13,20 17,20 16,28 14,28" fill="#dc2626"/>
-        <polygon points="10,20 13,20 12,27" fill="#ffffff"/>
-        <polygon points="20,20 17,20 18,27" fill="#ffffff"/>
-        <rect x="7" y="32" width="6" height="7" fill="#1e293b"/>
-        <rect x="17" y="32" width="6" height="7" fill="#1e293b"/>
-        <rect x="6" y="37" width="7" height="3" fill="#000"/>
-        <rect x="17" y="37" width="7" height="3" fill="#000"/>
-      `;
 
       bossSvg.innerHTML = content;
     }
@@ -789,7 +904,7 @@
         updateScoreUI();
 
         document.getElementById('quiz-modal').style.display = 'none';
-        setDialogue(`${qData.successMsg}\n(+${earnedScore.toLocaleString()}점 획득!)`);
+        setDialogue(`${qData.successMsg}\n(+${earnedScore.toLocaleString()}점 획득! 현재 총점: ${totalScore.toLocaleString()}점)`);
 
         if (quizKey.includes('memo')) roomSolved[currentRoom].memo = true;
         if (quizKey.includes('phone')) roomSolved[currentRoom].phone = true;
@@ -798,7 +913,11 @@
         checkDoorStatus();
       } else {
         wrongAttempts++;
-        alert(`❌ 오답입니다! (감점 누적: -${wrongAttempts * 800}점) 다시 선택하세요.`);
+        const penalty = 500;
+        totalScore = Math.max(0, totalScore - penalty);
+        updateScoreUI();
+        saveGameState();
+        alert(`❌ 오답입니다! 500점이 즉시 감점되었습니다. (현재 점수: ${totalScore.toLocaleString()}점) 다시 선택하세요.`);
       }
     }
 
