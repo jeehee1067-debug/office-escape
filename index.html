@@ -68,14 +68,14 @@
 
     .nav-btn-group {
       display: flex;
-      gap: 6px;
+      gap: 4px;
     }
 
     .nav-btn {
       background: #fff;
       border: 2px solid #000;
       padding: 4px 8px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: bold;
       cursor: pointer;
       box-shadow: 2px 2px 0px #000;
@@ -303,13 +303,14 @@
       </div>
     </div>
 
-    <!-- 상단 내비게이션 바 -->
+    <!-- 상단 내비게이션 바 (초기화 버튼 re-added) -->
     <div id="top-nav">
       <div id="room-title">S1FA PJT : 1관 EFA1 파트</div>
       <div id="user-stats">점수: 0점</div>
       <div class="nav-btn-group">
         <button id="prev-btn" class="nav-btn">◄ 이전</button>
         <button id="next-btn" class="nav-btn">다음 ►</button>
+        <button id="reset-btn" class="nav-btn" style="background:#ef4444; color:#fff;">🔄 초기화</button>
       </div>
     </div>
 
@@ -588,6 +589,14 @@
       return null;
     }
 
+    function resetGameProgress() {
+      if (confirm("정말로 모든 진행 상황을 초기화하고 첫 화면부터 다시 시작하시겠습니까?")) {
+        localStorage.removeItem('s1fa_state_' + userIp);
+        localStorage.removeItem('s1fa_latest_session');
+        location.reload();
+      }
+    }
+
     /* ==========================================
        게임 시작 및 복구 제어
     ========================================== */
@@ -650,14 +659,12 @@
           <rect x="0" y="130" width="320" height="70" fill="#475569"/>
           <path d="M 0,130 L 320,130" stroke="#0f172a" stroke-width="2"/>
           
-          <!-- 화이트보드 -->
           <rect x="80" y="10" width="160" height="55" fill="#ffffff" stroke="#0f172a" stroke-width="2.5"/>
           <rect x="185" y="14" width="48" height="10" fill="#1d4ed8" rx="2"/>
           <text x="188" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
           <text x="90" y="24" fill="#0f172a" font-size="8" font-weight="bold">S1FA PJT : 1관 EFA1 파트</text>
           <path d="M 90,32 L 230,32 M 90,42 L 210,42" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,2"/>
 
-          <!-- 좌측: 서버 랙 캐비닛 -->
           <rect x="10" y="20" width="55" height="90" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
           <circle cx="20" cy="30" r="2" fill="#22c55e"/><circle cx="28" cy="30" r="2" fill="#ef4444"/><circle cx="36" cy="30" r="2" fill="#3b82f6"/>
           <rect x="20" y="38" width="35" height="8" fill="#334155"/>
@@ -665,104 +672,89 @@
           <rect x="20" y="62" width="35" height="8" fill="#334155"/>
           <rect x="20" y="74" width="35" height="8" fill="#334155"/>
 
-          <!-- 우측: EFA 장비 & 오실로스코프 화면 -->
           <rect x="255" y="25" width="55" height="85" fill="#334155" stroke="#0f172a" stroke-width="2"/>
           <rect x="262" y="35" width="40" height="25" fill="#0284c7"/>
           <path d="M 262,47 Q 272,35 282,47 T 302,47" stroke="#38bdf8" fill="none" stroke-width="1.5"/>
           <circle cx="268" cy="70" r="3" fill="#f59e0b"/>
           <circle cx="280" cy="70" r="3" fill="#10b981"/>
 
-          <!-- 메인 책상 & 컴피선 -->
           <path d="M 70,105 L 250,105 L 250,145 L 225,145 L 225,120 L 95,120 L 95,145 L 70,145 Z" fill="#cbd5e1" stroke="#0f172a" stroke-width="2"/>
           <rect x="85" y="80" width="35" height="22" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
           <rect x="130" y="75" width="50" height="28" fill="#0f172a" stroke="#22c55e" stroke-width="2"/>
           <rect x="190" y="80" width="35" height="22" fill="#0f172a" stroke="#ef4444" stroke-width="2"/>
         `;
-      } else if (roomNum === 2) { // 2관: EFA2 (에머랄드 SW 오피스 & 커피 머신)
+      } else if (roomNum === 2) { // 2관: EFA2
         content = `
           <rect x="0" y="0" width="320" height="130" fill="#064e3b"/>
           <rect x="0" y="130" width="320" height="70" fill="#115e59"/>
           <path d="M 0,130 L 320,130" stroke="#022c22" stroke-width="2"/>
 
-          <!-- 화이트보드 -->
           <rect x="80" y="10" width="160" height="55" fill="#ffffff" stroke="#022c22" stroke-width="2.5"/>
           <rect x="185" y="14" width="48" height="10" fill="#1d4ed8" rx="2"/>
           <text x="188" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
           <text x="90" y="24" fill="#022c22" font-size="8" font-weight="bold">S1FA PJT : 2관 EFA2 파트</text>
           <path d="M 90,32 L 230,32 M 90,42 L 210,42" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,2"/>
 
-          <!-- 좌측: 에스프레소 커피 머신 및 선반 -->
           <rect x="10" y="30" width="55" height="75" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
           <rect x="20" y="40" width="35" height="30" fill="#1e293b"/>
-          <rect x="30" y="62" width="15" height="8" fill="#ffffff"/> <!-- 스팀 컵 -->
-          <path d="M 32,38 Q 37,32 42,38" stroke="#f1f5f9" fill="none" stroke-width="1.5"/> <!-- 김 모락모락 -->
+          <rect x="30" y="62" width="15" height="8" fill="#ffffff"/>
+          <path d="M 32,38 Q 37,32 42,38" stroke="#f1f5f9" fill="none" stroke-width="1.5"/>
 
-          <!-- 우측: 멀티 매트릭스 코드 모니터 -->
           <rect x="250" y="20" width="60" height="85" fill="#022c22" stroke="#10b981" stroke-width="2"/>
           <path d="M 255,30 L 305,30 M 255,40 L 290,40 M 255,50 L 300,50 M 255,60 L 280,60" stroke="#34d399" stroke-width="1.5"/>
 
-          <!-- 메인 책상 -->
           <path d="M 70,105 L 250,105 L 250,145 L 225,145 L 225,120 L 95,120 L 95,145 L 70,145 Z" fill="#a7f3d0" stroke="#022c22" stroke-width="2"/>
           <rect x="85" y="80" width="35" height="22" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
           <rect x="130" y="75" width="50" height="28" fill="#0f172a" stroke="#34d399" stroke-width="2"/>
           <rect x="190" y="80" width="35" height="22" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
         `;
-      } else if (roomNum === 3) { // 3관: PFA/VSEM (바이올렛 Cleanroom & 전자현미경 장비)
+      } else if (roomNum === 3) { // 3관: PFA/VSEM
         content = `
           <rect x="0" y="0" width="320" height="130" fill="#4c1d95"/>
           <rect x="0" y="130" width="320" height="70" fill="#a5f3fc"/>
           <path d="M 0,130 L 320,130" stroke="#312e81" stroke-width="2"/>
 
-          <!-- 화이트보드 -->
           <rect x="80" y="10" width="160" height="55" fill="#ffffff" stroke="#312e81" stroke-width="2.5"/>
           <rect x="185" y="14" width="48" height="10" fill="#1d4ed8" rx="2"/>
           <text x="188" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
           <text x="90" y="24" fill="#312e81" font-size="8" font-weight="bold">S1FA PJT : 3관 PFA/VSEM 파트</text>
           <path d="M 90,32 L 230,32 M 90,42 L 210,42" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,2"/>
 
-          <!-- 좌측: VSEM 전자현미경 검사 기기 -->
           <rect x="10" y="20" width="55" height="85" fill="#f8fafc" stroke="#312e81" stroke-width="2"/>
           <circle cx="37" cy="45" r="14" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
-          <rect x="25" y="70" width="25" height="18" fill="#f59e0b"/> <!-- 웨이퍼 케리어 박스 -->
+          <rect x="25" y="70" width="25" height="18" fill="#f59e0b"/>
 
-          <!-- 우측: PFA 분석 모니터 & 공기청정 화분 -->
           <rect x="255" y="25" width="55" height="80" fill="#f8fafc" stroke="#312e81" stroke-width="2"/>
           <rect x="262" y="35" width="40" height="30" fill="#e0e7ff"/>
-          <!-- 화분 -->
           <rect x="270" y="75" width="15" height="15" fill="#b45309"/>
           <circle cx="277" cy="70" r="10" fill="#22c55e"/>
 
-          <!-- 메인 책상 -->
           <path d="M 70,105 L 250,105 L 250,145 L 225,145 L 225,120 L 95,120 L 95,145 L 70,145 Z" fill="#e9d5ff" stroke="#312e81" stroke-width="2"/>
           <rect x="85" y="80" width="35" height="22" fill="#0f172a" stroke="#c084fc" stroke-width="2"/>
           <rect x="130" y="75" width="50" height="28" fill="#0f172a" stroke="#c084fc" stroke-width="2"/>
           <rect x="190" y="80" width="35" height="22" fill="#0f172a" stroke="#c084fc" stroke-width="2"/>
         `;
-      } else if (roomNum === 4) { // 4관: PL실 (로열 인디고 & 프리미엄 목재 오피스)
+      } else if (roomNum === 4) { // 4관: PL실
         content = `
           <rect x="0" y="0" width="320" height="130" fill="#1e1b4b"/>
           <rect x="0" y="130" width="320" height="70" fill="#92400e"/>
           <path d="M 0,130 L 320,130" stroke="#451a03" stroke-width="2"/>
 
-          <!-- 화이트보드 -->
           <rect x="80" y="10" width="160" height="55" fill="#ffffff" stroke="#312e81" stroke-width="2.5"/>
           <rect x="185" y="14" width="48" height="10" fill="#1d4ed8" rx="2"/>
           <text x="188" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
           <text x="90" y="24" fill="#312e81" font-size="8" font-weight="bold">S1FA PJT : 4관 S1FA PL실</text>
           <path d="M 90,32 L 230,32 M 90,42 L 210,42" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,2"/>
 
-          <!-- 좌측: 트로피 & 상장 수장고 -->
           <rect x="10" y="15" width="55" height="90" fill="#312e81" stroke="#fbbf24" stroke-width="2"/>
           <circle cx="37" cy="35" r="12" fill="#fbbf24" stroke="#000" stroke-width="1.5"/>
           <text x="32" y="39" fill="#000" font-size="9" font-weight="bold">PL</text>
           <rect x="20" y="60" width="35" height="12" fill="#d97706"/>
           <rect x="20" y="80" width="35" height="12" fill="#d97706"/>
 
-          <!-- 우측: S1FA 로드맵 로드 보드 -->
           <rect x="255" y="20" width="55" height="85" fill="#312e81" stroke="#fbbf24" stroke-width="2"/>
           <path d="M 260,35 L 305,35 M 260,55 L 305,55 M 260,75 L 305,75" stroke="#fef08a" stroke-width="1.5"/>
 
-          <!-- 메인 고급 원목 책상 -->
           <path d="M 70,105 L 250,105 L 250,145 L 225,145 L 225,120 L 95,120 L 95,145 L 70,145 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2"/>
           <rect x="85" y="80" width="35" height="22" fill="#0f172a" stroke="#fbbf24" stroke-width="2"/>
           <rect x="130" y="75" width="50" height="28" fill="#0f172a" stroke="#fbbf24" stroke-width="2"/>
@@ -787,22 +779,16 @@
       if (roomNum === 3) {
         // 윤지혜 파트장님 (여성 픽셀 캐릭터)
         content = `
-          <!-- 긴 갈색 헤어 -->
           <rect x="6" y="2" width="18" height="6" fill="#582f0e"/>
           <rect x="4" y="4" width="22" height="22" fill="#582f0e"/>
-          <!-- 얼굴 -->
           <rect x="8" y="7" width="14" height="11" fill="#fde047"/>
-          <!-- 예쁜 눈과 속눈썹 -->
           <rect x="9" y="10" width="3" height="3" fill="#0f172a"/>
           <rect x="18" y="10" width="3" height="3" fill="#0f172a"/>
           <rect x="9" y="9" width="4" height="1" fill="#0f172a"/>
           <rect x="17" y="9" width="4" height="1" fill="#0f172a"/>
-          <!-- 미소 입 -->
           <line x1="12" y1="15" x2="16" y2="15" stroke="#be185d" stroke-width="1.2"/>
-          <!-- 자줏빛 재킷 & 흰 블라우스 -->
           <rect x="6" y="19" width="18" height="13" fill="#be185d"/>
           <polygon points="12,19 18,19 17,26 13,26" fill="#ffffff"/>
-          <!-- 스커트 & 구두 -->
           <rect x="8" y="32" width="5" height="6" fill="#831843"/>
           <rect x="17" y="32" width="5" height="6" fill="#831843"/>
           <rect x="7" y="37" width="6" height="3" fill="#000"/>
@@ -1006,6 +992,7 @@
       const nicknameInput = document.getElementById('nickname-input');
       const prevBtn = document.getElementById('prev-btn');
       const nextBtn = document.getElementById('next-btn');
+      const resetBtn = document.getElementById('reset-btn');
       const restartBtn = document.getElementById('restart-btn');
 
       if (startBtn) startBtn.addEventListener('click', startGame);
@@ -1016,6 +1003,7 @@
       }
       if (prevBtn) prevBtn.addEventListener('click', prevRoom);
       if (nextBtn) nextBtn.addEventListener('click', nextRoom);
+      if (resetBtn) resetBtn.addEventListener('click', resetGameProgress);
       if (restartBtn) {
         restartBtn.addEventListener('click', () => {
           localStorage.removeItem('s1fa_state_' + userIp);
