@@ -3,197 +3,213 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>칼퇴 픽셀 로드 : 신입사원의 탈출기 v3.0</title>
+  <title>칼퇴 픽셀 로드 : 신입사원의 탈출기</title>
+  <!-- 갈무리 레트로 픽셀 폰트 로드 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       user-select: none;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Galmuri9', monospace;
     }
 
     body {
-      background-color: #1a1a24;
+      background-color: #121218;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      color: #fff;
+      color: #000;
     }
 
-    /* 게임 메인 프레임 */
+    /* 게임 화면 프레임 (픽셀 아트 비율) */
     #game-container {
       width: 640px;
-      height: 520px;
-      background-color: #2b2b36;
-      border: 6px solid #4a4a5a;
-      border-radius: 12px;
+      height: 600px;
+      background-color: #d1d5db;
+      border: 6px solid #1f2937;
+      border-radius: 8px;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
       display: flex;
       flex-direction: column;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.8);
     }
 
-    /* 클릭 감지 테스트용 상단 상태 로그 바 */
-    #status-bar {
-      background: #111;
-      color: #00ffcc;
-      font-size: 12px;
-      padding: 8px 12px;
-      border-bottom: 2px solid #4a4a5a;
-      font-family: monospace;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    /* 상단 내비게이션 바 */
+    #top-nav {
+      height: 48px;
+      background: #e5e7eb;
+      border-bottom: 4px solid #000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 12px;
       z-index: 100;
     }
 
-    /* 사무실 배경 화면 */
+    #room-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #111;
+      text-shadow: 1px 1px 0px #fff;
+    }
+
+    .nav-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .nav-btn {
+      background: #fff;
+      border: 3px solid #000;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 2px 2px 0px #000;
+    }
+
+    .nav-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0px 0px 0px #000;
+    }
+
+    /* 메인 픽셀 오피스 화면 */
     #screen {
       width: 100%;
-      height: 300px;
+      height: 390px;
       position: relative;
-      background-color: #3a3d52;
-      background-image: 
-        radial-gradient(#4a4d66 15%, transparent 16%),
-        radial-gradient(#4a4d66 15%, transparent 16%);
-      background-size: 30px 30px;
-      background-position: 0 0, 15px 15px;
+      background-color: #94a3b8;
+      overflow: hidden;
     }
 
-    .office-bg-2 {
-      background-color: #4d3a52 !important;
-      background-image: 
-        radial-gradient(#664a66 15%, transparent 16%),
-        radial-gradient(#664a66 15%, transparent 16%) !important;
+    /* SVG 픽셀 배경 고화질 렌더링 */
+    .pixel-render {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
     }
 
-    #room-badge {
+    #bg-svg {
+      width: 100%;
+      height: 100%;
       position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.85);
-      border: 2px solid #ffd700;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 13px;
-      color: #ffd700;
-      z-index: 10;
-      font-weight: bold;
+      top: 0; left: 0;
     }
 
-    /* 클릭 가능 오브젝트 (영역 명확화 및 터치 보장) */
+    /* 인터랙티브 픽셀 오브젝트 레이어 */
     .pixel-object {
       position: absolute;
       cursor: pointer;
+      z-index: 50;
+      transition: transform 0.15s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 2px dashed rgba(255, 255, 255, 0.4);
-      border-radius: 8px;
-      z-index: 50;
-      transition: all 0.15s ease;
     }
 
     .pixel-object:hover {
-      background: rgba(255, 215, 0, 0.25);
-      border-color: #ffd700;
-      border-style: solid;
-      transform: scale(1.1);
+      transform: scale(1.08);
+      filter: drop-shadow(0px 0px 6px #ffd700);
     }
 
     .pixel-object:active {
       transform: scale(0.95);
     }
 
-    /* 자식 요소가 클릭 이벤트를 방해하지 않도록 처리 */
     .pixel-object * {
       pointer-events: none;
     }
 
-    .pixel-sprite {
-      font-size: 36px;
-      line-height: 1;
-    }
-
-    .obj-label {
+    .obj-tag {
       background: #000;
       color: #fff;
-      font-size: 11px;
+      font-size: 10px;
       padding: 2px 6px;
       border-radius: 3px;
-      margin-top: 4px;
-      border: 1px solid #888;
+      border: 1px solid #fff;
+      margin-top: 2px;
       white-space: nowrap;
     }
 
-    /* 오브젝트 배치 위치 */
-    #boss-npc { top: 40px; left: 250px; }
-    #memo-obj { top: 150px; left: 50px; }
-    #phone-obj { top: 150px; right: 50px; }
-    #door-obj { top: 20px; right: 20px; }
+    /* 오브젝트 위치 설정 */
+    #boss-npc { top: 170px; left: 340px; }
+    #player-npc { top: 170px; left: 210px; }
+    #memo-obj { top: 135px; left: 110px; }
+    #phone-obj { top: 135px; right: 110px; }
+    #door-obj { top: 15px; right: 20px; }
 
-    /* 대사창 영역 */
+    /* 예시 이미지와 동일한 하단 대사창 */
     #dialogue-box {
       width: 100%;
       height: 160px;
-      background: #f8f9fa;
-      border-top: 4px solid #2b2b36;
-      padding: 12px 16px;
+      background: #ffffff;
+      border-top: 5px solid #000;
+      padding: 16px 20px;
       position: relative;
-      color: #111;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-    }
-
-    #speaker-name {
-      font-size: 13px;
-      color: #d32f2f;
-      font-weight: bold;
-      margin-bottom: 4px;
+      box-sizing: border-box;
+      z-index: 100;
     }
 
     #dialogue-text {
-      font-size: 14px;
-      line-height: 1.4;
-      color: #222;
-      height: 50px;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #000;
       white-space: pre-line;
+      font-weight: bold;
     }
 
+    /* 포켓몬 스타일 다음 대사 프롬프트 삼각 화살표 */
+    #next-arrow {
+      position: absolute;
+      bottom: 12px;
+      right: 16px;
+      width: 0; height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 10px solid #000;
+      animation: bounce 0.8s infinite alternate;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(5px); }
+    }
+
+    /* 선택지 버튼 창 */
     #options-container {
       display: flex;
-      gap: 8px;
+      gap: 10px;
+      margin-top: 6px;
     }
 
     .opt-btn {
       flex: 1;
-      background: #007bff;
-      color: #fff;
-      border: none;
+      background: #f3f4f6;
+      border: 3px solid #000;
       padding: 8px;
       font-size: 13px;
       font-weight: bold;
       cursor: pointer;
-      border-radius: 4px;
+      box-shadow: 2px 2px 0px #000;
+      color: #000;
       text-align: center;
     }
 
     .opt-btn:hover {
-      background: #0056b3;
+      background: #ffe082;
     }
 
     /* 퀴즈 모달 팝업 */
     #quiz-modal {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.75);
       display: none;
       flex-direction: column;
       justify-content: center;
@@ -204,88 +220,191 @@
 
     .quiz-card {
       background: #ffffff;
-      border: 3px solid #333;
-      border-radius: 8px;
+      border: 4px solid #000;
+      border-radius: 6px;
       width: 100%;
       max-width: 480px;
-      padding: 18px;
-      color: #111;
+      padding: 20px;
+      color: #000;
+      box-shadow: 6px 6px 0px rgba(0,0,0,0.5);
     }
 
     .quiz-title {
-      font-size: 15px;
-      color: #1976d2;
-      margin-bottom: 8px;
+      font-size: 16px;
+      color: #d32f2f;
+      margin-bottom: 10px;
       font-weight: bold;
     }
 
     .quiz-q {
       font-size: 14px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       line-height: 1.4;
-      color: #333;
+      font-weight: bold;
     }
 
     .quiz-choice {
-      background: #f1f3f5;
-      border: 1.5px solid #ced4da;
+      background: #f8f9fa;
+      border: 2px solid #000;
       padding: 10px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       cursor: pointer;
       font-size: 13px;
+      font-weight: bold;
       border-radius: 4px;
-      color: #212529;
-      transition: all 0.1s;
     }
 
     .quiz-choice:hover {
-      background: #e7f5ff;
-      border-color: #1c7ed6;
-      font-weight: bold;
+      background: #ffe082;
     }
   </style>
 </head>
 <body>
 
   <div id="game-container">
-    <!-- 실시간 동작 확인용 로그 바 -->
-    <div id="status-bar">▶ [SYSTEM LOG] 게임 준비 완료. 각 오브젝트를 클릭하세요.</div>
-
-    <div id="screen">
-      <div id="room-badge">📍 1관: 영업부 사무실</div>
-
-      <!-- 클릭 가능 대상 (점선 상자로 강조) -->
-      <div class="pixel-object" id="boss-npc">
-        <div class="pixel-sprite">👨‍💼</div>
-        <div class="obj-label">김부장님</div>
-      </div>
-
-      <div class="pixel-object" id="memo-obj">
-        <div class="pixel-sprite">📝</div>
-        <div class="obj-label">책상 메모 [퀴즈1]</div>
-      </div>
-
-      <div class="pixel-object" id="phone-obj">
-        <div class="pixel-sprite">☎️</div>
-        <div class="obj-label">사무실 전화 [퀴즈2]</div>
-      </div>
-
-      <div class="pixel-object" id="door-obj" style="opacity: 0.5;">
-        <div class="pixel-sprite">🚪</div>
-        <div class="obj-label" id="door-label">🔒 다음 사무실</div>
+    <!-- 상단 내비게이션 바 -->
+    <div id="top-nav">
+      <div id="room-title">모바일 그룹 : 1관 영업부</div>
+      <div class="nav-btn-group">
+        <button class="nav-btn" ON-CLICK="prevRoom()">◄ 이전</button>
+        <button class="nav-btn" ON-CLICK="nextRoom()">다음 ►</button>
       </div>
     </div>
 
-    <!-- 대사창 영역 -->
-    <div id="dialogue-box">
-      <div>
-        <div id="speaker-name">신입사원 (나)</div>
-        <div id="dialogue-text">오늘도 무사히 칼퇴할 수 있을까...? 책상 메모와 전화기를 클릭해 보자.</div>
+    <!-- 오피스 화면 영역 -->
+    <div id="screen">
+      <!-- 예시 이미지 기반 레트로 오피스 픽셀 SVG 배경 -->
+      <svg id="bg-svg" class="pixel-render" viewBox="0 0 320 200" preserveAspectRatio="none">
+        <!-- 벽면 및 바닥 타일 격자 -->
+        <rect x="0" y="0" width="320" height="130" fill="#94a3b8"/>
+        <rect x="0" y="130" width="320" height="70" fill="#cbd5e1"/>
+        <path d="M 0,130 L 320,130" stroke="#64748b" stroke-width="2"/>
+        <!-- 타일 패턴 세로선 -->
+        <path d="M 40,130 L 40,200 M 80,130 L 80,200 M 120,130 L 120,200 M 160,130 L 160,200 M 200,130 L 200,200 M 240,130 L 240,200 M 280,130 L 280,200" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2"/>
+
+        <!-- 배경 좌측: 파일 선반 및 박스들 -->
+        <rect x="10" y="20" width="60" height="90" fill="#475569" stroke="#1e293b" stroke-width="2"/>
+        <rect x="14" y="30" width="52" height="4" fill="#334155"/>
+        <rect x="14" y="60" width="52" height="4" fill="#334155"/>
+        <rect x="14" y="85" width="52" height="4" fill="#334155"/>
+        <!-- 박스들 -->
+        <rect x="18" y="10" width="20" height="18" fill="#d97706" stroke="#78350f"/>
+        <rect x="42" y="12" width="22" height="16" fill="#d97706" stroke="#78350f"/>
+        <rect x="18" y="38" width="16" height="20" fill="#64748b"/>
+        <rect x="38" y="38" width="16" height="20" fill="#38bdf8"/>
+
+        <!-- 배경 중앙: 삼성 로고 화이트보드 & 회로도 -->
+        <rect x="90" y="10" width="140" height="65" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+        <rect x="180" y="15" width="40" height="10" fill="#1d4ed8" rx="2"/>
+        <text x="185" y="22" fill="#ffffff" font-size="6" font-weight="bold">SAMSUNG</text>
+        <path d="M 100,30 L 140,30 M 100,45 L 210,45 M 110,30 L 110,60" stroke="#334155" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <circle cx="140" cy="30" r="3" fill="#ef4444"/>
+        <circle cx="210" cy="45" r="3" fill="#3b82f6"/>
+        <text x="100" y="22" fill="#0f172a" font-size="10" font-weight="bold">모바일 그룹 개발 현황</text>
+
+        <!-- 배경 우측: 서버 랙 & 장비 -->
+        <rect x="250" y="15" width="55" height="95" fill="#334155" stroke="#0f172a" stroke-width="2"/>
+        <circle cx="260" cy="25" r="2" fill="#22c55e"/>
+        <circle cx="268" cy="25" r="2" fill="#ef4444"/>
+        <rect x="260" y="35" width="35" height="12" fill="#1e293b"/>
+        <rect x="260" y="55" width="35" height="12" fill="#1e293b"/>
+        <rect x="260" y="75" width="35" height="12" fill="#1e293b"/>
+
+        <!-- 중앙 메인 U자형 사무실 책상 & 컴퓨터 3대 -->
+        <path d="M 70,100 L 250,100 L 250,145 L 225,145 L 225,118 L 95,118 L 95,145 L 70,145 Z" fill="#cbd5e1" stroke="#334155" stroke-width="2"/>
+        <!-- 모니터 3대 -->
+        <rect x="85" y="75" width="35" height="22" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+        <path d="M 88,80 L 115,80 M 88,86 L 105,86 M 88,92 L 110,92" stroke="#38bdf8" stroke-width="1"/>
+        <rect x="130" y="70" width="50" height="28" fill="#0f172a" stroke="#22c55e" stroke-width="2"/>
+        <path d="M 135,76 L 170,76 M 135,82 L 160,82 M 135,88 L 175,88" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="190" y="75" width="35" height="22" fill="#0f172a" stroke="#ef4444" stroke-width="2"/>
+        <!-- 키보드 및 문서 -->
+        <rect x="140" y="103" width="30" height="8" fill="#475569"/>
+        <rect x="100" y="103" width="15" height="10" fill="#ffffff" stroke="#94a3b8"/>
+        <rect x="195" y="103" width="15" height="10" fill="#ffffff" stroke="#94a3b8"/>
+      </svg>
+
+      <!-- NPC 1: 김부장님 (안경 쓴 깐깐한 인상 픽셀 캐릭터) -->
+      <div class="pixel-object" id="boss-npc">
+        <svg width="60" height="80" viewBox="0 0 30 40" class="pixel-render">
+          <!-- 포마드 헤어 스타일 -->
+          <rect x="8" y="2" width="14" height="6" fill="#1e293b"/>
+          <rect x="6" y="4" width="18" height="5" fill="#1e293b"/>
+          <!-- 얼굴 (얼굴선 & 안경) -->
+          <rect x="7" y="8" width="16" height="12" fill="#fde047"/>
+          <!-- 깐깐하게 내려간 눈썹 -->
+          <path d="M 9,10 L 13,12 M 21,10 L 17,12" stroke="#0f172a" stroke-width="1.2"/>
+          <!-- 사각 안경 테 (검은색 테 & 회색 안경알) -->
+          <rect x="8" y="11" width="6" height="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+          <rect x="16" y="11" width="6" height="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+          <line x1="14" y1="12" x2="16" y2="12" stroke="#0f172a" stroke-width="1"/>
+          <!-- 굳게 다문 입 -->
+          <line x1="12" y1="17" x2="18" y2="17" stroke="#0f172a" stroke-width="1"/>
+          <!-- 양복 정장 상의 & 붉은 넥타이 -->
+          <rect x="5" y="20" width="20" height="12" fill="#0f172a"/>
+          <polygon points="13,20 17,20 16,28 14,28" fill="#dc2626"/>
+          <polygon points="10,20 13,20 12,27" fill="#ffffff"/>
+          <polygon points="20,20 17,20 18,27" fill="#ffffff"/>
+          <!-- 바지 및 구두 -->
+          <rect x="7" y="32" width="6" height="7" fill="#1e293b"/>
+          <rect x="17" y="32" width="6" height="7" fill="#1e293b"/>
+          <rect x="6" y="37" width="7" height="3" fill="#000"/>
+          <rect x="17" y="37" width="7" height="3" fill="#000"/>
+        </svg>
+        <div class="obj-tag">김부장님</div>
       </div>
+
+      <!-- NPC 2: 신입사원 (예시 이미지 플레이어 스타일) -->
+      <div class="pixel-object" id="player-npc">
+        <svg width="60" height="80" viewBox="0 0 30 40" class="pixel-render">
+          <!-- 깔끔한 검은 머리 -->
+          <rect x="7" y="3" width="16" height="7" fill="#0f172a"/>
+          <!-- 얼굴 -->
+          <rect x="7" y="9" width="16" height="11" fill="#fde047"/>
+          <!-- 순한 눈방울 -->
+          <rect x="10" y="12" width="3" height="3" fill="#0f172a"/>
+          <rect x="17" y="12" width="3" height="3" fill="#0f172a"/>
+          <!-- 미소 입 -->
+          <path d="M 12,17 Q 15,19 18,17" stroke="#0f172a" fill="none" stroke-width="1"/>
+          <!-- 체크무늬 셔츠 -->
+          <rect x="6" y="20" width="18" height="12" fill="#2563eb"/>
+          <path d="M 6,24 L 24,24 M 6,28 L 24,28 M 12,20 L 12,32 M 18,20 L 18,32" stroke="#1d4ed8" stroke-width="1"/>
+          <!-- 청바지 & 운동화 -->
+          <rect x="8" y="32" width="5" height="7" fill="#1e3a8a"/>
+          <rect x="17" y="32" width="5" height="7" fill="#1e3a8a"/>
+          <rect x="7" y="37" width="6" height="3" fill="#ffffff"/>
+          <rect x="17" y="37" width="6" height="3" fill="#ffffff"/>
+        </svg>
+        <div class="obj-tag">신입사원 (나)</div>
+      </div>
+
+      <!-- 오브젝트 1: 책상 메모 -->
+      <div class="pixel-object" id="memo-obj">
+        <span style="font-size:28px;">📝</span>
+        <div class="obj-tag">메모 [퀴즈1]</div>
+      </div>
+
+      <!-- 오브젝트 2: 전화기 -->
+      <div class="pixel-object" id="phone-obj">
+        <span style="font-size:28px;">☎️</span>
+        <div class="obj-tag">전화기 [퀴즈2]</div>
+      </div>
+
+      <!-- 오브젝트 3: 다음 방 출입문 -->
+      <div class="pixel-object" id="door-obj" style="opacity:0.5;">
+        <span style="font-size:28px;">🚪</span>
+        <div class="obj-tag" id="door-label">🔒 다음 사무실</div>
+      </div>
+    </div>
+
+    <!-- 예시 이미지 기반 대사창 -->
+    <div id="dialogue-box">
+      <div id="dialogue-text">김부장님: 오늘 칼퇴하고 싶나? 책상의 이메일 메모와 전화기 퀴즈부터 해결하게나!</div>
+      <div id="next-arrow"></div>
       <div id="options-container"></div>
     </div>
 
-    <!-- 퀴즈 팝업 창 -->
+    <!-- 퀴즈 모달 -->
     <div id="quiz-modal">
       <div class="quiz-card">
         <div class="quiz-title" id="qz-title">📋 사무실 퀴즈</div>
@@ -296,7 +415,6 @@
   </div>
 
   <script>
-    // 페이지 로드 상태 관리
     let currentRoom = 1;
     let room1Solved = { memo: false, phone: false };
     let room2Solved = { memo: false, phone: false };
@@ -312,7 +430,7 @@
           "제출합니다."
         ],
         answer: 1,
-        successMsg: "정답이다! 비즈니스 이메일 작성법을 완벽히 해결했다."
+        successMsg: "신입사원: 정답이다! 비즈니스 이메일 작성법을 완벽히 해결했다."
       },
       r1_phone: {
         title: "☎️ 외부 전화 응대 퀴즈",
@@ -324,7 +442,7 @@
           "모르겠습니다. 다른 분한테 전화해보세요."
         ],
         answer: 2,
-        successMsg: "깔끔한 전화 응대! 부장님의 신뢰도가 상승했다."
+        successMsg: "신입사원: 깔끔한 전화 응대 완료! 부장님의 신뢰도가 상승했다."
       },
       r2_memo: {
         title: "📊 보고서 결재 퀴즈",
@@ -336,7 +454,7 @@
           "구두로만 대충 설명한다."
         ],
         answer: 0,
-        successMsg: "완벽하다! 이사님이 만족스러운 표정으로 결재 도장을 찍으셨다."
+        successMsg: "신입사원: 완벽하다! 이사님이 만족스러운 표정으로 결재 도장을 찍으셨다."
       },
       r2_phone: {
         title: "🔐 퇴근 보안 점검 퀴즈",
@@ -348,23 +466,12 @@
           "퇴근 전 메인 서버 전원 코드를 뽑아둔다."
         ],
         answer: 3,
-        successMsg: "보안 점검 완료! 이제 야근 없이 무사히 출입문이 열린다!"
+        successMsg: "신입사원: 보안 점검 완료! 이제 야근 없이 무사히 출입문이 열린다!"
       }
     };
 
-    // 상태 로그 출력 전용 함수
-    function logStatus(msg) {
-      const statusBar = document.getElementById('status-bar');
-      if (statusBar) {
-        statusBar.innerText = "▶ " + msg;
-      }
-    }
-
-    // 대사 변경 함수
-    function setDialogue(speaker, text, options = []) {
-      document.getElementById('speaker-name').innerText = speaker;
+    function setDialogue(text, options = []) {
       document.getElementById('dialogue-text').innerText = text;
-      
       const optContainer = document.getElementById('options-container');
       optContainer.innerHTML = '';
       
@@ -391,11 +498,10 @@
       if (isUnlocked) {
         door.style.opacity = '1';
         doorLabel.innerText = currentRoom === 1 ? "🚪 2관 이동 가능!" : "🚪 퇴근문 열림!";
-        doorLabel.style.background = '#28a745';
+        doorLabel.style.background = '#22c55e';
       }
     }
 
-    // 퀴즈 창 열기
     function openQuiz(quizKey) {
       const qData = quizzes[quizKey];
       document.getElementById('qz-title').innerText = qData.title;
@@ -418,14 +524,12 @@
       document.getElementById('quiz-modal').style.display = 'flex';
     }
 
-    // 퀴즈 정답 확인
     function submitAnswer(quizKey, chosenIdx) {
       const qData = quizzes[quizKey];
       document.getElementById('quiz-modal').style.display = 'none';
 
       if (chosenIdx === qData.answer) {
-        logStatus("정답입니다! 퀴즈를 해결했습니다.");
-        setDialogue("정답 성공!", qData.successMsg);
+        setDialogue(qData.successMsg);
 
         if (quizKey === 'r1_memo') room1Solved.memo = true;
         if (quizKey === 'r1_phone') room1Solved.phone = true;
@@ -434,117 +538,101 @@
 
         checkDoorStatus();
       } else {
-        logStatus("오답입니다. 다시 시도해 보세요.");
-        setDialogue("오답!", "틀렸다... 부장님의 따가운 시선이 느껴진다. 다시 시도해보자.", [
-          { label: "다시 도전하기", action: () => openQuiz(quizKey) }
-        ]);
+        setDialogue("김부장님: 어이 신입, 틀렸잖아! 정신 안 차리나? 다시 풀어보게.");
       }
     }
 
-    // 방 이동
+    function nextRoom() {
+      if (currentRoom === 1) {
+        if (room1Solved.memo && room1Solved.phone) {
+          triggerRoomChange(2);
+        } else {
+          setDialogue("김부장님: 1관의 퀴즈 2개를 모두 해결해야 2관 임원실로 이동할 수 있네!");
+        }
+      }
+    }
+
+    function prevRoom() {
+      if (currentRoom === 2) {
+        triggerRoomChange(1);
+      }
+    }
+
     function triggerRoomChange(toRoom) {
       currentRoom = toRoom;
-      const screen = document.getElementById('screen');
-      const badge = document.getElementById('room-badge');
+      const title = document.getElementById('room-title');
       
       if (toRoom === 2) {
-        screen.classList.add('office-bg-2');
-        badge.innerText = "📍 2관: 임원실 (최종관문)";
-        document.getElementById('boss-npc').querySelector('.obj-label').innerText = "박이사님";
-        document.getElementById('boss-npc').querySelector('.pixel-sprite').innerText = "👨‍🦳";
-        document.getElementById('door-label').innerText = "🔒 최종 퇴근문";
-        document.getElementById('door-obj').style.opacity = "0.5";
-        
-        logStatus("2관 [임원실]로 이동했습니다.");
-        setDialogue("시스템", "2관 [임원실]에 진입했다! 박이사님의 서류와 전화기를 조사하라.");
+        title.innerText = "모바일 그룹 : 2관 임원실";
+        document.getElementById('boss-npc').querySelector('.obj-tag').innerText = "박이사님";
+        setDialogue("박이사님: 자, 2관 임원실에 온 것을 환영하네. 결재 서류 메모와 전화기 문제를 풀면 퇴근시켜 주지!");
+      } else {
+        title.innerText = "모바일 그룹 : 1관 영업부";
+        document.getElementById('boss-npc').querySelector('.obj-tag').innerText = "김부장님";
+        setDialogue("김부장님: 1관 영업부로 돌아왔군. 남은 업무를 마치게나!");
       }
     }
 
-    // 엔딩
     function showEnding() {
       const screen = document.getElementById('screen');
       screen.innerHTML = `
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#ffd700; text-align:center;">
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#ffd700; text-align:center; background:#0f172a;">
           <div style="font-size:60px; margin-bottom:10px;">🎉</div>
-          <h2 style="font-size:22px;">칼퇴 성공! 탈출 완료!</h2>
+          <h2 style="font-size:24px;">칼퇴 성공! 탈출 완료!</h2>
           <p style="color:#fff; font-size:14px; margin-top:10px;">당신은 무사히 야근을 피하고 칼퇴근에 성공했습니다!</p>
         </div>
       `;
-      logStatus("🎉 축하합니다! 모든 미션을 완료했습니다.");
-      setDialogue("엔딩", "축하합니다! 포켓몬 스타일 픽셀 방탈출을 모두 클리어하셨습니다!", [
-        { label: "처음부터 다시하기", action: () => location.reload() }
-      ]);
+      setDialogue("엔딩: 축하합니다! 포켓몬 스타일 픽셀 방탈출 게임을 완수하셨습니다!");
     }
 
-    // 자바스크립트 표준 이벤트 바인딩 (CSP 보안 정책 완전 준수)
-    function initGame() {
-      logStatus("이벤트 바인딩 완료. 오브젝트를 클릭해 보세요.");
-
-      // 김부장님 클릭
-      document.getElementById('boss-npc').addEventListener('click', function(e) {
-        e.stopPropagation();
-        logStatus("[클릭] 김부장님을 클릭했습니다.");
+    // 클릭 이벤트 등록
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('boss-npc').addEventListener('click', () => {
         if (currentRoom === 1) {
-          setDialogue("김부장님", "어이 신입~ 오늘 칼퇴하고 싶나?\n책상의 이메일 메모랑 전화 응대 퀴즈부터 완료하게나!");
+          setDialogue("김부장님: 오늘 칼퇴하고 싶나? 책상의 이메일 메모랑 전화 응대 퀴즈부터 풀어보게!");
         } else {
-          setDialogue("박이사님", "오~ 여기까지 왔군! 결재 서류와 퇴근 보안 점검을 마치면 보내주지!");
+          setDialogue("박이사님: 오~ 여기까지 왔군! 결재 서류와 퇴근 보안 점검을 마치면 보내주지!");
         }
       });
 
-      // 책상 메모 클릭
-      document.getElementById('memo-obj').addEventListener('click', function(e) {
-        e.stopPropagation();
-        logStatus("[클릭] 책상 메모를 클릭했습니다.");
+      document.getElementById('memo-obj').addEventListener('click', () => {
         const key = currentRoom === 1 ? 'r1_memo' : 'r2_memo';
         const isSolved = currentRoom === 1 ? room1Solved.memo : room2Solved.memo;
 
         if (isSolved) {
-          setDialogue("신입사원 (나)", "이 퀴즈는 이미 풀어냈다!");
+          setDialogue("신입사원: 이 메모 퀴즈는 이미 완료했습니다!");
           return;
         }
         openQuiz(key);
       });
 
-      // 전화기 클릭
-      document.getElementById('phone-obj').addEventListener('click', function(e) {
-        e.stopPropagation();
-        logStatus("[클릭] 전화기를 클릭했습니다.");
+      document.getElementById('phone-obj').addEventListener('click', () => {
         const key = currentRoom === 1 ? 'r1_phone' : 'r2_phone';
         const isSolved = currentRoom === 1 ? room1Solved.phone : room2Solved.phone;
 
         if (isSolved) {
-          setDialogue("신입사원 (나)", "전화기 관련 문제는 해결 완료했다!");
+          setDialogue("신입사원: 전화기 퀴즈는 해결 완료했습니다!");
           return;
         }
         openQuiz(key);
       });
 
-      // 문 클릭
-      document.getElementById('door-obj').addEventListener('click', function(e) {
-        e.stopPropagation();
-        logStatus("[클릭] 출입문을 클릭했습니다.");
+      document.getElementById('door-obj').addEventListener('click', () => {
         if (currentRoom === 1) {
           if (room1Solved.memo && room1Solved.phone) {
             triggerRoomChange(2);
           } else {
-            setDialogue("경고", "사무실의 2가지 문제(메모, 전화기)를 모두 풀어야 다음 방으로 갈 수 있습니다!");
+            setDialogue("시스템: 메모와 전화기 퀴즈 2개를 모두 풀어야 2관으로 가는 문이 열립니다!");
           }
         } else {
           if (room2Solved.memo && room2Solved.phone) {
             showEnding();
           } else {
-            setDialogue("경고", "모든 보안 및 결재 퀴즈를 마쳐야 정문 열쇠를 얻을 수 있습니다!");
+            setDialogue("시스템: 임원실의 모든 퀴즈를 완수해야 퇴근할 수 있습니다!");
           }
         }
       });
-    }
-
-    // DOM 준비 완료 시 실행
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initGame);
-    } else {
-      initGame();
-    }
+    });
   </script>
 </body>
 </html>
