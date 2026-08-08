@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>칼퇴 픽셀 로드 : 신입사원의 탈출기 v2.0</title>
-  <!-- 갈무리 픽셀 폰트 로드 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+  <title>칼퇴 픽셀 로드 : 신입사원의 탈출기 v3.0</title>
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       user-select: none;
-      font-family: 'Galmuri9', monospace;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
     body {
@@ -27,21 +25,37 @@
     /* 게임 메인 프레임 */
     #game-container {
       width: 640px;
-      height: 480px;
+      height: 520px;
       background-color: #2b2b36;
       border: 6px solid #4a4a5a;
       border-radius: 12px;
       position: relative;
       overflow: hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
     }
 
-    /* 상단 오피스 화면 */
+    /* 클릭 감지 테스트용 상단 상태 로그 바 */
+    #status-bar {
+      background: #111;
+      color: #00ffcc;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-bottom: 2px solid #4a4a5a;
+      font-family: monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 100;
+    }
+
+    /* 사무실 배경 화면 */
     #screen {
       width: 100%;
-      height: 320px;
+      height: 300px;
       position: relative;
-      background: #3a3d52;
+      background-color: #3a3d52;
       background-image: 
         radial-gradient(#4a4d66 15%, transparent 16%),
         radial-gradient(#4a4d66 15%, transparent 16%);
@@ -50,111 +64,96 @@
     }
 
     .office-bg-2 {
-      background: #4d3a52 !important;
+      background-color: #4d3a52 !important;
       background-image: 
         radial-gradient(#664a66 15%, transparent 16%),
         radial-gradient(#664a66 15%, transparent 16%) !important;
-      background-size: 30px 30px !important;
-      background-position: 0 0, 15px 15px !important;
     }
 
-    /* 룸 타이틀 배지 */
     #room-badge {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 10px;
+      left: 10px;
       background: rgba(0, 0, 0, 0.85);
-      border: 2px solid #fff;
-      padding: 6px 12px;
+      border: 2px solid #ffd700;
+      padding: 4px 10px;
       border-radius: 4px;
       font-size: 13px;
       color: #ffd700;
       z-index: 10;
-    }
-
-    /* 버전 확인용 배지 (업데이트 여부 확인) */
-    #version-tag {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: #d32f2f;
-      color: #fff;
-      font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 4px;
       font-weight: bold;
-      z-index: 10;
     }
 
-    /* 픽셀 오브젝트 */
+    /* 클릭 가능 오브젝트 (영역 명확화 및 터치 보장) */
     .pixel-object {
       position: absolute;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      transition: transform 0.1s;
-      z-index: 20;
+      justify-content: center;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px dashed rgba(255, 255, 255, 0.4);
+      border-radius: 8px;
+      z-index: 50;
+      transition: all 0.15s ease;
     }
 
     .pixel-object:hover {
-      transform: scale(1.15);
+      background: rgba(255, 215, 0, 0.25);
+      border-color: #ffd700;
+      border-style: solid;
+      transform: scale(1.1);
     }
 
     .pixel-object:active {
       transform: scale(0.95);
     }
 
-    /* 내부 아이콘 및 라벨의 클릭 통과 처리 (클릭 인식율 100% 보장) */
-    .pixel-sprite {
-      font-size: 42px;
-      filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.5));
+    /* 자식 요소가 클릭 이벤트를 방해하지 않도록 처리 */
+    .pixel-object * {
       pointer-events: none;
+    }
+
+    .pixel-sprite {
+      font-size: 36px;
+      line-height: 1;
     }
 
     .obj-label {
       background: #000;
       color: #fff;
       font-size: 11px;
-      padding: 3px 6px;
-      border-radius: 4px;
-      margin-top: 2px;
-      border: 1px solid #aaa;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-top: 4px;
+      border: 1px solid #888;
       white-space: nowrap;
-      pointer-events: none;
     }
 
-    /* 오브젝트 좌표 */
-    #boss-npc { top: 50px; left: 270px; }
-    #memo-obj { top: 160px; left: 80px; }
-    #phone-obj { top: 160px; right: 80px; }
-    #door-obj { top: 20px; right: 30px; }
+    /* 오브젝트 배치 위치 */
+    #boss-npc { top: 40px; left: 250px; }
+    #memo-obj { top: 150px; left: 50px; }
+    #phone-obj { top: 150px; right: 50px; }
+    #door-obj { top: 20px; right: 20px; }
 
-    /* 하단 대사창 */
+    /* 대사창 영역 */
     #dialogue-box {
       width: 100%;
       height: 160px;
-      background: #f8f8f8;
-      border-top: 6px solid #2b2b36;
-      padding: 14px 20px;
+      background: #f8f9fa;
+      border-top: 4px solid #2b2b36;
+      padding: 12px 16px;
       position: relative;
-      color: #222;
+      color: #111;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      z-index: 10;
-    }
-
-    #dialogue-frame {
-      position: absolute;
-      top: 6px; left: 6px; right: 6px; bottom: 6px;
-      border: 4px solid #383838;
-      border-radius: 6px;
-      pointer-events: none;
     }
 
     #speaker-name {
-      font-size: 14px;
+      font-size: 13px;
       color: #d32f2f;
       font-weight: bold;
       margin-bottom: 4px;
@@ -163,33 +162,31 @@
     #dialogue-text {
       font-size: 14px;
       line-height: 1.4;
-      color: #111;
-      height: 55px;
+      color: #222;
+      height: 50px;
       white-space: pre-line;
     }
 
-    /* 선택지 버튼 */
     #options-container {
       display: flex;
-      gap: 10px;
-      z-index: 30;
+      gap: 8px;
     }
 
     .opt-btn {
       flex: 1;
-      background: #fff;
-      border: 2px solid #333;
+      background: #007bff;
+      color: #fff;
+      border: none;
       padding: 8px;
       font-size: 13px;
+      font-weight: bold;
       cursor: pointer;
       border-radius: 4px;
-      box-shadow: 2px 2px 0px #333;
       text-align: center;
-      color: #222;
     }
 
     .opt-btn:hover {
-      background: #ffe082;
+      background: #0056b3;
     }
 
     /* 퀴즈 모달 팝업 */
@@ -206,83 +203,89 @@
     }
 
     .quiz-card {
-      background: #f8f8f8;
-      border: 4px solid #000;
+      background: #ffffff;
+      border: 3px solid #333;
       border-radius: 8px;
       width: 100%;
-      max-width: 500px;
-      padding: 20px;
+      max-width: 480px;
+      padding: 18px;
       color: #111;
     }
 
     .quiz-title {
-      font-size: 16px;
+      font-size: 15px;
       color: #1976d2;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-weight: bold;
     }
 
     .quiz-q {
       font-size: 14px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       line-height: 1.4;
+      color: #333;
     }
 
     .quiz-choice {
-      background: #fff;
-      border: 2px solid #555;
+      background: #f1f3f5;
+      border: 1.5px solid #ced4da;
       padding: 10px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       cursor: pointer;
       font-size: 13px;
       border-radius: 4px;
+      color: #212529;
+      transition: all 0.1s;
     }
 
     .quiz-choice:hover {
-      background: #e3f2fd;
-      border-color: #1976d2;
+      background: #e7f5ff;
+      border-color: #1c7ed6;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
   <div id="game-container">
-    <div id="room-badge">📍 1관: 영업부 사무실</div>
-    <div id="version-tag">v2.0 (최신)</div>
+    <!-- 실시간 동작 확인용 로그 바 -->
+    <div id="status-bar">▶ [SYSTEM LOG] 게임 준비 완료. 각 오브젝트를 클릭하세요.</div>
 
     <div id="screen">
-      <div class="pixel-object" id="boss-npc" ON-CLICK="clickBoss()">
+      <div id="room-badge">📍 1관: 영업부 사무실</div>
+
+      <!-- 클릭 가능 대상 (점선 상자로 강조) -->
+      <div class="pixel-object" id="boss-npc">
         <div class="pixel-sprite">👨‍💼</div>
         <div class="obj-label">김부장님</div>
       </div>
 
-      <div class="pixel-object" id="memo-obj" ON-CLICK="clickMemo()">
+      <div class="pixel-object" id="memo-obj">
         <div class="pixel-sprite">📝</div>
         <div class="obj-label">책상 메모 [퀴즈1]</div>
       </div>
 
-      <div class="pixel-object" id="phone-obj" ON-CLICK="clickPhone()">
+      <div class="pixel-object" id="phone-obj">
         <div class="pixel-sprite">☎️</div>
         <div class="obj-label">사무실 전화 [퀴즈2]</div>
       </div>
 
-      <div class="pixel-object" id="door-obj" ON-CLICK="clickDoor()" style="opacity: 0.5;">
+      <div class="pixel-object" id="door-obj" style="opacity: 0.5;">
         <div class="pixel-sprite">🚪</div>
         <div class="obj-label" id="door-label">🔒 다음 사무실</div>
       </div>
     </div>
 
-    <!-- 하단 대사창 -->
+    <!-- 대사창 영역 -->
     <div id="dialogue-box">
-      <div id="dialogue-frame"></div>
       <div>
         <div id="speaker-name">신입사원 (나)</div>
-        <div id="dialogue-text">오늘도 무사히 칼퇴할 수 있을까...? 책상 메모와 전화기를 클릭해 조사해 보자.</div>
+        <div id="dialogue-text">오늘도 무사히 칼퇴할 수 있을까...? 책상 메모와 전화기를 클릭해 보자.</div>
       </div>
       <div id="options-container"></div>
     </div>
 
-    <!-- 퀴즈 모달 -->
+    <!-- 퀴즈 팝업 창 -->
     <div id="quiz-modal">
       <div class="quiz-card">
         <div class="quiz-title" id="qz-title">📋 사무실 퀴즈</div>
@@ -293,9 +296,7 @@
   </div>
 
   <script>
-    /* 스크립트 실행 확인 로그 */
-    console.log("포켓몬 RPG 스크립트 정상 로드 완료 (v2.0)");
-
+    // 페이지 로드 상태 관리
     let currentRoom = 1;
     let room1Solved = { memo: false, phone: false };
     let room2Solved = { memo: false, phone: false };
@@ -303,7 +304,7 @@
     const quizzes = {
       r1_memo: {
         title: "📝 책상 위 이메일 양식 퀴즈",
-        question: "김부장님이 거래처 이메일 제목 양식을 물어보셨다. 가장 올바른 제목은?",
+        question: "김부장님이 올바른 이메일 제목 양식을 물어보셨다. 가장 바른 제목은?",
         choices: [
           "안녕하세요 부장님 메일 드립니다",
           "[ABC상사] 2026년 3분기 프로젝트 정기보고서 제출건",
@@ -351,6 +352,15 @@
       }
     };
 
+    // 상태 로그 출력 전용 함수
+    function logStatus(msg) {
+      const statusBar = document.getElementById('status-bar');
+      if (statusBar) {
+        statusBar.innerText = "▶ " + msg;
+      }
+    }
+
+    // 대사 변경 함수
     function setDialogue(speaker, text, options = []) {
       document.getElementById('speaker-name').innerText = speaker;
       document.getElementById('dialogue-text').innerText = text;
@@ -362,7 +372,10 @@
         const btn = document.createElement('button');
         btn.className = 'opt-btn';
         btn.innerText = opt.label;
-        btn.ON-CLICK = () => opt.action();
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          opt.action();
+        });
         optContainer.appendChild(btn);
       });
     }
@@ -378,61 +391,11 @@
       if (isUnlocked) {
         door.style.opacity = '1';
         doorLabel.innerText = currentRoom === 1 ? "🚪 2관 이동 가능!" : "🚪 퇴근문 열림!";
-        doorLabel.style.background = '#4caf50';
+        doorLabel.style.background = '#28a745';
       }
     }
 
-    /* 클릭 함수들 (호이스팅 보장) */
-    function clickBoss() {
-      console.log("부장님 클릭됨");
-      if (currentRoom === 1) {
-        setDialogue("김부장님", "어이 신입~ 오늘 칼퇴하고 싶나?\n책상의 이메일 메모랑 전화 응대 퀴즈부터 완료하게나!");
-      } else {
-        setDialogue("박이사님", "오~ 여기까지 왔군! 결재 서류와 퇴근 보안 점검을 마치면 보내주지!");
-      }
-    }
-
-    function clickMemo() {
-      console.log("메모 클릭됨");
-      const key = currentRoom === 1 ? 'r1_memo' : 'r2_memo';
-      const isSolved = currentRoom === 1 ? room1Solved.memo : room2Solved.memo;
-
-      if (isSolved) {
-        setDialogue("신입사원 (나)", "이 퀴즈는 이미 풀어냈다!");
-        return;
-      }
-      openQuiz(key);
-    }
-
-    function clickPhone() {
-      console.log("전화기 클릭됨");
-      const key = currentRoom === 1 ? 'r1_phone' : 'r2_phone';
-      const isSolved = currentRoom === 1 ? room1Solved.phone : room2Solved.phone;
-
-      if (isSolved) {
-        setDialogue("신입사원 (나)", "전화기 관련 문제는 해결 완료했다!");
-        return;
-      }
-      openQuiz(key);
-    }
-
-    function clickDoor() {
-      console.log("문 클릭됨");
-      if (currentRoom === 1) {
-        if (room1Solved.memo && room1Solved.phone) {
-          triggerRoomChange(2);
-        } else {
-          setDialogue("경고", "사무실의 2가지 문제(메모, 전화기)를 모두 풀어야 다음 방으로 갈 수 있습니다!");
-        }
-      } else {
-        if (room2Solved.memo && room2Solved.phone) {
-          showEnding();
-        } else {
-          setDialogue("경고", "모든 보안 및 결재 퀴즈를 마쳐야 정문 열쇠를 얻을 수 있습니다!");
-        }
-      }
-    }
-
+    // 퀴즈 창 열기
     function openQuiz(quizKey) {
       const qData = quizzes[quizKey];
       document.getElementById('qz-title').innerText = qData.title;
@@ -445,18 +408,23 @@
         const div = document.createElement('div');
         div.className = 'quiz-choice';
         div.innerText = `${idx + 1}. ${choice}`;
-        div.ON-CLICK = () => submitAnswer(quizKey, idx);
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          submitAnswer(quizKey, idx);
+        });
         choicesDiv.appendChild(div);
       });
 
       document.getElementById('quiz-modal').style.display = 'flex';
     }
 
+    // 퀴즈 정답 확인
     function submitAnswer(quizKey, chosenIdx) {
       const qData = quizzes[quizKey];
       document.getElementById('quiz-modal').style.display = 'none';
 
       if (chosenIdx === qData.answer) {
+        logStatus("정답입니다! 퀴즈를 해결했습니다.");
         setDialogue("정답 성공!", qData.successMsg);
 
         if (quizKey === 'r1_memo') room1Solved.memo = true;
@@ -466,29 +434,33 @@
 
         checkDoorStatus();
       } else {
+        logStatus("오답입니다. 다시 시도해 보세요.");
         setDialogue("오답!", "틀렸다... 부장님의 따가운 시선이 느껴진다. 다시 시도해보자.", [
           { label: "다시 도전하기", action: () => openQuiz(quizKey) }
         ]);
       }
     }
 
+    // 방 이동
     function triggerRoomChange(toRoom) {
       currentRoom = toRoom;
       const screen = document.getElementById('screen');
       const badge = document.getElementById('room-badge');
       
       if (toRoom === 2) {
-        screen.className = 'office-bg-2';
+        screen.classList.add('office-bg-2');
         badge.innerText = "📍 2관: 임원실 (최종관문)";
         document.getElementById('boss-npc').querySelector('.obj-label').innerText = "박이사님";
         document.getElementById('boss-npc').querySelector('.pixel-sprite').innerText = "👨‍🦳";
         document.getElementById('door-label').innerText = "🔒 최종 퇴근문";
         document.getElementById('door-obj').style.opacity = "0.5";
         
+        logStatus("2관 [임원실]로 이동했습니다.");
         setDialogue("시스템", "2관 [임원실]에 진입했다! 박이사님의 서류와 전화기를 조사하라.");
       }
     }
 
+    // 엔딩
     function showEnding() {
       const screen = document.getElementById('screen');
       screen.innerHTML = `
@@ -498,9 +470,80 @@
           <p style="color:#fff; font-size:14px; margin-top:10px;">당신은 무사히 야근을 피하고 칼퇴근에 성공했습니다!</p>
         </div>
       `;
+      logStatus("🎉 축하합니다! 모든 미션을 완료했습니다.");
       setDialogue("엔딩", "축하합니다! 포켓몬 스타일 픽셀 방탈출을 모두 클리어하셨습니다!", [
         { label: "처음부터 다시하기", action: () => location.reload() }
       ]);
+    }
+
+    // 자바스크립트 표준 이벤트 바인딩 (CSP 보안 정책 완전 준수)
+    function initGame() {
+      logStatus("이벤트 바인딩 완료. 오브젝트를 클릭해 보세요.");
+
+      // 김부장님 클릭
+      document.getElementById('boss-npc').addEventListener('click', function(e) {
+        e.stopPropagation();
+        logStatus("[클릭] 김부장님을 클릭했습니다.");
+        if (currentRoom === 1) {
+          setDialogue("김부장님", "어이 신입~ 오늘 칼퇴하고 싶나?\n책상의 이메일 메모랑 전화 응대 퀴즈부터 완료하게나!");
+        } else {
+          setDialogue("박이사님", "오~ 여기까지 왔군! 결재 서류와 퇴근 보안 점검을 마치면 보내주지!");
+        }
+      });
+
+      // 책상 메모 클릭
+      document.getElementById('memo-obj').addEventListener('click', function(e) {
+        e.stopPropagation();
+        logStatus("[클릭] 책상 메모를 클릭했습니다.");
+        const key = currentRoom === 1 ? 'r1_memo' : 'r2_memo';
+        const isSolved = currentRoom === 1 ? room1Solved.memo : room2Solved.memo;
+
+        if (isSolved) {
+          setDialogue("신입사원 (나)", "이 퀴즈는 이미 풀어냈다!");
+          return;
+        }
+        openQuiz(key);
+      });
+
+      // 전화기 클릭
+      document.getElementById('phone-obj').addEventListener('click', function(e) {
+        e.stopPropagation();
+        logStatus("[클릭] 전화기를 클릭했습니다.");
+        const key = currentRoom === 1 ? 'r1_phone' : 'r2_phone';
+        const isSolved = currentRoom === 1 ? room1Solved.phone : room2Solved.phone;
+
+        if (isSolved) {
+          setDialogue("신입사원 (나)", "전화기 관련 문제는 해결 완료했다!");
+          return;
+        }
+        openQuiz(key);
+      });
+
+      // 문 클릭
+      document.getElementById('door-obj').addEventListener('click', function(e) {
+        e.stopPropagation();
+        logStatus("[클릭] 출입문을 클릭했습니다.");
+        if (currentRoom === 1) {
+          if (room1Solved.memo && room1Solved.phone) {
+            triggerRoomChange(2);
+          } else {
+            setDialogue("경고", "사무실의 2가지 문제(메모, 전화기)를 모두 풀어야 다음 방으로 갈 수 있습니다!");
+          }
+        } else {
+          if (room2Solved.memo && room2Solved.phone) {
+            showEnding();
+          } else {
+            setDialogue("경고", "모든 보안 및 결재 퀴즈를 마쳐야 정문 열쇠를 얻을 수 있습니다!");
+          }
+        }
+      });
+    }
+
+    // DOM 준비 완료 시 실행
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initGame);
+    } else {
+      initGame();
     }
   </script>
 </body>
