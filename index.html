@@ -16,82 +16,91 @@
     }
 
     body {
-      background-color: #0f172a;
+      background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      color: #000;
+      color: #fff;
     }
 
-    /* 게임 메인 프레임 */
+    /* 게임 메인 프레임 (레트로 아케이드 게임기 스타일) */
     #game-container {
-      width: 680px;
-      height: 620px;
-      background-color: #e2e8f0;
-      border: 6px solid #1e293b;
-      border-radius: 8px;
+      width: 700px;
+      height: 640px;
+      background-color: #0f172a;
+      border: 5px solid #38bdf8;
+      border-radius: 12px;
       position: relative;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 16px 50px rgba(0,0,0,0.8);
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.4), inset 0 0 15px rgba(0,0,0,0.8);
     }
 
     /* 상단 내비게이션 및 정보바 */
     #top-nav {
-      height: 52px;
-      background: #cbd5e1;
-      border-bottom: 4px solid #000;
+      height: 54px;
+      background: #1e293b;
+      border-bottom: 4px solid #38bdf8;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 12px;
+      padding: 0 14px;
       z-index: 100;
     }
 
     #room-title {
       font-size: 13px;
       font-weight: bold;
-      color: #000;
+      color: #38bdf8;
+      text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
     }
 
     #user-stats {
       font-size: 12px;
       font-weight: bold;
-      color: #1e3a8a;
-      background: #fff;
-      padding: 4px 8px;
-      border: 2px solid #000;
-      border-radius: 4px;
+      color: #facc15;
+      background: #020617;
+      padding: 5px 10px;
+      border: 2px solid #facc15;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
     }
 
     .nav-btn-group {
       display: flex;
-      gap: 4px;
+      gap: 5px;
     }
 
     .nav-btn {
-      background: #fff;
-      border: 2px solid #000;
-      padding: 4px 8px;
+      background: #0f172a;
+      color: #fff;
+      border: 2px solid #38bdf8;
+      padding: 5px 10px;
       font-size: 11px;
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 2px 2px 0px #000;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      background: #38bdf8;
+      color: #0f172a;
+      box-shadow: 0 0 10px #38bdf8;
     }
 
     .nav-btn:active {
-      transform: translate(2px, 2px);
-      box-shadow: 0px 0px 0px #000;
+      transform: scale(0.95);
     }
 
-    /* 화면 영역 */
+    /* 메인 픽셀 화면 */
     #screen {
       width: 100%;
-      height: 400px;
+      height: 410px;
       position: relative;
-      background-color: #94a3b8;
+      background-color: #020617;
       overflow: hidden;
     }
 
@@ -119,8 +128,8 @@
     }
 
     .pixel-object:hover {
-      transform: scale(1.1);
-      filter: drop-shadow(0px 0px 6px #ffd700);
+      transform: scale(1.12);
+      filter: drop-shadow(0px 0px 8px #facc15);
     }
 
     .pixel-object:active {
@@ -132,29 +141,30 @@
     }
 
     .obj-tag {
-      background: #000;
-      color: #fff;
+      background: rgba(15, 23, 42, 0.9);
+      color: #f8fafc;
       font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 3px;
-      border: 1px solid #fff;
-      margin-top: 2px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      border: 1px solid #38bdf8;
+      margin-top: 3px;
       white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
     }
 
     /* 위치 좌표 */
-    #boss-npc { top: 175px; left: 350px; }
-    #player-npc { top: 175px; left: 210px; }
-    #memo-obj { top: 140px; left: 100px; }
-    #phone-obj { top: 140px; right: 100px; }
-    #door-obj { top: 15px; right: 20px; }
+    #boss-npc { top: 180px; left: 360px; }
+    #player-npc { top: 180px; left: 210px; }
+    #memo-obj { top: 145px; left: 105px; }
+    #phone-obj { top: 145px; right: 105px; }
+    #door-obj { top: 20px; right: 25px; }
 
     /* 하단 대사창 */
     #dialogue-box {
       width: 100%;
-      height: 168px;
-      background: #ffffff;
-      border-top: 5px solid #000;
+      height: 176px;
+      background: #090d16;
+      border-top: 4px solid #38bdf8;
       padding: 16px 20px;
       position: relative;
       display: flex;
@@ -165,34 +175,35 @@
     }
 
     #dialogue-text {
-      font-size: 15px;
-      line-height: 1.5;
-      color: #000;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #f1f5f9;
       white-space: pre-line;
       font-weight: bold;
     }
 
     #next-arrow {
       position: absolute;
-      bottom: 12px;
-      right: 16px;
+      bottom: 14px;
+      right: 18px;
       width: 0; height: 0;
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
-      border-top: 10px solid #000;
+      border-top: 10px solid #facc15;
       animation: bounce 0.8s infinite alternate;
     }
 
     @keyframes bounce {
       from { transform: translateY(0); }
-      to { transform: translateY(5px); }
+      to { transform: translateY(6px); }
     }
 
-    /* 모달 팝업 공통 */
+    /* 모달 팝업 디자인 (주관식 입력 모달) */
     .modal-overlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(2, 6, 23, 0.88);
+      backdrop-filter: blur(4px);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -202,53 +213,92 @@
     }
 
     .modal-card {
-      background: #ffffff;
-      border: 4px solid #000;
-      border-radius: 6px;
+      background: #0f172a;
+      border: 3px solid #38bdf8;
+      border-radius: 10px;
       width: 100%;
-      max-width: 500px;
-      padding: 22px;
-      color: #000;
-      box-shadow: 6px 6px 0px rgba(0,0,0,0.5);
+      max-width: 520px;
+      padding: 24px;
+      color: #fff;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
     }
 
     .quiz-title {
-      font-size: 16px;
-      color: #dc2626;
-      margin-bottom: 10px;
+      font-size: 15px;
+      color: #38bdf8;
+      margin-bottom: 12px;
       font-weight: bold;
     }
 
     .quiz-q {
       font-size: 14px;
-      margin-bottom: 14px;
-      line-height: 1.4;
+      margin-bottom: 10px;
+      line-height: 1.5;
+      color: #f8fafc;
       font-weight: bold;
     }
 
-    .quiz-choice {
-      background: #f1f5f9;
-      border: 2px solid #000;
-      padding: 10px;
-      margin-bottom: 8px;
+    .quiz-hint {
+      display: inline-block;
+      background: #1e293b;
+      color: #facc15;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #facc15;
+      margin-bottom: 16px;
+    }
+
+    .quiz-input-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .quiz-input {
+      flex: 1;
+      padding: 12px;
+      font-size: 15px;
+      background: #020617;
+      border: 2px solid #38bdf8;
+      border-radius: 6px;
+      color: #fff;
+      outline: none;
+      font-weight: bold;
+    }
+
+    .quiz-input:focus {
+      border-color: #facc15;
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
+    }
+
+    .quiz-submit-btn {
+      background: #2563eb;
+      color: #fff;
+      border: 2px solid #60a5fa;
+      padding: 0 18px;
+      font-size: 14px;
+      font-weight: bold;
       cursor: pointer;
-      font-size: 13px;
-      font-weight: bold;
-      border-radius: 4px;
+      border-radius: 6px;
+      transition: all 0.15s ease;
     }
 
-    .quiz-choice:hover {
-      background: #fde047;
+    .quiz-submit-btn:hover {
+      background: #1d4ed8;
+      box-shadow: 0 0 12px #2563eb;
     }
 
     /* 닉네임 입력 폼 */
     .start-input {
       width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 3px solid #000;
-      border-radius: 4px;
-      margin: 15px 0;
+      padding: 12px;
+      font-size: 15px;
+      background: #020617;
+      border: 2px solid #38bdf8;
+      border-radius: 6px;
+      color: #fff;
+      margin: 16px 0;
       font-weight: bold;
     }
 
@@ -256,12 +306,13 @@
       width: 100%;
       background: #2563eb;
       color: #fff;
-      border: 3px solid #000;
+      border: 2px solid #60a5fa;
       padding: 12px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 3px 3px 0px #000;
+      border-radius: 6px;
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
     }
 
     .start-btn:hover {
@@ -277,13 +328,18 @@
     }
 
     .leaderboard-table th, .leaderboard-table td {
-      border: 1px solid #000;
-      padding: 6px;
+      border: 1px solid #334155;
+      padding: 8px;
       text-align: center;
     }
 
     .leaderboard-table th {
-      background: #cbd5e1;
+      background: #1e293b;
+      color: #38bdf8;
+    }
+
+    .leaderboard-table td {
+      background: #020617;
     }
   </style>
 </head>
@@ -293,24 +349,24 @@
     <!-- 시작 모달 (닉네임 입력) -->
     <div id="start-modal" class="modal-overlay">
       <div class="modal-card">
-        <h2 style="font-size: 20px; color:#1e3a8a; text-align:center; margin-bottom:10px;">🚀 S1FA PJT 칼퇴 방탈출</h2>
-        <p style="font-size: 13px; line-height: 1.4; color:#334155;">
-          4개관의 파트장님과 PL님의 퀴즈를 모두 풀고 탈출하세요!<br>
-          <b>[실시간 감점]</b> 오답 선택 시 즉시 500점 차감 및 반영됩니다.
+        <h2 style="font-size: 20px; color:#38bdf8; text-align:center; margin-bottom:12px; text-shadow:0 0 10px #38bdf8;">🚀 S1FA PJT 주관식 방탈출</h2>
+        <p style="font-size: 13px; line-height: 1.5; color:#cbd5e1; text-align:center;">
+          4개관의 파트장님과 PL님의 <b>주관식 정답</b>을 직접 입력하여 탈출하세요!<br>
+          <span style="color:#facc15;">[실시간 감점]</span> 오답 시 즉시 500점이 차감됩니다.
         </p>
         <input type="text" id="nickname-input" class="start-input" placeholder="참여자 닉네임 / 사번 입력..." maxlength="12">
         <button id="start-btn" class="start-btn">게임 시작하기 ➔</button>
       </div>
     </div>
 
-    <!-- 상단 내비게이션 바 (초기화 버튼 re-added) -->
+    <!-- 상단 내비게이션 바 -->
     <div id="top-nav">
       <div id="room-title">S1FA PJT : 1관 EFA1 파트</div>
       <div id="user-stats">점수: 0점</div>
       <div class="nav-btn-group">
         <button id="prev-btn" class="nav-btn">◄ 이전</button>
         <button id="next-btn" class="nav-btn">다음 ►</button>
-        <button id="reset-btn" class="nav-btn" style="background:#ef4444; color:#fff;">🔄 초기화</button>
+        <button id="reset-btn" class="nav-btn" style="border-color:#ef4444; color:#f87171;">🔄 초기화</button>
       </div>
     </div>
 
@@ -367,22 +423,26 @@
       <div id="next-arrow"></div>
     </div>
 
-    <!-- 퀴즈 모달 -->
+    <!-- 주관식 퀴즈 모달 -->
     <div id="quiz-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card">
-        <div class="quiz-title" id="qz-title">📋 퀴즈</div>
+        <div class="quiz-title" id="qz-title">📋 주관식 퀴즈</div>
         <div class="quiz-q" id="qz-question">질문</div>
-        <div id="qz-choices"></div>
+        <div class="quiz-hint" id="qz-hint">💡 힌트: </div>
+        <div class="quiz-input-group">
+          <input type="text" id="qz-input" class="quiz-input" placeholder="정답을 입력하세요..." />
+          <button id="qz-submit-btn" class="quiz-submit-btn">제출 ➔</button>
+        </div>
       </div>
     </div>
 
     <!-- 엔딩 및 리더보드 모달 -->
     <div id="ending-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card" style="max-width: 550px; text-align: center;">
-        <h2 style="font-size:22px; color:#16a34a; margin-bottom:8px;">🎉 칼퇴 성공! 탈출 완료!</h2>
-        <p id="final-summary" style="font-size:14px; font-weight:bold; margin-bottom:12px; color:#1e293b;"></p>
+        <h2 style="font-size:22px; color:#4ade80; margin-bottom:8px; text-shadow:0 0 10px #22c55e;">🎉 칼퇴 성공! 탈출 완료!</h2>
+        <p id="final-summary" style="font-size:14px; font-weight:bold; margin-bottom:12px; color:#cbd5e1;"></p>
         
-        <h3 style="font-size:14px; text-align:left; margin-top:10px; color:#1e3a8a;">🏆 S1FA PJT 랭킹 순위표</h3>
+        <h3 style="font-size:14px; text-align:left; margin-top:10px; color:#38bdf8;">🏆 S1FA PJT 랭킹 순위표</h3>
         <div style="max-height: 180px; overflow-y: auto; margin-bottom: 15px;">
           <table class="leaderboard-table">
             <thead>
@@ -412,6 +472,7 @@
     let gameStartTime = 0;
     let quizStartTime = 0;
     let wrongAttempts = 0;
+    let activeQuizKey = null;
 
     let roomSolved = {
       1: { memo: false, phone: false },
@@ -424,121 +485,84 @@
       1: {
         title: "S1FA PJT : 1관 EFA1 파트 (김주헌 파트장님)",
         bossName: "김주헌 파트장님",
-        welcomeMsg: "김주헌 파트장님: 어이 신입~ EFA1 파트에 온 걸 환영하네! 메모와 전화기 퀴즈부터 풀게나."
+        welcomeMsg: "김주헌 파트장님: 어이 신입~ EFA1 파트에 온 걸 환영하네! 메모와 전화기 주관식 퀴즈부터 풀게나."
       },
       2: {
         title: "S1FA PJT : 2관 EFA2 파트 (김진석 파트장님)",
         bossName: "김진석 파트장님",
-        welcomeMsg: "김진석 파트장님: 반가워요! EFA2 개발 파트입니다. 코드 가이드와 업무 전화 퀴즈를 해결하세요."
+        welcomeMsg: "김진석 파트장님: 반가워요! EFA2 개발 파트입니다. 코드 가이드와 전화 주관식 퀴즈를 입력해 보세요."
       },
       3: {
         title: "S1FA PJT : 3관 PFA/VSEM 파트 (윤지혜 파트장님)",
         bossName: "윤지혜 파트장님",
-        welcomeMsg: "윤지혜 파트장님: 오셨군요! PFA/VSEM 파트입니다. 품질 이슈 퀴즈를 신속히 풀어주세요."
+        welcomeMsg: "윤지혜 파트장님: 오셨군요! PFA/VSEM 파트입니다. 품질 검증 퀴즈의 정답을 직접 적어주세요."
       },
       4: {
         title: "S1FA PJT : 4관 S1FA PL실 (손승준 PL님)",
         bossName: "손승준 PL님",
-        welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 최종 출하 리스크 퀴즈를 풀고 칼퇴하세요!"
+        welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 최종 주관식 퀴즈를 풀고 칼퇴하세요!"
       }
     };
 
+    /* ==========================================
+       주관식 퀴즈 데이터 및 정답 모음 (다중 정답 가능)
+    ========================================== */
     const quizzes = {
       r1_memo: {
-        title: "📝 1관: EFA1 파트 기획 퀴즈",
-        question: "김주헌 파트장님이 올바른 이메일 제목 양식을 물어보셨다. 가장 바른 제목은?",
-        choices: [
-          "안녕하세요 파트장님 메일 드립니다",
-          "[S1FA PJT] 2026년 3분기 시스템 기획 보고서 제출건",
-          "급함!!! 확인 부탁드립니다!!",
-          "제출합니다."
-        ],
-        answer: 1,
-        successMsg: "김주헌 파트장님: 좋아! 비즈니스 이메일 규격을 잘 알고 있군."
+        title: "📝 1관: EFA1 파트 기획 주관식 퀴즈",
+        question: "김주헌 파트장님이 요청하신 이메일 제목 양식 맨 앞에 필수로 넣어야 하는 프로젝트 대괄호 태그명은?",
+        hint: "💡 힌트: 대괄호 안 프로젝트명 (예: S1FA PJT)",
+        answers: ["S1FA PJT", "S1FAPJT", "S1FA"],
+        successMsg: "김주헌 파트장님: 좋아! 비즈니스 이메일 태그를 정확히 적었군."
       },
       r1_phone: {
-        title: "☎️ 1관: EFA1 파트 긴급 전화 응대 퀴즈",
-        question: "파트장님 부재중일 때 외부 거래처 전화를 받았다. 가장 적절한 응대는?",
-        choices: [
-          "파트장님 지금 담배 피우러 나가셨는데요?",
-          "지금 자리에 안 계셔서 나중에 다시 걸어주세요.",
-          "현재 잠시 자리를 비우셨습니다. 메모나 연락처를 남겨드릴까요?",
-          "모르겠습니다. 다른 분한테 전화해보세요."
-        ],
-        answer: 2,
-        successMsg: "김주헌 파트장님: 깔끔한 응대야! 1관 미션 완수!"
+        title: "☎️ 1관: EFA1 파트 긴급 전화 주관식 퀴즈",
+        question: "부재중인 파트장님 대신 외부 거래처 전화를 받을 때 남겨드려야 할 2글자 정보는?",
+        hint: "💡 힌트: 2글자 단어 (ㅁㅁ)",
+        answers: ["메모", "연락처"],
+        successMsg: "김주헌 파트장님: 깔끔하게 메모 남기는 습관 아주 좋아! 1관 미션 완수!"
       },
       r2_memo: {
-        title: "📝 2관: EFA2 파트 코드 리뷰 퀴즈",
-        question: "김진석 파트장님과의 코드 리뷰 중이다. 상사 보고 시 '두괄식 작성'의 의미는?",
-        choices: [
-          "결론과 핵심 요약을 맨 앞에 먼저 작성한다.",
-          "보고서 배경과 과정을 10페이지 이상 길게 작성한다.",
-          "결론은 맨 마지막장에만 적는다.",
-          "구두로만 대충 설명한다."
-        ],
-        answer: 0,
-        successMsg: "김진석 파트장님: 가독성이 뛰어난 보고 방식입니다! 정답!"
+        title: "📝 2관: EFA2 파트 코드 리뷰 주관식 퀴즈",
+        question: "보고서 작성 시 결론과 핵심 요약을 맨 앞에 먼저 작성하는 3글자 보고 방식은?",
+        hint: "💡 힌트: ㄷㄱㅅ 작성법",
+        answers: ["두괄식", "두괄식 작성", "두괄식작성"],
+        successMsg: "김진석 파트장님: 두괄식 보고! 가독성이 핵심입니다."
       },
       r2_phone: {
-        title: "☎️ 2관: EFA2 파트 서버 장애 응대 퀴즈",
-        question: "개발 서버 장애 발생 시 가장 먼저 조치해야 할 행동은?",
-        choices: [
-          "서버실 전원 코드를 뽑아버린다.",
-          "담당 개발자와 파트장님께 장애 현상을 공유하고 로그를 즉시 확보한다.",
-          "퇴근시간까지 기다렸다가 내일 확인한다.",
-          "장애 사실을 은폐한다."
-        ],
-        answer: 1,
-        successMsg: "김진석 파트장님: 완벽한 장애 대응 프로세스입니다!"
+        title: "☎️ 2관: EFA2 파트 서버 장애 주관식 퀴즈",
+        question: "개발 서버 장애 발생 시 원인 분석을 위해 담당 개발자가 즉시 확보해야 하는 시스템 데이터는?",
+        hint: "💡 힌트: 2글자 단어 (ㄹㄱ 또는 log)",
+        answers: ["로그", "log", "LOG"],
+        successMsg: "김진석 파트장님: 완벽한 로그 분석 대응입니다!"
       },
       r3_memo: {
-        title: "📝 3관: PFA/VSEM 파트 UX/검증 퀴즈",
-        question: "윤지혜 파트장님이 UX 검증 기준을 물어보셨다. 가장 중요한 요소는?",
-        choices: [
-          "화려한 색상만 많이 사용하기",
-          "사용자의 직관성과 편의성, 오류 없는 동작 검증",
-          "버튼을 최대한 작게 만들어 안 보이게 하기",
-          "텍스트를 모두 영문으로만 표기하기"
-        ],
-        answer: 1,
-        successMsg: "윤지혜 파트장님: 정확해요! 사용 편의성이 최우선이죠."
+        title: "📝 3관: PFA/VSEM 파트 UX/검증 주관식 퀴즈",
+        question: "사용자의 직관성과 편의성을 최우선으로 검증하는 기획/디자인 개념의 2글자 영문 약어는?",
+        hint: "💡 힌트: 사용자 경험 (영문 2글자)",
+        answers: ["UX", "ux", "Ux"],
+        successMsg: "윤지혜 파트장님: 정답이에요! UX 편의성이 최우선이죠."
       },
       r3_phone: {
-        title: "☎️ 3관: PFA/VSEM 파트 타부서 협조 퀴즈",
-        question: "타 팀에서 긴급 데이터 검증을 요청할 때 올바른 태도는?",
-        choices: [
-          "우리 팀 업무가 아니니 거절한다.",
-          "요청 내용을 확인하고 파트장님 공유 후 처리 일정을 안내한다.",
-          "읽고 답장을 하지 않는다.",
-          "화부터 낸다."
-        ],
-        answer: 1,
-        successMsg: "윤지혜 파트장님: 협업 매너가 아주 훌륭합니다!"
+        title: "☎️ 3관: PFA/VSEM 파트 타부서 협조 주관식 퀴즈",
+        question: "타 부서에서 데이터 검증 요청이 올 때 파트장님 공유 후 확정하여 전달해야 하는 2글자 단어는?",
+        hint: "💡 힌트: 2글자 단어 (ㅇㅈ)",
+        answers: ["일정", "처리일정", "처리 일정"],
+        successMsg: "윤지혜 파트장님: 협업 매너와 일정 안내가 아주 훌륭합니다!"
       },
       r4_memo: {
-        title: "📝 4관: S1FA PL실 최종 리스크 관리 퀴즈",
-        question: "손승준 PL님이 프로젝트 최종 출하 전 확인해야 할 핵심 리스크는?",
-        choices: [
-          "오늘 점심 메뉴판 확인하기",
-          "최종 시스템 보안 및 데이터 백업, 기능 통합 테스트 완료 여부",
-          "책상 위 먼지 청소하기",
-          "개인 소지품 정리하기"
-        ],
-        answer: 1,
-        successMsg: "손승준 PL님: 훌륭합니다! 리스크 점검 완벽!"
+        title: "📝 4관: S1FA PL실 최종 출하 주관식 퀴즈",
+        question: "프로젝트 최종 출하 전 시스템 데이터 백업과 함께 점검해야 하는 핵심 2글자 단어는?",
+        hint: "💡 힌트: 2글자 단어 (ㅂㅇ)",
+        answers: ["보안", "테스트", "통합테스트"],
+        successMsg: "손승준 PL님: 훌륭합니다! 최종 리스크 점검 완벽!"
       },
       r4_phone: {
-        title: "☎️ 4관: S1FA PL실 최종 퇴근 보안점검 퀴즈",
-        question: "퇴근 전 사무실 보안 점검 사항 중 틀린 것은?",
-        choices: [
-          "중요 보안 서류는 캐비닛에 넣고 잠근다.",
-          "PC 화면을 잠그거나 전원을 끈다.",
-          "마지막 퇴근자는 창문과 문을 잠근다.",
-          "퇴근 전 메인 서버 전원 코드를 뽑아둔다."
-        ],
-        answer: 3,
-        successMsg: "손승준 PL님: 좋습니다! 모든 보안 통과, 최종 탈출!"
+        title: "☎️ 4관: S1FA PL실 최종 퇴근 보안 주관식 퀴즈",
+        question: "퇴근 전 서류 캐비닛, PC 화면, 출입문과 함께 최종 확인해야 하는 2글자 점검 사항은?",
+        hint: "💡 힌트: 2글자 단어 (ㅂㅇ)",
+        answers: ["보안", "보안점검", "보안 점검", "창문"],
+        successMsg: "손승준 PL님: 좋습니다! 모든 보안 통과, 최종 칼퇴 성공!"
       }
     };
 
@@ -636,9 +660,9 @@
     /* ==========================================
        점수 계산 및 UI 실시간 렌더링
     ========================================== */
-    function calculateQuizScore(timeTakenMs, wrongCount) {
+    function calculateQuizScore(timeTakenMs) {
       const timeInSec = timeTakenMs / 1000;
-      let score = Math.max(100, Math.round(10000 - (timeInSec * 145)));
+      let score = Math.max(200, Math.round(10000 - (timeInSec * 145)));
       return score;
     }
 
@@ -855,62 +879,69 @@
       }
     }
 
+    /* ==========================================
+       주관식 퀴즈 제어 및 정답 판정
+    ========================================== */
     function openQuiz(quizKey) {
-      wrongAttempts = 0;
+      activeQuizKey = quizKey;
       quizStartTime = Date.now();
 
       const qData = quizzes[quizKey];
       document.getElementById('qz-title').innerText = qData.title;
       document.getElementById('qz-question').innerText = qData.question;
+      document.getElementById('qz-hint').innerText = qData.hint;
       
-      const choicesDiv = document.getElementById('qz-choices');
-      choicesDiv.innerHTML = '';
-
-      qData.choices.forEach((choice, idx) => {
-        const div = document.createElement('div');
-        div.className = 'quiz-choice';
-        div.innerText = `${idx + 1}. ${choice}`;
-        div.addEventListener('click', (e) => {
-          e.stopPropagation();
-          submitAnswer(quizKey, idx);
-        });
-        choicesDiv.appendChild(div);
-      });
-
+      const input = document.getElementById('qz-input');
+      input.value = '';
+      
       document.getElementById('quiz-modal').style.display = 'flex';
+      setTimeout(() => input.focus(), 100);
     }
 
-    function submitAnswer(quizKey, chosenIdx) {
-      const qData = quizzes[quizKey];
+    function submitAnswer() {
+      if (!activeQuizKey) return;
 
-      if (chosenIdx === qData.answer) {
+      const qData = quizzes[activeQuizKey];
+      const input = document.getElementById('qz-input');
+      const userAns = input.value.trim().toLowerCase().replace(/\s+/g, '');
+
+      if (!userAns) {
+        alert("정답을 입력해 주세요!");
+        return;
+      }
+
+      // 정답 매칭 알고리즘 (공백 및 대소문자 무시)
+      const isCorrect = qData.answers.some(ans => ans.toLowerCase().replace(/\s+/g, '') === userAns);
+
+      if (isCorrect) {
         const timeTakenMs = Date.now() - quizStartTime;
-        const earnedScore = calculateQuizScore(timeTakenMs, wrongAttempts);
+        const earnedScore = calculateQuizScore(timeTakenMs);
         totalScore += earnedScore;
         updateScoreUI();
 
         document.getElementById('quiz-modal').style.display = 'none';
         setDialogue(`${qData.successMsg}\n(+${earnedScore.toLocaleString()}점 획득! 현재 총점: ${totalScore.toLocaleString()}점)`);
 
-        if (quizKey.includes('memo')) roomSolved[currentRoom].memo = true;
-        if (quizKey.includes('phone')) roomSolved[currentRoom].phone = true;
+        if (activeQuizKey.includes('memo')) roomSolved[currentRoom].memo = true;
+        if (activeQuizKey.includes('phone')) roomSolved[currentRoom].phone = true;
 
         saveGameState();
         checkDoorStatus();
       } else {
-        wrongAttempts++;
         const penalty = 500;
         totalScore = Math.max(0, totalScore - penalty);
         updateScoreUI();
         saveGameState();
-        alert(`❌ 오답입니다! 500점이 즉시 감점되었습니다. (현재 점수: ${totalScore.toLocaleString()}점) 다시 선택하세요.`);
+        alert(`❌ 오답입니다! 500점이 감점되었습니다. (현재 점수: ${totalScore.toLocaleString()}점)\n다시 입력해 보세요!`);
+        input.value = '';
+        input.focus();
       }
     }
 
     function nextRoom() {
       const currentSolved = roomSolved[currentRoom];
       if (!currentSolved.memo || !currentSolved.phone) {
-        alert("현재 관의 메모와 전화기 퀴즈 2개를 모두 해결해야 다음 방으로 넘어갈 수 있습니다!");
+        alert("현재 관의 메모와 전화기 주관식 퀴즈 2개를 모두 해결해야 다음 방으로 넘어갈 수 있습니다!");
         return;
       }
 
@@ -944,7 +975,7 @@
 
       document.getElementById('final-summary').innerHTML = `
         참여자: <b>${playerNickname}</b> 님<br>
-        최종 점수: <span style="color:#dc2626; font-size:18px;">${totalScore.toLocaleString()}점</span><br>
+        최종 점수: <span style="color:#facc15; font-size:18px;">${totalScore.toLocaleString()}점</span><br>
         총 소요시간: <b>${timeStr}</b>
       `;
 
@@ -968,12 +999,12 @@
       records.forEach((rec, idx) => {
         const tr = document.createElement('tr');
         if (rec.name === playerNickname && rec.score === totalScore) {
-          tr.style.background = '#fef08a';
+          tr.style.background = '#1e3a8a';
         }
         tr.innerHTML = `
           <td><b>${idx + 1}위</b></td>
           <td>${rec.name}</td>
-          <td><b>${rec.score.toLocaleString()}</b></td>
+          <td><b style="color:#facc15;">${rec.score.toLocaleString()}</b></td>
           <td>${rec.timeStr}</td>
         `;
         tbody.appendChild(tr);
@@ -987,13 +1018,15 @@
       // 1. IP 주소 가져오기
       await fetchUserIp();
 
-      // 2. 버튼 이벤트 바인딩
+      // 2. 버튼 및 키보드 이벤트 바인딩
       const startBtn = document.getElementById('start-btn');
       const nicknameInput = document.getElementById('nickname-input');
       const prevBtn = document.getElementById('prev-btn');
       const nextBtn = document.getElementById('next-btn');
       const resetBtn = document.getElementById('reset-btn');
       const restartBtn = document.getElementById('restart-btn');
+      const qzSubmitBtn = document.getElementById('qz-submit-btn');
+      const qzInput = document.getElementById('qz-input');
 
       if (startBtn) startBtn.addEventListener('click', startGame);
       if (nicknameInput) {
@@ -1009,6 +1042,12 @@
           localStorage.removeItem('s1fa_state_' + userIp);
           localStorage.removeItem('s1fa_latest_session');
           location.reload();
+        });
+      }
+      if (qzSubmitBtn) qzSubmitBtn.addEventListener('click', submitAnswer);
+      if (qzInput) {
+        qzInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') submitAnswer();
         });
       }
 
