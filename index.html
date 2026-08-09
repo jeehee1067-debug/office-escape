@@ -24,7 +24,7 @@
       color: #fff;
     }
 
-    /* 게임 메인 프레임 (레트로 아케이드 게임기 스타일) */
+    /* 게임 메인 프레임 */
     #game-container {
       width: 700px;
       height: 640px;
@@ -58,7 +58,7 @@
     }
 
     #user-stats {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: bold;
       color: #facc15;
       background: #020617;
@@ -198,7 +198,7 @@
       to { transform: translateY(6px); }
     }
 
-    /* 모달 팝업 디자인 (주관식 입력 모달) */
+    /* 모달 팝업 디자인 */
     .modal-overlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -220,7 +220,34 @@
       max-width: 520px;
       padding: 24px;
       color: #fff;
+      position: relative;
       box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+    }
+
+    /* 퀴즈 창 닫기 버튼 */
+    .modal-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: #1e293b;
+      color: #f87171;
+      border: 2px solid #ef4444;
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.15s ease;
+    }
+
+    .modal-close-btn:hover {
+      background: #ef4444;
+      color: #fff;
+      box-shadow: 0 0 10px #ef4444;
     }
 
     .quiz-title {
@@ -228,11 +255,12 @@
       color: #38bdf8;
       margin-bottom: 12px;
       font-weight: bold;
+      padding-right: 40px;
     }
 
     .quiz-q {
       font-size: 14px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       line-height: 1.5;
       color: #f8fafc;
       font-weight: bold;
@@ -246,9 +274,37 @@
       padding: 6px 10px;
       border-radius: 6px;
       border: 1px solid #facc15;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
+    /* 객관식 선택지 보기 */
+    .quiz-choice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .quiz-choice-item {
+      background: #1e293b;
+      border: 2px solid #334155;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+      color: #f1f5f9;
+      transition: all 0.15s ease;
+    }
+
+    .quiz-choice-item:hover {
+      background: #2563eb;
+      border-color: #60a5fa;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+    }
+
+    /* 주관식 입력 그룹 */
     .quiz-input-group {
       display: flex;
       gap: 8px;
@@ -258,7 +314,7 @@
     .quiz-input {
       flex: 1;
       padding: 12px;
-      font-size: 15px;
+      font-size: 14px;
       background: #020617;
       border: 2px solid #38bdf8;
       border-radius: 6px;
@@ -293,7 +349,7 @@
     .start-input {
       width: 100%;
       padding: 12px;
-      font-size: 15px;
+      font-size: 14px;
       background: #020617;
       border: 2px solid #38bdf8;
       border-radius: 6px;
@@ -346,15 +402,15 @@
 <body>
 
   <div id="game-container">
-    <!-- 시작 모달 (닉네임 입력) -->
+    <!-- 시작 모달 (파특명/이름 입력) -->
     <div id="start-modal" class="modal-overlay">
       <div class="modal-card">
-        <h2 style="font-size: 20px; color:#38bdf8; text-align:center; margin-bottom:12px; text-shadow:0 0 10px #38bdf8;">🚀 S1FA PJT 주관식 방탈출</h2>
+        <h2 style="font-size: 20px; color:#38bdf8; text-align:center; margin-bottom:12px; text-shadow:0 0 10px #38bdf8;">🚀 S1FA PJT 칼퇴 방탈출</h2>
         <p style="font-size: 13px; line-height: 1.5; color:#cbd5e1; text-align:center;">
-          4개관의 파트장님과 PL님의 <b>주관식 정답</b>을 직접 입력하여 탈출하세요!<br>
-          <span style="color:#facc15;">[실시간 감점]</span> 오답 시 즉시 500점이 차감됩니다.
+          4개관의 주관식 & 객관식 퀴즈를 모두 풀고 탈출하세요!<br>
+          <span style="color:#ef4444;">[경고]</span> 오답 제출 시 <b>-2,000점</b>이 강하게 감점됩니다!
         </p>
-        <input type="text" id="nickname-input" class="start-input" placeholder="참여자 닉네임 / 사번 입력..." maxlength="12">
+        <input type="text" id="nickname-input" class="start-input" placeholder="파트명 / 이름 (예: EFA1 / 홍길동)..." maxlength="20">
         <button id="start-btn" class="start-btn">게임 시작하기 ➔</button>
       </div>
     </div>
@@ -423,13 +479,19 @@
       <div id="next-arrow"></div>
     </div>
 
-    <!-- 주관식 퀴즈 모달 -->
+    <!-- 퀴즈 통합 모달 (닫기 버튼 ✖ 추가) -->
     <div id="quiz-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card">
-        <div class="quiz-title" id="qz-title">📋 주관식 퀴즈</div>
+        <button id="quiz-close-btn" class="modal-close-btn" title="닫기">✖</button>
+        <div class="quiz-title" id="qz-title">📋 퀴즈</div>
         <div class="quiz-q" id="qz-question">질문</div>
-        <div class="quiz-hint" id="qz-hint">💡 힌트: </div>
-        <div class="quiz-input-group">
+        <div class="quiz-hint" id="qz-hint" style="display:none;">💡 힌트: </div>
+        
+        <!-- 객관식 영역 -->
+        <div id="qz-choices-container" class="quiz-choice-list" style="display:none;"></div>
+
+        <!-- 주관식 영역 -->
+        <div id="qz-input-container" class="quiz-input-group" style="display:none;">
           <input type="text" id="qz-input" class="quiz-input" placeholder="정답을 입력하세요..." />
           <button id="qz-submit-btn" class="quiz-submit-btn">제출 ➔</button>
         </div>
@@ -448,7 +510,7 @@
             <thead>
               <tr>
                 <th>순위</th>
-                <th>닉네임</th>
+                <th>파트 / 이름</th>
                 <th>점수</th>
                 <th>소요시간</th>
               </tr>
@@ -466,12 +528,11 @@
        글로벌 상태 변수 & IP 기반 세션 데이터
     ========================================== */
     let userIp = "default_user";
-    let playerNickname = "신입사원";
+    let playerNickname = "EFA1 / 신입사원";
     let currentRoom = 1;
     let totalScore = 0;
     let gameStartTime = 0;
     let quizStartTime = 0;
-    let wrongAttempts = 0;
     let activeQuizKey = null;
 
     let roomSolved = {
@@ -485,83 +546,118 @@
       1: {
         title: "S1FA PJT : 1관 EFA1 파트 (김주헌 파트장님)",
         bossName: "김주헌 파트장님",
-        welcomeMsg: "김주헌 파트장님: 어이 신입~ EFA1 파트에 온 걸 환영하네! 메모와 전화기 주관식 퀴즈부터 풀게나."
+        welcomeMsg: "김주헌 파트장님: 어이 신입~ EFA1 파트에 온 걸 환영하네! 메모와 전화기 퀴즈부터 풀어보게."
       },
       2: {
         title: "S1FA PJT : 2관 EFA2 파트 (김진석 파트장님)",
         bossName: "김진석 파트장님",
-        welcomeMsg: "김진석 파트장님: 반가워요! EFA2 개발 파트입니다. 코드 가이드와 전화 주관식 퀴즈를 입력해 보세요."
+        welcomeMsg: "김진석 파트장님: 반가워요! EFA2 개발 파트입니다. 코드 가이드와 전화 퀴즈를 해결하세요."
       },
       3: {
         title: "S1FA PJT : 3관 PFA/VSEM 파트 (윤지혜 파트장님)",
         bossName: "윤지혜 파트장님",
-        welcomeMsg: "윤지혜 파트장님: 오셨군요! PFA/VSEM 파트입니다. 품질 검증 퀴즈의 정답을 직접 적어주세요."
+        welcomeMsg: "윤지혜 파트장님: 오셨군요! PFA/VSEM 파트입니다. 품질 검증 퀴즈를 신속히 풀어주세요."
       },
       4: {
         title: "S1FA PJT : 4관 S1FA PL실 (손승준 PL님)",
         bossName: "손승준 PL님",
-        welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 최종 주관식 퀴즈를 풀고 칼퇴하세요!"
+        welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 최종 퀴즈를 풀고 무사히 칼퇴하세요!"
       }
     };
 
     /* ==========================================
-       주관식 퀴즈 데이터 및 정답 모음 (다중 정답 가능)
+       주관식 + 객관식 혼합 퀴즈 데이터
     ========================================== */
     const quizzes = {
+      // 1관
       r1_memo: {
-        title: "📝 1관: EFA1 파트 기획 주관식 퀴즈",
+        type: "subjective",
+        title: "📝 1관: EFA1 파트 기획 [주관식]",
         question: "김주헌 파트장님이 요청하신 이메일 제목 양식 맨 앞에 필수로 넣어야 하는 프로젝트 대괄호 태그명은?",
         hint: "💡 힌트: 대괄호 안 프로젝트명 (예: S1FA PJT)",
         answers: ["S1FA PJT", "S1FAPJT", "S1FA"],
-        successMsg: "김주헌 파트장님: 좋아! 비즈니스 이메일 태그를 정확히 적었군."
+        successMsg: "김주헌 파트장님: 좋아! 비즈니스 이메일 규격을 잘 숙지하고 있군."
       },
       r1_phone: {
-        title: "☎️ 1관: EFA1 파트 긴급 전화 주관식 퀴즈",
-        question: "부재중인 파트장님 대신 외부 거래처 전화를 받을 때 남겨드려야 할 2글자 정보는?",
-        hint: "💡 힌트: 2글자 단어 (ㅁㅁ)",
-        answers: ["메모", "연락처"],
-        successMsg: "김주헌 파트장님: 깔끔하게 메모 남기는 습관 아주 좋아! 1관 미션 완수!"
+        type: "objective",
+        title: "☎️ 1관: EFA1 파트 긴급 전화 [객관식]",
+        question: "파트장님 부재중일 때 외부 거래처 전화를 받았다. 가장 적절한 응대는?",
+        choices: [
+          "1. 지금 담배 피우러 나가셨는데요?",
+          "2. 지금 자리에 안 계셔서 나중에 다시 걸어주세요.",
+          "3. 현재 잠시 자리를 비우셨습니다. 메모나 연락처를 남겨드릴까요?",
+          "4. 모르겠습니다. 다른 분한테 전화해 보세요."
+        ],
+        answerIdx: 2,
+        successMsg: "김주헌 파트장님: 깔끔한 업무 응대야! 1관 미션 완수!"
       },
+
+      // 2관
       r2_memo: {
-        title: "📝 2관: EFA2 파트 코드 리뷰 주관식 퀴즈",
+        type: "subjective",
+        title: "📝 2관: EFA2 파트 코드 리뷰 [주관식]",
         question: "보고서 작성 시 결론과 핵심 요약을 맨 앞에 먼저 작성하는 3글자 보고 방식은?",
         hint: "💡 힌트: ㄷㄱㅅ 작성법",
         answers: ["두괄식", "두괄식 작성", "두괄식작성"],
         successMsg: "김진석 파트장님: 두괄식 보고! 가독성이 핵심입니다."
       },
       r2_phone: {
-        title: "☎️ 2관: EFA2 파트 서버 장애 주관식 퀴즈",
-        question: "개발 서버 장애 발생 시 원인 분석을 위해 담당 개발자가 즉시 확보해야 하는 시스템 데이터는?",
-        hint: "💡 힌트: 2글자 단어 (ㄹㄱ 또는 log)",
-        answers: ["로그", "log", "LOG"],
-        successMsg: "김진석 파트장님: 완벽한 로그 분석 대응입니다!"
+        type: "objective",
+        title: "☎️ 2관: EFA2 파트 서버 장애 [객관식]",
+        question: "개발 서버 장애 발생 시 가장 먼저 조치해야 할 올바른 행동은?",
+        choices: [
+          "1. 서버실 전원 코드를 뽑아버린다.",
+          "2. 담당 개발자와 파트장님께 장애 현상을 공유하고 로그를 즉시 확보한다.",
+          "3. 퇴근시간까지 기다렸다가 내일 확인한다.",
+          "4. 장애 사실을 은폐한다."
+        ],
+        answerIdx: 1,
+        successMsg: "김진석 파트장님: 완벽한 장애 대응 프로세스입니다!"
       },
+
+      // 3관
       r3_memo: {
-        title: "📝 3관: PFA/VSEM 파트 UX/검증 주관식 퀴즈",
+        type: "subjective",
+        title: "📝 3관: PFA/VSEM 파트 UX/검증 [주관식]",
         question: "사용자의 직관성과 편의성을 최우선으로 검증하는 기획/디자인 개념의 2글자 영문 약어는?",
         hint: "💡 힌트: 사용자 경험 (영문 2글자)",
         answers: ["UX", "ux", "Ux"],
         successMsg: "윤지혜 파트장님: 정답이에요! UX 편의성이 최우선이죠."
       },
       r3_phone: {
-        title: "☎️ 3관: PFA/VSEM 파트 타부서 협조 주관식 퀴즈",
-        question: "타 부서에서 데이터 검증 요청이 올 때 파트장님 공유 후 확정하여 전달해야 하는 2글자 단어는?",
-        hint: "💡 힌트: 2글자 단어 (ㅇㅈ)",
-        answers: ["일정", "처리일정", "처리 일정"],
-        successMsg: "윤지혜 파트장님: 협업 매너와 일정 안내가 아주 훌륭합니다!"
+        type: "objective",
+        title: "☎️ 3관: PFA/VSEM 파트 타부서 협조 [객관식]",
+        question: "타 팀에서 긴급 데이터 검증을 요청할 때 올바른 업무 태도는?",
+        choices: [
+          "1. 우리 팀 업무가 아니니 바로 거절한다.",
+          "2. 요청 내용을 확인하고 파트장님 공유 후 처리 일정을 안내한다.",
+          "3. 메시지를 읽고 답장을 하지 않는다.",
+          "4. 화부터 낸다."
+        ],
+        answerIdx: 1,
+        successMsg: "윤지혜 파트장님: 협업 매너와 일정 공유가 훌륭합니다!"
       },
+
+      // 4관
       r4_memo: {
-        title: "📝 4관: S1FA PL실 최종 출하 주관식 퀴즈",
-        question: "프로젝트 최종 출하 전 시스템 데이터 백업과 함께 점검해야 하는 핵심 2글자 단어는?",
+        type: "subjective",
+        title: "📝 4관: S1FA PL실 최종 출하 [주관식]",
+        question: "프로젝트 최종 출하 전 데이터 백업과 함께 점검해야 하는 핵심 2글자 단어는?",
         hint: "💡 힌트: 2글자 단어 (ㅂㅇ)",
         answers: ["보안", "테스트", "통합테스트"],
         successMsg: "손승준 PL님: 훌륭합니다! 최종 리스크 점검 완벽!"
       },
       r4_phone: {
-        title: "☎️ 4관: S1FA PL실 최종 퇴근 보안 주관식 퀴즈",
-        question: "퇴근 전 서류 캐비닛, PC 화면, 출입문과 함께 최종 확인해야 하는 2글자 점검 사항은?",
-        hint: "💡 힌트: 2글자 단어 (ㅂㅇ)",
-        answers: ["보안", "보안점검", "보안 점검", "창문"],
+        type: "objective",
+        title: "☎️ 4관: S1FA PL실 최종 퇴근 보안 [객관식]",
+        question: "퇴근 전 사무실 보안 점검 사항 중 잘못된(틀린) 것은?",
+        choices: [
+          "1. 중요 보안 서류는 캐비닛에 넣고 잠근다.",
+          "2. PC 화면을 잠그거나 전원을 끈다.",
+          "3. 마지막 퇴근자는 창문과 출입문을 잠근다.",
+          "4. 퇴근 전 메인 서버 전원 코드를 뽑아둔다."
+        ],
+        answerIdx: 3,
         successMsg: "손승준 PL님: 좋습니다! 모든 보안 통과, 최종 칼퇴 성공!"
       }
     };
@@ -627,7 +723,7 @@
     function startGame() {
       const input = document.getElementById('nickname-input').value.trim();
       if (!input) {
-        alert("참여자 닉네임이나 사번을 입력해 주세요!");
+        alert("소속 파트명과 이름을 입력해 주세요!\n(예: EFA1 / 홍길동)");
         return;
       }
       playerNickname = input;
@@ -643,7 +739,7 @@
     }
 
     function restoreGame(savedState) {
-      playerNickname = savedState.playerNickname || "신입사원";
+      playerNickname = savedState.playerNickname || "EFA1 / 신입사원";
       currentRoom = savedState.currentRoom || 1;
       totalScore = savedState.totalScore || 0;
       gameStartTime = savedState.gameStartTime || Date.now();
@@ -654,7 +750,7 @@
 
       updateScoreUI();
       triggerRoomChange(currentRoom);
-      setDialogue(`[진행 상황 복구 완료]\n${playerNickname} 님, 이전 접속 위치(${currentRoom}관)에서 게임을 이어서 진행합니다!`);
+      setDialogue(`[진행 상황 복구 완료]\n${playerNickname} 님, 이전 접속 위치(${currentRoom}관)에서 이어서 진행합니다!`);
     }
 
     /* ==========================================
@@ -662,7 +758,7 @@
     ========================================== */
     function calculateQuizScore(timeTakenMs) {
       const timeInSec = timeTakenMs / 1000;
-      let score = Math.max(200, Math.round(10000 - (timeInSec * 145)));
+      let score = Math.max(300, Math.round(10000 - (timeInSec * 145)));
       return score;
     }
 
@@ -677,7 +773,7 @@
       const svg = document.getElementById('bg-svg');
       let content = "";
 
-      if (roomNum === 1) { // 1관: EFA1 (다크 블루 서버 & 오실로스코프)
+      if (roomNum === 1) { // 1관: EFA1
         content = `
           <rect x="0" y="0" width="320" height="130" fill="#1e293b"/>
           <rect x="0" y="130" width="320" height="70" fill="#475569"/>
@@ -880,7 +976,7 @@
     }
 
     /* ==========================================
-       주관식 퀴즈 제어 및 정답 판정
+       퀴즈 창 제어 및 정답 처리
     ========================================== */
     function openQuiz(quizKey) {
       activeQuizKey = quizKey;
@@ -889,18 +985,49 @@
       const qData = quizzes[quizKey];
       document.getElementById('qz-title').innerText = qData.title;
       document.getElementById('qz-question').innerText = qData.question;
-      document.getElementById('qz-hint').innerText = qData.hint;
       
-      const input = document.getElementById('qz-input');
-      input.value = '';
-      
+      const hintElem = document.getElementById('qz-hint');
+      const choicesContainer = document.getElementById('qz-choices-container');
+      const inputContainer = document.getElementById('qz-input-container');
+
+      choicesContainer.innerHTML = '';
+      document.getElementById('qz-input').value = '';
+
+      if (qData.type === 'subjective') {
+        hintElem.style.display = 'inline-block';
+        hintElem.innerText = qData.hint;
+        choicesContainer.style.display = 'none';
+        inputContainer.style.display = 'flex';
+        
+        setTimeout(() => document.getElementById('qz-input').focus(), 100);
+      } else {
+        hintElem.style.display = 'none';
+        inputContainer.style.display = 'none';
+        choicesContainer.style.display = 'flex';
+
+        qData.choices.forEach((choiceText, idx) => {
+          const btn = document.createElement('div');
+          btn.className = 'quiz-choice-item';
+          btn.innerText = choiceText;
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            checkObjectiveAnswer(idx);
+          });
+          choicesContainer.appendChild(btn);
+        });
+      }
+
       document.getElementById('quiz-modal').style.display = 'flex';
-      setTimeout(() => input.focus(), 100);
     }
 
-    function submitAnswer() {
-      if (!activeQuizKey) return;
+    function closeQuizModal() {
+      document.getElementById('quiz-modal').style.display = 'none';
+      activeQuizKey = null;
+    }
 
+    /* 주관식 정답 검사 */
+    function checkSubjectiveAnswer() {
+      if (!activeQuizKey) return;
       const qData = quizzes[activeQuizKey];
       const input = document.getElementById('qz-input');
       const userAns = input.value.trim().toLowerCase().replace(/\s+/g, '');
@@ -910,38 +1037,59 @@
         return;
       }
 
-      // 정답 매칭 알고리즘 (공백 및 대소문자 무시)
       const isCorrect = qData.answers.some(ans => ans.toLowerCase().replace(/\s+/g, '') === userAns);
 
       if (isCorrect) {
-        const timeTakenMs = Date.now() - quizStartTime;
-        const earnedScore = calculateQuizScore(timeTakenMs);
-        totalScore += earnedScore;
-        updateScoreUI();
-
-        document.getElementById('quiz-modal').style.display = 'none';
-        setDialogue(`${qData.successMsg}\n(+${earnedScore.toLocaleString()}점 획득! 현재 총점: ${totalScore.toLocaleString()}점)`);
-
-        if (activeQuizKey.includes('memo')) roomSolved[currentRoom].memo = true;
-        if (activeQuizKey.includes('phone')) roomSolved[currentRoom].phone = true;
-
-        saveGameState();
-        checkDoorStatus();
+        handleQuizSuccess(qData);
       } else {
-        const penalty = 500;
-        totalScore = Math.max(0, totalScore - penalty);
-        updateScoreUI();
-        saveGameState();
-        alert(`❌ 오답입니다! 500점이 감점되었습니다. (현재 점수: ${totalScore.toLocaleString()}점)\n다시 입력해 보세요!`);
+        handleQuizFailure();
         input.value = '';
         input.focus();
       }
     }
 
+    /* 객관식 정답 검사 */
+    function checkObjectiveAnswer(chosenIdx) {
+      if (!activeQuizKey) return;
+      const qData = quizzes[activeQuizKey];
+
+      if (chosenIdx === qData.answerIdx) {
+        handleQuizSuccess(qData);
+      } else {
+        handleQuizFailure();
+      }
+    }
+
+    /* 퀴즈 정답 시 실행 */
+    function handleQuizSuccess(qData) {
+      const timeTakenMs = Date.now() - quizStartTime;
+      const earnedScore = calculateQuizScore(timeTakenMs);
+      totalScore += earnedScore;
+      updateScoreUI();
+
+      closeQuizModal();
+      setDialogue(`${qData.successMsg}\n(+${earnedScore.toLocaleString()}점 획득! 현재 총점: ${totalScore.toLocaleString()}점)`);
+
+      if (activeQuizKey.includes('memo')) roomSolved[currentRoom].memo = true;
+      if (activeQuizKey.includes('phone')) roomSolved[currentRoom].phone = true;
+
+      saveGameState();
+      checkDoorStatus();
+    }
+
+    /* 퀴즈 오답 시 강한 감점 실행 (-2,000점) */
+    function handleQuizFailure() {
+      const penalty = 2000;
+      totalScore = Math.max(0, totalScore - penalty);
+      updateScoreUI();
+      saveGameState();
+      alert(`❌ 오답입니다! 2,000점이 감점되었습니다.\n(현재 점수: ${totalScore.toLocaleString()}점) 신중하게 맞춰보세요!`);
+    }
+
     function nextRoom() {
       const currentSolved = roomSolved[currentRoom];
       if (!currentSolved.memo || !currentSolved.phone) {
-        alert("현재 관의 메모와 전화기 주관식 퀴즈 2개를 모두 해결해야 다음 방으로 넘어갈 수 있습니다!");
+        alert("현재 관의 메모와 전화기 퀴즈 2개를 모두 해결해야 다음 방으로 넘어갈 수 있습니다!");
         return;
       }
 
@@ -974,7 +1122,7 @@
       const timeStr = `${minutes}분 ${seconds}초`;
 
       document.getElementById('final-summary').innerHTML = `
-        참여자: <b>${playerNickname}</b> 님<br>
+        참여자: <b>${playerNickname}</b><br>
         최종 점수: <span style="color:#facc15; font-size:18px;">${totalScore.toLocaleString()}점</span><br>
         총 소요시간: <b>${timeStr}</b>
       `;
@@ -1027,6 +1175,7 @@
       const restartBtn = document.getElementById('restart-btn');
       const qzSubmitBtn = document.getElementById('qz-submit-btn');
       const qzInput = document.getElementById('qz-input');
+      const quizCloseBtn = document.getElementById('quiz-close-btn');
 
       if (startBtn) startBtn.addEventListener('click', startGame);
       if (nicknameInput) {
@@ -1044,12 +1193,21 @@
           location.reload();
         });
       }
-      if (qzSubmitBtn) qzSubmitBtn.addEventListener('click', submitAnswer);
+      if (qzSubmitBtn) qzSubmitBtn.addEventListener('click', checkSubjectiveAnswer);
       if (qzInput) {
         qzInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') submitAnswer();
+          if (e.key === 'Enter') checkSubjectiveAnswer();
         });
       }
+      if (quizCloseBtn) quizCloseBtn.addEventListener('click', closeQuizModal);
+
+      // 모달 바깥 배경 클릭 및 ESC 누름 시 닫기
+      document.getElementById('quiz-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'quiz-modal') closeQuizModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeQuizModal();
+      });
 
       // 3. 오브젝트 클릭 이벤트
       document.getElementById('boss-npc').addEventListener('click', () => {
