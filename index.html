@@ -24,7 +24,7 @@
       color: #fff;
     }
 
-    /* 확장된 게임 메인 프레임 (1000px * 720px) */
+    /* 확장된 메인 프레임 (1000px * 720px) */
     #game-container {
       width: 1000px;
       height: 720px;
@@ -116,7 +116,7 @@
       top: 0; left: 0;
     }
 
-    /* 인터랙티브 픽셀 오브젝트 */
+    /* NPC 및 숨겨진 인터랙티브 사물 요소들 */
     .pixel-object {
       position: absolute;
       cursor: pointer;
@@ -128,19 +128,27 @@
     }
 
     .pixel-object:hover {
-      transform: scale(1.12);
       filter: drop-shadow(0px 0px 8px #facc15);
     }
 
-    .pixel-object:active {
-      transform: scale(0.95);
+    /* 드래그 가능한 오브젝트 클래스 */
+    .draggable-obj {
+      cursor: grab;
+      z-index: 60 !important;
+      touch-action: none;
     }
 
-    .pixel-object * {
-      pointer-events: none;
+    .draggable-obj:active {
+      cursor: grabbing;
     }
 
-    .obj-tag {
+    /* 위치 좌표 설정 */
+    #boss-npc { top: 220px; left: 520px; }
+    #player-npc { top: 220px; left: 320px; }
+
+    /* 출입문 */
+    #door-obj { top: 25px; right: 35px; }
+    .door-tag {
       background: rgba(15, 23, 42, 0.9);
       color: #f8fafc;
       font-size: 11px;
@@ -149,18 +157,7 @@
       border: 1px solid #38bdf8;
       margin-top: 4px;
       white-space: nowrap;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-      transition: all 0.2s ease;
     }
-
-    /* 확장 화면 오브젝트 좌표 배치 */
-    #boss-npc { top: 210px; left: 520px; }
-    #player-npc { top: 210px; left: 320px; }
-    
-    #obj-1 { top: 160px; left: 100px; }  /* 모니터 / 서버랙 / VSEM / 트로피관 */
-    #obj-2 { top: 220px; left: 210px; }  /* 서류(드래그) / 케이블 / 얼룩화면 / 비밀금고 */
-    #obj-3 { top: 160px; right: 120px; } /* 전화기 */
-    #door-obj { top: 25px; right: 35px; }
 
     /* 하단 대사창 */
     #dialogue-box {
@@ -400,10 +397,10 @@
       background: #020617;
     }
 
-    /* 미니 게임 인터랙션 전용 CSS (케이블/얼룩/키패드) */
+    /* 미니 게임 인터랙션 전용 CSS */
     .wire-port {
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       border: 3px solid #fff;
       cursor: pointer;
@@ -413,10 +410,11 @@
     .wire-port:hover { transform: scale(1.2); }
     .wire-red { background: #ef4444; }
     .wire-blue { background: #3b82f6; }
+    .wire-yellow { background: #eab308; }
 
     .stain-spot {
-      width: 42px;
-      height: 42px;
+      width: 45px;
+      height: 45px;
       background: rgba(180, 83, 9, 0.85);
       border-radius: 50%;
       position: absolute;
@@ -429,38 +427,19 @@
       box-shadow: 0 0 10px #facc15;
     }
     .stain-spot:hover { transform: scale(1.1); }
-
-    .keypad-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      max-width: 240px;
-      margin: 15px auto;
-    }
-    .keypad-btn {
-      background: #1e293b;
-      border: 2px solid #38bdf8;
-      color: #fff;
-      font-size: 18px;
-      font-weight: bold;
-      padding: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      text-align: center;
-    }
-    .keypad-btn:hover { background: #38bdf8; color: #000; }
   </style>
 </head>
 <body>
 
   <div id="game-container">
-    <!-- 시작 모달 (파트명/이름 입력) -->
+    <!-- 시작 모달 -->
     <div id="start-modal" class="modal-overlay">
       <div class="modal-card">
-        <h2 style="font-size: 21px; color:#38bdf8; text-align:center; margin-bottom:12px; text-shadow:0 0 10px #38bdf8;">🚀 S1FA PJT 인터랙티브 방탈출 (12개 미션)</h2>
+        <h2 style="font-size: 21px; color:#38bdf8; text-align:center; margin-bottom:12px; text-shadow:0 0 10px #38bdf8;">🚀 S1FA PJT 방탈출 (맥거핀 낚시 주의!)</h2>
         <p style="font-size: 13px; line-height: 1.5; color:#cbd5e1; text-align:center;">
-          <b>[방별 특수 미션]</b> 드래그, 케이블 연결, 모니터 닦기, 비밀금고 키패드를 풀어 숨겨진 문제를 찾아내세요!<br>
-          <span style="color:#ef4444;">[경고]</span> 오답 제출 시 <b>-2,000점</b>이 차감됩니다!
+          진짜 단서와 <b>플레이어를 낚는 가짜 맥거핀 사물</b>이 섞여 있습니다!<br>
+          물건을 직접 드래그하고 눌러보며 진짜 신입사원 퀴즈를 찾아내세요.<br>
+          <span style="color:#ef4444;">[경고]</span> 오답 제출 시 <b>-2,000점</b>이 감점됩니다!
         </p>
         <input type="text" id="nickname-input" class="start-input" placeholder="파트명 / 이름 (예: EFA1 / 홍길동)..." maxlength="20">
         <button id="start-btn" class="start-btn">게임 시작하기 ➔</button>
@@ -480,16 +459,17 @@
 
     <!-- 메인 픽셀 화면 -->
     <div id="screen">
+      <!-- 배경 SVG 렌더링 -->
       <svg id="bg-svg" class="pixel-render" viewBox="0 0 320 200" preserveAspectRatio="none"></svg>
 
       <!-- NPC: 파트장님/PL님 -->
-      <div class="pixel-object" id="boss-npc">
+      <div class="pixel-object" id="boss-npc" style="cursor:pointer;">
         <svg id="boss-svg" width="60" height="80" viewBox="0 0 30 40" class="pixel-render"></svg>
-        <div class="obj-tag" id="boss-tag">김주헌 파트장님</div>
+        <div id="boss-tag" class="door-tag">김주헌 파트장님</div>
       </div>
 
       <!-- Player: 신입사원 -->
-      <div class="pixel-object" id="player-npc">
+      <div class="pixel-object" id="player-npc" style="pointer-events:none;">
         <svg width="60" height="80" viewBox="0 0 30 40" class="pixel-render">
           <rect x="7" y="3" width="16" height="7" fill="#0f172a"/>
           <rect x="7" y="9" width="16" height="11" fill="#fde047"/>
@@ -503,31 +483,16 @@
           <rect x="7" y="37" width="6" height="3" fill="#ffffff"/>
           <rect x="17" y="37" width="6" height="3" fill="#ffffff"/>
         </svg>
-        <div class="obj-tag" id="player-tag">신입사원</div>
+        <div id="player-tag" class="door-tag">신입사원</div>
       </div>
 
-      <!-- 오브젝트 1 (메인 단말기 / 장비) -->
-      <div class="pixel-object" id="obj-1">
-        <span id="obj-1-icon" style="font-size:32px;">💻</span>
-        <div class="obj-tag" id="obj-1-tag">PC 모니터 [미션1]</div>
-      </div>
-
-      <!-- 오브젝트 2 (관별 특수 인터랙션: 드래그 / 케이블 / 얼룩 / 비밀금고) -->
-      <div class="pixel-object" id="obj-2">
-        <span id="obj-2-icon" style="font-size:32px;">📄</span>
-        <div class="obj-tag" id="obj-2-tag">보안 서류 [치우기]</div>
-      </div>
-
-      <!-- 오브젝트 3 (전화기) -->
-      <div class="pixel-object" id="obj-3">
-        <span id="obj-3-icon" style="font-size:32px;">☎️</span>
-        <div class="obj-tag" id="obj-3-tag">업무 전화 [미션3]</div>
-      </div>
+      <!-- 동적 상호작용 레이어 (진짜 + 맥거핀 낚시 오브젝트) -->
+      <div id="interactive-layer"></div>
 
       <!-- 출입문 -->
       <div class="pixel-object" id="door-obj" style="opacity:0.5;">
         <span style="font-size:32px;">🚪</span>
-        <div class="obj-tag" id="door-label">🔒 다음 방</div>
+        <div class="door-tag" id="door-label">🔒 다음 방</div>
       </div>
     </div>
 
@@ -537,9 +502,9 @@
       <div id="next-arrow"></div>
     </div>
 
-    <!-- 미니 인터랙션 모달 (2관 케이블 / 3관 얼룩 / 4관 키패드) -->
+    <!-- 미니 인터랙션 모달 (2관 케이블 / 3관 얼룩) -->
     <div id="minigame-modal" class="modal-overlay" style="display:none;">
-      <div class="modal-card" id="minigame-card">
+      <div class="modal-card">
         <button id="minigame-close-btn" class="modal-close-btn">✖</button>
         <div class="quiz-title" id="mg-title">🔧 특수 미션</div>
         <div id="mg-body" style="margin-top:15px; text-align:center;"></div>
@@ -592,7 +557,7 @@
 
   <script>
     /* ==========================================
-       글로벌 상태 변수 & IP 기반 세션 데이터
+       글로벌 상태 변수 & 세션 데이터
     ========================================== */
     let userIp = "default_user";
     let playerNickname = "EFA1 / 신입사원";
@@ -602,13 +567,12 @@
     let quizStartTime = 0;
     let activeQuizKey = null;
 
-    // 미니 게임 상태 변수
+    // 미니 게임 상태
     let wireSelectedPort = null;
     let wireConnectedCount = 0;
     let stainCleanedCount = 0;
-    let keypadCodeInput = "";
 
-    // 관별 3문제씩 총 12문제 완료 상태
+    // 관별 3문제 완료 상태
     let roomSolved = {
       1: { q1: false, q2: false, q3: false },
       2: { q1: false, q2: false, q3: false },
@@ -620,22 +584,22 @@
       1: {
         title: "S1FA PJT : 1관 EFA1 파트 (김주헌 파트장님)",
         bossName: "김주헌 파트장님",
-        welcomeMsg: "김주헌 파트장님: 어이 신입~ EFA1 파트에 온 걸 환영하네! 책상 서류를 치워 숨겨진 메모를 찾아보게."
+        welcomeMsg: "김주헌 파트장님: 어이 신입~ EFA1 파트에 온 걸 환영하네! 서류를 드래그해서 치워 진짜 단서를 찾게. (낚시 맥거핀 주의!)"
       },
       2: {
         title: "S1FA PJT : 2관 EFA2 파트 (김진석 파트장님)",
         bossName: "김진석 파트장님",
-        welcomeMsg: "김진석 파트장님: 반가워요! EFA2 개발 파트입니다. 끊어진 케이블 선을 올바르게 연결해 보세요."
+        welcomeMsg: "김진석 파트장님: 반가워요! EFA2 개발 파트입니다. 끊어진 서버 전용 케이블을 찾아서 올바르게 연결해 보세요."
       },
       3: {
         title: "S1FA PJT : 3관 PFA/VSEM 파트 (윤지혜 파트장님)",
         bossName: "윤지혜 파트장님",
-        welcomeMsg: "윤지혜 파트장님: 오셨군요! PFA/VSEM 파트입니다. 모니터의 얼룩을 클릭해 닦아내면 암호가 보입니다."
+        welcomeMsg: "윤지혜 파트장님: 오셨군요! PFA/VSEM 파트입니다. 모니터 얼룩을 닦다 보면 가짜 스티커도 나오니 유의하세요!"
       },
       4: {
         title: "S1FA PJT : 4관 S1FA PL실 (손승준 PL님)",
         bossName: "손승준 PL님",
-        welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 비밀 금고의 4자리 암호를 풀고 최종 탈출하세요!"
+        welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 벽에 걸린 달력이나 액자를 치워 진짜 비밀 금고를 발굴하세요!"
       }
     };
 
@@ -654,11 +618,11 @@
       },
       r1_q2: {
         type: "subjective",
-        title: "📝 1관: 책상 밑 비밀 메모 [주관식]",
-        question: "서류 밑에서 찾은 비밀 메모다! EFA1 파트의 핵심 장비인 오실로스코프 신호 신뢰성 테스트 기준 수치는?",
-        hint: "💡 힌트: 신뢰성 백분율 수치 (예: 99% 또는 100%)",
+        title: "📝 1관: 진짜 숨겨진 비밀 메모 [주관식]",
+        question: "진짜 서류 밑에서 찾은 시크릿 메모다! EFA1 파트 장비 신뢰성 테스트 목표 수치는?",
+        hint: "💡 힌트: 백분율 수치 (예: 100% 또는 100)",
         answers: ["100%", "100", "99%", "99"],
-        successMsg: "김주헌 파트장님: 서류 밑 숨겨진 시크릿 메모를 제대로 찾아냈군!"
+        successMsg: "김주헌 파트장님: 맥거핀을 피하고 서류 밑 진짜 메모를 잘 찾아냈군!"
       },
       r1_q3: {
         type: "objective",
@@ -685,11 +649,11 @@
       },
       r2_q2: {
         type: "subjective",
-        title: "🔌 2관: 서버 케이블 복구 암호 [주관식]",
-        question: "케이블 복구 성공! 서버 로그 파일 분석 시 원인 파악을 위해 즉시 확보해야 하는 시스템 2글자 데이터는?",
+        title: "🔌 2관: 서버 케이블 복구 분석 [주관식]",
+        question: "진짜 케이블 연결 성공! 서버 장애 원인 분석을 위해 개발자가 즉시 확보해야 하는 시스템 2글자 데이터는?",
         hint: "💡 힌트: 2글자 단어 (ㄹㄱ 또는 log)",
         answers: ["로그", "log", "LOG"],
-        successMsg: "김진석 파트장님: 케이블 연결도 잘하고 로그 분석까지 완벽하네요!"
+        successMsg: "김진석 파트장님: 가짜 케이블을 물리치고 서버 연결 완벽히 성공!"
       },
       r2_q3: {
         type: "objective",
@@ -716,11 +680,11 @@
       },
       r3_q2: {
         type: "subjective",
-        title: "🔍 3관: VSEM 깨끗한 모니터 화면 [주관식]",
-        question: "얼룩을 닦아내니 정밀 측정 단위가 보인다! VSEM 전자현미경의 주 검사 단위 나노미터의 2글자 영문 약어는?",
+        title: "🔍 3관: 깨끗해진 모니터 측정 단위 [주관식]",
+        question: "진짜 얼룩을 닦아내니 단위가 보인다! VSEM 전자현미경의 정밀 측정 단위 나노미터의 2글자 영문 약어는?",
         hint: "💡 힌트: 나노미터 약어 (예: nm)",
         answers: ["nm", "NM", "Nm"],
-        successMsg: "윤지혜 파트장님: 화면을 깨끗이 닦아서 단위를 잘 밝혀냈네요!"
+        successMsg: "윤지혜 파트장님: 가짜 고양이 스티커에 낚이지 않고 단위를 잘 발견하셨네요!"
       },
       r3_q3: {
         type: "objective",
@@ -747,11 +711,11 @@
       },
       r4_q2: {
         type: "subjective",
-        title: "🔐 4관: 비밀 금고 해제 문서 [주관식]",
-        question: "금고에서 꺼낸 최종 승인 문서다! 프로젝트 최종 승인자 권한을 가진 2글자 직책 영문 약어는?",
+        title: "🔐 4관: 액자 뒤 비밀 금고 문서 [주관식]",
+        question: "달력이 아닌 진짜 액자 뒤 비밀 금고에서 꺼낸 서류다! 프로젝트 최종 승인자 권한을 가진 2글자 직책 영문 약어는?",
         hint: "💡 힌트: 프로젝트 리더 (영문 2글자)",
         answers: ["PL", "pl", "Pl"],
-        successMsg: "손승준 PL님: 금고 해제 완료! 최종 승인권을 잘 확인했습니다."
+        successMsg: "손승준 PL님: 가짜 달력을 우회하고 액자 뒤 금고를 찾아내다니 대단합니다!"
       },
       r4_q3: {
         type: "objective",
@@ -841,7 +805,7 @@
       saveGameState();
       updateScoreUI();
       renderRoomBackground(1);
-      updateObjectStates();
+      renderInteractiveElements(1);
       setDialogue(roomData[1].welcomeMsg);
     }
 
@@ -874,7 +838,7 @@
     }
 
     /* ==========================================
-       4개관 사무실 개별 테마 배경 드로잉 (확장 뷰)
+       4개관 사무실 개별 테마 배경 드로잉
     ========================================== */
     function renderRoomBackground(roomNum) {
       const svg = document.getElementById('bg-svg');
@@ -892,9 +856,11 @@
           <text x="80" y="24" fill="#0f172a" font-size="8" font-weight="bold">S1FA PJT : 1관 EFA1 파트</text>
           <path d="M 80,32 L 240,32 M 80,42 L 220,42" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,2"/>
 
+          <!-- 오실로스코프 장비 랙 -->
           <rect x="10" y="20" width="50" height="90" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
           <circle cx="20" cy="30" r="2" fill="#22c55e"/><circle cx="28" cy="30" r="2" fill="#ef4444"/>
 
+          <!-- 메인 데스크 -->
           <path d="M 60,110 L 260,110 L 260,150 L 235,150 L 235,125 L 85,125 L 85,150 L 60,150 Z" fill="#cbd5e1" stroke="#0f172a" stroke-width="2"/>
         `;
       } else if (roomNum === 2) { // 2관: EFA2
@@ -1018,53 +984,271 @@
       document.getElementById('dialogue-text').innerText = text;
     }
 
-    /* 방별 오브젝트 1, 2, 3 및 출입문 상태 업데이트 */
-    function updateObjectStates() {
+    /* ==========================================
+       배경 동적 요소 생성 (진짜 + 맥거핀 낚시 사물)
+    ========================================== */
+    function renderInteractiveElements(roomNum) {
+      const layer = document.getElementById('interactive-layer');
+      layer.innerHTML = '';
+
+      if (roomNum === 1) { // 1관: EFA1 (진짜 모니터 + 맥거핀 낚시 모니터 + 진짜/가짜 서류)
+        layer.innerHTML = `
+          <!-- 1-1. 진짜 PC 모니터 -->
+          <div id="elem-m1" style="position:absolute; top:210px; left:180px; cursor:pointer;" title="메인 모니터">
+            <span style="font-size:38px;">💻</span>
+          </div>
+
+          <!-- 1-2. 맥거핀 낚시 모니터 -->
+          <div id="fake-mon1" style="position:absolute; top:210px; left:260px; cursor:pointer;" title="서브 모니터">
+            <span style="font-size:32px;">🖥️</span>
+          </div>
+
+          <!-- 2-1. 진짜 서류 밑 숨겨진 시크릿 메모지 -->
+          <div id="elem-secret-memo" style="position:absolute; top:280px; left:200px; cursor:pointer;" title="비밀 메모지">
+            <span style="font-size:26px;">📝</span>
+          </div>
+
+          <!-- 2-2. 진짜 드래그 서류 (메모지 위를 덮음) -->
+          <div id="drag-paper-real" class="draggable-obj" style="position:absolute; top:275px; left:190px;" title="중요 서류 (드래그)">
+            <span style="font-size:32px;">📑</span>
+          </div>
+
+          <!-- 2-3. 맥거핀 낚시 드래그 서류 (치워도 아무것도 없음!) -->
+          <div id="drag-paper-fake" class="draggable-obj" style="position:absolute; top:275px; left:650px;" title="일반 서류 (드래그)">
+            <span style="font-size:30px;">📄</span>
+          </div>
+
+          <!-- 3. 업무 전화기 -->
+          <div id="elem-p1" style="position:absolute; top:210px; left:750px; cursor:pointer;" title="업무 전화기">
+            <span style="font-size:34px;">☎️</span>
+          </div>
+        `;
+
+        // 낚시 모니터 클릭
+        document.getElementById('fake-mon1').addEventListener('click', () => {
+          setDialogue("신입사원: 서브 모니터를 열어보니... '김주헌 파트장님의 오늘 점심 추천 메뉴: 제육볶음' 메모만 적혀있다. (낚였다!)");
+        });
+
+        // 가짜 서류 드래그
+        makeElementDraggable(document.getElementById('drag-paper-fake'), () => {
+          setDialogue("신입사원: 서류를 치워봤지만 책상 바닥만 깨끗하다... 아무 단서도 없다.");
+        });
+
+        // 진짜 모니터
+        document.getElementById('elem-m1').addEventListener('click', () => {
+          if (roomSolved[1].q1) setDialogue("신입사원: 모니터 메일 미션은 완료했습니다!");
+          else openQuiz('r1_q1');
+        });
+
+        // 진짜 비밀 메모
+        document.getElementById('elem-secret-memo').addEventListener('click', () => {
+          if (roomSolved[1].q2) setDialogue("신입사원: 서류 밑 비밀 메모 미션은 완료했습니다!");
+          else openQuiz('r1_q2');
+        });
+
+        makeElementDraggable(document.getElementById('drag-paper-real'), () => {
+          setDialogue("신입사원: 서류를 옆으로 치우니 밑에 진짜 숨겨져 있던 시크릿 메모지(📝)가 나왔다!");
+        });
+
+        // 전화기
+        document.getElementById('elem-p1').addEventListener('click', () => {
+          if (roomSolved[1].q3) setDialogue("신입사원: 긴급 전화 응대 미션은 완료했습니다!");
+          else openQuiz('r1_q3');
+        });
+
+      } else if (roomNum === 2) { // 2관: EFA2
+        layer.innerHTML = `
+          <!-- 1. 서버 랙 -->
+          <div id="elem-m2" style="position:absolute; top:180px; left:160px; cursor:pointer;" title="개발 서버 랙">
+            <span style="font-size:42px;">🖥️</span>
+          </div>
+
+          <!-- 2. 단선된 케이블 -->
+          <div id="elem-cable" style="position:absolute; top:280px; left:220px; cursor:pointer;" title="단선된 케이블">
+            <span style="font-size:32px;">🔌</span>
+          </div>
+
+          <!-- 3. 맥거핀 낚시 커피 컵 -->
+          <div id="fake-coffee" class="draggable-obj" style="position:absolute; top:270px; left:620px;" title="커피 컵 (드래그)">
+            <span style="font-size:28px;">☕</span>
+          </div>
+
+          <!-- 4. 업무 전화기 -->
+          <div id="elem-p2" style="position:absolute; top:210px; left:750px; cursor:pointer;" title="업무 전화기">
+            <span style="font-size:34px;">☎️</span>
+          </div>
+        `;
+
+        makeElementDraggable(document.getElementById('fake-coffee'), () => {
+          setDialogue("신입사원: 식어버린 아메리카노 컵을 치워보았다... 밑에 커피 자국만 차갑게 남아있다.");
+        });
+
+        document.getElementById('elem-m2').addEventListener('click', () => {
+          if (roomSolved[2].q1) setDialogue("신입사원: 개발 서버 가이드 미션은 완료했습니다!");
+          else openQuiz('r2_q1');
+        });
+
+        document.getElementById('elem-cable').addEventListener('click', () => {
+          if (roomSolved[2].q2) setDialogue("신입사원: 케이블 복구 미션은 완료했습니다!");
+          else openWireMiniGame('r2_q2');
+        });
+
+        document.getElementById('elem-p2').addEventListener('click', () => {
+          if (roomSolved[2].q3) setDialogue("신입사원: 장애 전화 응대 미션은 완료했습니다!");
+          else openQuiz('r2_q3');
+        });
+
+      } else if (roomNum === 3) { // 3관: PFA/VSEM
+        layer.innerHTML = `
+          <!-- 1. VSEM 장비 -->
+          <div id="elem-m3" style="position:absolute; top:180px; left:160px; cursor:pointer;" title="VSEM 검사 기기">
+            <span style="font-size:42px;">🔬</span>
+          </div>
+
+          <!-- 2. 얼룩진 모니터 -->
+          <div id="elem-stain-mon" style="position:absolute; top:270px; left:230px; cursor:pointer;" title="얼룩진 모니터">
+            <span style="font-size:34px;">🖥️</span>
+          </div>
+
+          <!-- 3. 맥거핀 낚시 화분 -->
+          <div id="fake-plant" class="draggable-obj" style="position:absolute; top:160px; left:660px;" title="공기정화 화분 (드래그)">
+            <span style="font-size:36px;">🪴</span>
+          </div>
+
+          <!-- 4. 업무 전화기 -->
+          <div id="elem-p3" style="position:absolute; top:210px; left:750px; cursor:pointer;" title="업무 전화기">
+            <span style="font-size:34px;">☎️</span>
+          </div>
+        `;
+
+        makeElementDraggable(document.getElementById('fake-plant'), () => {
+          setDialogue("신입사원: 화분을 들춰보았지만 촉촉한 흙밖에 없다. 공기가 한층 쾌적해진 기분이다!");
+        });
+
+        document.getElementById('elem-m3').addEventListener('click', () => {
+          if (roomSolved[3].q1) setDialogue("신입사원: UX 검증 미션은 완료했습니다!");
+          else openQuiz('r3_q1');
+        });
+
+        document.getElementById('elem-stain-mon').addEventListener('click', () => {
+          if (roomSolved[3].q2) setDialogue("신입사원: 모니터 얼룩 닦기 미션은 완료했습니다!");
+          else openStainMiniGame('r3_q2');
+        });
+
+        document.getElementById('elem-p3').addEventListener('click', () => {
+          if (roomSolved[3].q3) setDialogue("신입사원: 타 부서 협조 전화 미션은 완료했습니다!");
+          else openQuiz('r3_q3');
+        });
+
+      } else if (roomNum === 4) { // 4관: PL실 (맥거핀 달력 + 진짜 액자/금고)
+        layer.innerHTML = `
+          <!-- 1. 트로피 수장고 -->
+          <div id="elem-m4" style="position:absolute; top:160px; left:160px; cursor:pointer;" title="트로피 수장고">
+            <span style="font-size:40px;">🏆</span>
+          </div>
+
+          <!-- 2-1. 진짜 비밀 금고 -->
+          <div id="elem-secret-safe" style="position:absolute; top:85px; left:225px; cursor:pointer;" title="비밀 금고">
+            <span style="font-size:32px;">🔐</span>
+          </div>
+
+          <!-- 2-2. 진짜 삼성 로드맵 액자 (드래그) -->
+          <div id="drag-frame-real" class="draggable-obj" style="position:absolute; top:75px; left:215px;" title="삼성 로드맵 액자 (드래그)">
+            <span style="font-size:38px;">🖼️</span>
+          </div>
+
+          <!-- 2-3. 맥거핀 낚시 달력 (드래그) -->
+          <div id="drag-calendar-fake" class="draggable-obj" style="position:absolute; top:75px; left:650px;" title="2026년 달력 (드래그)">
+            <span style="font-size:36px;">📅</span>
+          </div>
+
+          <!-- 3. 업무 전화기 -->
+          <div id="elem-p4" style="position:absolute; top:210px; left:750px; cursor:pointer;" title="업무 전화기">
+            <span style="font-size:34px;">☎️</span>
+          </div>
+        `;
+
+        // 낚시 달력 드래그
+        makeElementDraggable(document.getElementById('drag-calendar-fake'), () => {
+          setDialogue("신입사원: 달력을 치우니 뒤에 '칼퇴 기원'이라고 적힌 귀여운 부적 스티커만 붙어있다! (가짜 단서다!)");
+        });
+
+        document.getElementById('elem-m4').addEventListener('click', () => {
+          if (roomSolved[4].q1) setDialogue("신입사원: 최종 출하 리스크 미션은 완료했습니다!");
+          else openQuiz('r4_q1');
+        });
+
+        document.getElementById('elem-secret-safe').addEventListener('click', () => {
+          if (roomSolved[4].q2) setDialogue("신입사원: 액자 뒤 비밀 금고 미션은 완료했습니다!");
+          else openQuiz('r4_q2');
+        });
+
+        makeElementDraggable(document.getElementById('drag-frame-real'), () => {
+          setDialogue("신입사원: 로드맵 액자를 아래로 치우니 진짜 매립되어 있던 비밀 금고(🔐)가 나왔다!");
+        });
+
+        document.getElementById('elem-p4').addEventListener('click', () => {
+          if (roomSolved[4].q3) setDialogue("신입사원: 최종 퇴근 보안 미션은 완료했습니다!");
+          else openQuiz('r4_q3');
+        });
+      }
+
+      updateDoorStatusUI();
+    }
+
+    /* 드래그 엔진 */
+    function makeElementDraggable(elem, onMovedCallback) {
+      if (!elem) return;
+      let isDragging = false;
+      let startX, startY, initialLeft, initialTop;
+
+      const onMouseDown = (e) => {
+        isDragging = true;
+        const event = e.touches ? e.touches[0] : e;
+        startX = event.clientX;
+        startY = event.clientY;
+        initialLeft = elem.offsetLeft;
+        initialTop = elem.offsetTop;
+        elem.style.transition = 'none';
+      };
+
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const event = e.touches ? e.touches[0] : e;
+        const dx = event.clientX - startX;
+        const dy = event.clientY - startY;
+
+        elem.style.left = (initialLeft + dx) + 'px';
+        elem.style.top = (initialTop + dy) + 'px';
+
+        if (Math.abs(dx) > 40 || Math.abs(dy) > 40) {
+          if (onMovedCallback) {
+            onMovedCallback();
+            onMovedCallback = null;
+          }
+        }
+      };
+
+      const onMouseUp = () => {
+        isDragging = false;
+      };
+
+      elem.addEventListener('mousedown', onMouseDown);
+      elem.addEventListener('touchstart', onMouseDown);
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('touchmove', onMouseMove);
+
+      window.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('touchend', onMouseUp);
+    }
+
+    function updateDoorStatusUI() {
       const door = document.getElementById('door-obj');
       const doorLabel = document.getElementById('door-label');
 
-      const obj1Icon = document.getElementById('obj-1-icon');
-      const obj1Tag = document.getElementById('obj-1-tag');
-      
-      const obj2Icon = document.getElementById('obj-2-icon');
-      const obj2Tag = document.getElementById('obj-2-tag');
-
-      const obj3Tag = document.getElementById('obj-3-tag');
-
       const currentSolved = roomSolved[currentRoom];
 
-      // 방별 오브젝트 아이콘 및 태그 세팅
-      if (currentRoom === 1) {
-        obj1Icon.innerText = "💻"; obj1Tag.innerText = currentSolved.q1 ? "PC모니터 [완료]" : "PC 모니터 [미션1]";
-        obj2Icon.innerText = "📄"; obj2Tag.innerText = currentSolved.q2 ? "비밀메모 [완료]" : "보안 서류 [드래그]";
-      } else if (currentRoom === 2) {
-        obj1Icon.innerText = "🖥️"; obj1Tag.innerText = currentSolved.q1 ? "서버랙 [완료]" : "개발 서버 [미션1]";
-        obj2Icon.innerText = "🔌"; obj2Tag.innerText = currentSolved.q2 ? "케이블 [완료]" : "단선된 케이블 [연결]";
-      } else if (currentRoom === 3) {
-        obj1Icon.innerText = "🔬"; obj1Tag.innerText = currentSolved.q1 ? "VSEM [완료]" : "VSEM 장비 [미션1]";
-        obj2Icon.innerText = "🖥️"; obj2Tag.innerText = currentSolved.q2 ? "검증표 [완료]" : "얼룩진 모니터 [닦기]";
-      } else if (currentRoom === 4) {
-        obj1Icon.innerText = "🏆"; obj1Tag.innerText = currentSolved.q1 ? "수장고 [완료]" : "트로피관 [미션1]";
-        obj2Icon.innerText = "🔐"; obj2Tag.innerText = currentSolved.q2 ? "금고문 [완료]" : "비밀 금고 [암호입력]";
-      }
-
-      obj3Tag.innerText = currentSolved.q3 ? "업무전화 [완료]" : "업무 전화 [미션3]";
-
-      // 푼 미션 색상 교체
-      [ { elem: obj1Tag, solved: currentSolved.q1 },
-        { elem: obj2Tag, solved: currentSolved.q2 },
-        { elem: obj3Tag, solved: currentSolved.q3 }
-      ].forEach(item => {
-        if (item.solved) {
-          item.elem.style.background = "#22c55e";
-          item.elem.style.borderColor = "#16a34a";
-        } else {
-          item.elem.style.background = "rgba(15, 23, 42, 0.9)";
-          item.elem.style.borderColor = "#38bdf8";
-        }
-      });
-
-      // 3개 미션 모두 완료 시 문 오픈
       if (currentSolved.q1 && currentSolved.q2 && currentSolved.q3) {
         door.style.opacity = '1';
         doorLabel.innerText = currentRoom === 4 ? "🚪 최종 탈출!" : `🚪 ${currentRoom + 1}관 이동!`;
@@ -1077,52 +1261,33 @@
     }
 
     /* ==========================================
-       방별 차별화된 특수 미션 인터랙션 제어
+       방별 미니게임 인터랙션 (함정 케이블 & 얼룩 낚시 포함)
     ========================================== */
-    function handleObject2Click() {
-      const qKey = `r${currentRoom}_q2`;
-      if (roomSolved[currentRoom].q2) {
-        setDialogue("신입사원: 이 미션은 이미 완료했습니다!");
-        return;
-      }
-
-      if (currentRoom === 1) {
-        // 1관: 드래그 안내 후 퀴즈 연결
-        openQuiz(qKey);
-      } else if (currentRoom === 2) {
-        // 2관: 단선된 케이블 연결 게임
-        openWireMiniGame(qKey);
-      } else if (currentRoom === 3) {
-        // 3관: 모니터 얼룩 닦기 게임
-        openStainMiniGame(qKey);
-      } else if (currentRoom === 4) {
-        // 4관: 비밀금고 키패드 입력 게임
-        openKeypadMiniGame(qKey);
-      }
-    }
-
-    /* 2관 미니게임: 단선된 케이블 연결 */
+    /* 2관 미니게임: 케이블 연결 (함정 노란색 케이블 포함) */
     function openWireMiniGame(qKey) {
       wireSelectedPort = null;
       wireConnectedCount = 0;
       
       const mgTitle = document.getElementById('mg-title');
       const mgBody = document.getElementById('mg-body');
-      mgTitle.innerText = "🔌 2관 미션: 서버 케이블 선 연결하기";
+      mgTitle.innerText = "🔌 2관 미션: 서버 전용 케이블 선 연결하기";
 
       mgBody.innerHTML = `
         <p style="font-size:13px; color:#cbd5e1; margin-bottom:15px;">
-          단선된 동일한 색상의 케이블 단자를 순서대로 클릭하여 연결하세요!
+          서버를 복구할 수 있는 올바른 동일 색상의 케이블 단자를 연결하세요!<br>
+          <span style="color:#facc15;">(경고: 서버와 무관한 일반 LAN 케이블선 함정이 섞여 있습니다!)</span>
         </p>
         <div style="display:flex; justify-content:space-around; align-items:center; background:#020617; padding:20px; border:2px solid #38bdf8; border-radius:8px;">
-          <div style="display:flex; flex-direction:column; gap:20px;">
-            <div class="wire-port wire-red" data-color="red" data-id="left-red"></div>
-            <div class="wire-port wire-blue" data-color="blue" data-id="left-blue"></div>
+          <div style="display:flex; flex-direction:column; gap:15px;">
+            <div class="wire-port wire-red" data-color="red" data-id="left-red" title="빨간 케이블"></div>
+            <div class="wire-port wire-yellow" data-color="yellow" data-id="left-yellow" title="노란 케이블 (함정)"></div>
+            <div class="wire-port wire-blue" data-color="blue" data-id="left-blue" title="파란 케이블"></div>
           </div>
-          <div id="wire-status-text" style="font-size:14px; font-weight:bold; color:#facc15;">케이블을 선택하세요...</div>
-          <div style="display:flex; flex-direction:column; gap:20px;">
-            <div class="wire-port wire-blue" data-color="blue" data-id="right-blue"></div>
-            <div class="wire-port wire-red" data-color="red" data-id="right-red"></div>
+          <div id="wire-status-text" style="font-size:14px; font-weight:bold; color:#facc15;">케이블 단자를 선택하세요...</div>
+          <div style="display:flex; flex-direction:column; gap:15px;">
+            <div class="wire-port wire-blue" data-color="blue" data-id="right-blue" title="파란 케이블"></div>
+            <div class="wire-port wire-red" data-color="red" data-id="right-red" title="빨간 케이블"></div>
+            <div class="wire-port wire-yellow" data-color="yellow" data-id="right-yellow" title="노란 케이블 (함정)"></div>
           </div>
         </div>
       `;
@@ -1134,6 +1299,14 @@
         port.addEventListener('click', () => {
           const color = port.getAttribute('data-color');
           const id = port.getAttribute('data-id');
+
+          if (color === 'yellow') {
+            alert("⚠️ 노란색 케이블은 서버 복구와 상관없는 일반 LAN선입니다! (맥거핀 함정)");
+            if (wireSelectedPort) wireSelectedPort.elem.style.transform = "scale(1)";
+            wireSelectedPort = null;
+            document.getElementById('wire-status-text').innerText = "케이블 단자를 선택하세요...";
+            return;
+          }
 
           if (!wireSelectedPort) {
             wireSelectedPort = { color, id, elem: port };
@@ -1147,26 +1320,26 @@
               wireSelectedPort.elem.style.opacity = "0.3";
               wireConnectedCount++;
               wireSelectedPort = null;
-              document.getElementById('wire-status-text').innerText = "⚡ 연결 성공!";
+              document.getElementById('wire-status-text').innerText = "⚡ 서버 케이블 연결 성공!";
 
               if (wireConnectedCount >= 2) {
                 setTimeout(() => {
                   closeMiniGameModal();
                   openQuiz(qKey);
-                }, 500);
+                }, 400);
               }
             } else {
-              alert("❌ 서로 다른 색상의 케이블입니다! 같은 색상끼리 연결하세요.");
+              alert("❌ 서로 다른 케이블입니다! 같은 색상끼리 연결하세요.");
               wireSelectedPort.elem.style.transform = "scale(1)";
               wireSelectedPort = null;
-              document.getElementById('wire-status-text').innerText = "케이블을 선택하세요...";
+              document.getElementById('wire-status-text').innerText = "케이블 단자를 선택하세요...";
             }
           }
         });
       });
     }
 
-    /* 3관 미니게임: 얼룩 닦기 */
+    /* 3관 미니게임: 얼룩 닦아내기 (가짜 스티커 함정 포함) */
     function openStainMiniGame(qKey) {
       stainCleanedCount = 0;
       const mgTitle = document.getElementById('mg-title');
@@ -1175,13 +1348,19 @@
 
       mgBody.innerHTML = `
         <p style="font-size:13px; color:#cbd5e1; margin-bottom:15px;">
-          화면을 가리고 있는 3개의 이물질 얼룩을 클릭하여 깨끗이 닦아내세요!
+          모니터 화면을 가리고 있는 얼룩들을 클릭해 깨끗이 닦아내세요!
         </p>
-        <div style="position:relative; width:100%; height:180px; background:#1e1b4b; border:2px solid #38bdf8; border-radius:8px; display:flex; justify-content:center; align-items:center;">
-          <div style="font-size:16px; font-weight:bold; color:#38bdf8;">[ VSEM 정밀 데이터 스캔 완료 ]</div>
-          <div class="stain-spot" style="top:20px; left:40px;">🧹</div>
-          <div class="stain-spot" style="top:90px; left:230px;">🧹</div>
-          <div class="stain-spot" style="top:50px; left:420px;">🧹</div>
+        <div style="position:relative; width:100%; height:190px; background:#1e1b4b; border:2px solid #38bdf8; border-radius:8px; display:flex; justify-content:center; align-items:center;">
+          <div style="font-size:15px; font-weight:bold; color:#38bdf8; text-align:center;">
+            [ VSEM 정밀 측정 결과 ]<br>
+            <span style="font-size:12px; color:#fde047;">(진짜 얼룩 뒤에 단위 단서가 숨어 있습니다)</span>
+          </div>
+          <!-- 진짜 얼룩 2개 -->
+          <div class="stain-spot" data-real="true" style="top:25px; left:50px;">🧹</div>
+          <div class="stain-spot" data-real="true" style="top:110px; left:230px;">🧹</div>
+          
+          <!-- 가짜 스티커 얼룩 1개 (맥거핀) -->
+          <div class="stain-spot" data-real="false" style="top:45px; left:410px; background:rgba(225, 29, 72, 0.85);">🐈</div>
         </div>
       `;
 
@@ -1190,62 +1369,20 @@
       const spots = mgBody.querySelectorAll('.stain-spot');
       spots.forEach(spot => {
         spot.addEventListener('click', () => {
+          const isReal = spot.getAttribute('data-real') === 'true';
           spot.style.display = 'none';
-          stainCleanedCount++;
-          if (stainCleanedCount >= 3) {
-            setTimeout(() => {
-              closeMiniGameModal();
-              openQuiz(qKey);
-            }, 300);
-          }
-        });
-      });
-    }
 
-    /* 4관 미니게임: 비밀금고 키패드 */
-    function openKeypadMiniGame(qKey) {
-      keypadCodeInput = "";
-      const mgTitle = document.getElementById('mg-title');
-      const mgBody = document.getElementById('mg-body');
-      mgTitle.innerText = "🔐 4관 미션: 비밀 금고 키패드 입력";
-
-      mgBody.innerHTML = `
-        <p style="font-size:13px; color:#cbd5e1; margin-bottom:10px;">
-          4자리 비밀번호를 입력하세요! (💡 힌트: 올해 연도 2026)
-        </p>
-        <div id="keypad-display" style="font-size:24px; font-weight:bold; color:#facc15; background:#020617; padding:10px; border:2px solid #38bdf8; border-radius:6px; letter-spacing:8px; margin-bottom:12px;">____</div>
-        <div class="keypad-grid">
-          <div class="keypad-btn">1</div><div class="keypad-btn">2</div><div class="keypad-btn">3</div>
-          <div class="keypad-btn">4</div><div class="keypad-btn">5</div><div class="keypad-btn">6</div>
-          <div class="keypad-btn">7</div><div class="keypad-btn">8</div><div class="keypad-btn">9</div>
-          <div class="keypad-btn" style="color:#f87171;">C</div><div class="keypad-btn">0</div><div class="keypad-btn" style="color:#4ade80;">↵</div>
-        </div>
-      `;
-
-      document.getElementById('minigame-modal').style.display = 'flex';
-
-      const btns = mgBody.querySelectorAll('.keypad-btn');
-      btns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const txt = btn.innerText;
-          if (txt === 'C') {
-            keypadCodeInput = "";
-          } else if (txt === '↵') {
-            if (keypadCodeInput === "2026") {
-              alert("🔓 잠금 해제 성공!");
-              closeMiniGameModal();
-              openQuiz(qKey);
-              return;
-            } else {
-              alert("❌ 비밀번호가 틀렸습니다! (힌트: 2026)");
-              keypadCodeInput = "";
-            }
+          if (!isReal) {
+            alert("🐈 이것은 윤지혜 파트장님이 붙여둔 귀여운 고양이 스티커였습니다! (단서가 아닙니다)");
           } else {
-            if (keypadCodeInput.length < 4) {
-              keypadCodeInput += txt;
+            stainCleanedCount++;
+            if (stainCleanedCount >= 2) {
+              setTimeout(() => {
+                closeMiniGameModal();
+                openQuiz(qKey);
+              }, 300);
             }
           }
-          document.getElementById('keypad-display').innerText = keypadCodeInput.padEnd(4, '_');
         });
       });
     }
@@ -1255,7 +1392,7 @@
     }
 
     /* ==========================================
-       퀴즈 창 제어 및 정답 처리
+       퀴즈 모달 및 정답 판정
     ========================================== */
     function openQuiz(quizKey) {
       activeQuizKey = quizKey;
@@ -1353,7 +1490,7 @@
       setDialogue(`${qData.successMsg}\n(+${earnedScore.toLocaleString()}점 획득! 현재 총점: ${totalScore.toLocaleString()}점)`);
       
       saveGameState();
-      updateObjectStates();
+      updateDoorStatusUI();
       closeQuizModal();
     }
 
@@ -1390,7 +1527,7 @@
       currentRoom = toRoom;
       document.getElementById('room-title').innerText = roomData[toRoom].title;
       renderRoomBackground(toRoom);
-      updateObjectStates();
+      renderInteractiveElements(toRoom);
       setDialogue(roomData[toRoom].welcomeMsg);
       saveGameState();
     }
@@ -1446,7 +1583,7 @@
       // 1. IP 주소 가져오기
       await fetchUserIp();
 
-      // 2. 버튼 및 키보드 이벤트 바인딩
+      // 2. 버튼 및 이벤트 바인딩
       const startBtn = document.getElementById('start-btn');
       const nicknameInput = document.getElementById('nickname-input');
       const prevBtn = document.getElementById('prev-btn');
@@ -1483,7 +1620,7 @@
       if (quizCloseBtn) quizCloseBtn.addEventListener('click', closeQuizModal);
       if (minigameCloseBtn) minigameCloseBtn.addEventListener('click', closeMiniGameModal);
 
-      // 모달 바깥 클릭 및 ESC 키 처리
+      // 모달 바깥 및 ESC 누름 처리
       document.getElementById('quiz-modal').addEventListener('click', (e) => {
         if (e.target.id === 'quiz-modal') closeQuizModal();
       });
@@ -1497,38 +1634,16 @@
         }
       });
 
-      // 3. 방 안 개체 클릭 이벤트
+      // 3. 개체 클릭 이벤트
       document.getElementById('boss-npc').addEventListener('click', () => {
         setDialogue(roomData[currentRoom].welcomeMsg);
-      });
-
-      document.getElementById('obj-1').addEventListener('click', () => {
-        const key = `r${currentRoom}_q1`;
-        if (roomSolved[currentRoom].q1) {
-          setDialogue("신입사원: 이 미션은 이미 완료했습니다!");
-          return;
-        }
-        openQuiz(key);
-      });
-
-      document.getElementById('obj-2').addEventListener('click', () => {
-        handleObject2Click();
-      });
-
-      document.getElementById('obj-3').addEventListener('click', () => {
-        const key = `r${currentRoom}_q3`;
-        if (roomSolved[currentRoom].q3) {
-          setDialogue("신입사원: 이 미션은 이미 완료했습니다!");
-          return;
-        }
-        openQuiz(key);
       });
 
       document.getElementById('door-obj').addEventListener('click', () => {
         nextRoom();
       });
 
-      // 4. IP 세션에 따른 자동 진행상황 복구 체크
+      // 4. IP 세션 자동 복구 체크
       const savedState = loadGameState();
       if (savedState && savedState.playerNickname) {
         restoreGame(savedState);
