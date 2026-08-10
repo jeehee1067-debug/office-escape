@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>S1FA PJT 방탈출 : 분석기술팀 신입사원의 칼퇴기</title>
+  <title>S1FA PJT 방탈출 : 사무실을 탈출하라!</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
   <style>
     * {
@@ -297,7 +297,7 @@
       1: { title: "S1FA PJT : 1관 분석기술팀 EFA1 파트", bossName: "김주헌 파트장님", welcomeMsg: "방 안의 구조물을 치워가며 숨겨진 단서를 찾게." },
       2: { title: "S1FA PJT : 2관 분석기술팀 EFA2 파트", bossName: "김진석 파트장님", welcomeMsg: "책상 위 장애물들을 치우고 케이블과 단서를 확인하세요." },
       3: { title: "S1FA PJT : 3관 분석기술팀 PFA/VSEM 파트", bossName: "윤지혜 파트장님", welcomeMsg: "실험대 위 장비들을 탐색하고 미션을 해결하세요." },
-      4: { title: "S1FA PJT : 4관 분석기술팀 PL실", bossName: "손승준 PL님", welcomeMsg: "캔틴룸 주변 물건을 치워 비밀 금고를 찾아내세요!" }
+      4: { title: "S1FA PJT : 4관 분석기술팀 캔틴룸", bossName: "손승준 PL님", welcomeMsg: "캔틴룸 주변 물건을 치워 비밀 금고를 찾아내세요!" }
     };
 
     // 배열 셔플 함수
@@ -314,7 +314,7 @@
       return false;
     }
 
-    // 👨‍💼 윤지혜 파트장님 앞머리 덮고 튀어나오지 않는 긴 생머리 완벽 구현
+    // 👨‍💼 윤지혜 파트장님 허리까지 오는 둥근 긴 머리 완벽 구현
     function renderBossNPC(r) {
       const bossNPC = document.getElementById('boss-npc');
       const bossSvg = document.getElementById('boss-svg');
@@ -348,16 +348,16 @@
           <path d="M20,50 L12,65 L16,68 L22,52 Z" fill="#065f46" stroke="#000" stroke-width="1.5"/><path d="M44,50 L52,65 L48,68 L42,52 Z" fill="#065f46" stroke="#000" stroke-width="1.5"/>
           <rect x="22" y="70" width="8" height="16" fill="#1e293b" stroke="#000" stroke-width="2"/><rect x="34" y="70" width="8" height="16" fill="#1e293b" stroke="#000" stroke-width="2"/>
         `;
-      } else if (r === 3) { // 윤지혜 (좌측, 긴 생머리, 가운)
+      } else if (r === 3) { // 윤지혜 (좌측, 허리까지 오는 둥근 긴머리, 가운)
         bossNPC.style.left = '70%'; bossNPC.style.right = 'auto'; bossNPC.style.bottom = '8%';
         bossSvg.innerHTML = `
-          <!-- 긴 생머리 뒷배경 (얼굴보다 훨씬 넒음) -->
-          <rect x="12" y="24" width="40" height="75" fill="#2d1b11" rx="8"/>
+          <!-- 허리(y=70)까지 내려오며 끝이 둥글게 다듬어진 머리카락 -->
+          <path d="M 14 30 Q 14 20 32 20 Q 50 20 50 30 L 50 60 Q 50 70 32 70 Q 14 70 14 60 Z" fill="#2d1b11"/>
           <!-- 얼굴 -->
           <rect x="18" y="24" width="28" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
-          <!-- 옆머리로 얼굴 양옆 완벽 차단 -->
-          <path d="M 32,24 Q 24,24 14,34 L 14,75 L 20,75 L 20,32 Z" fill="#2d1b11" stroke="#000" stroke-width="1"/>
-          <path d="M 32,24 Q 40,24 50,34 L 50,75 L 44,75 L 44,32 Z" fill="#2d1b11" stroke="#000" stroke-width="1"/>
+          <!-- 앞머리/옆머리 -->
+          <path d="M 32,24 Q 24,24 14,34 L 14,60 L 20,60 L 20,32 Z" fill="#2d1b11" stroke="#000" stroke-width="1"/>
+          <path d="M 32,24 Q 40,24 50,34 L 50,60 L 44,60 L 44,32 Z" fill="#2d1b11" stroke="#000" stroke-width="1"/>
           <!-- 눈코입 -->
           <rect x="22" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="23" y="35" width="2" height="3" fill="#fff"/>
           <rect x="36" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="37" y="35" width="2" height="3" fill="#fff"/>
