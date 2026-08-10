@@ -70,63 +70,43 @@
     
     #interactive-layer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 40; }
 
+    /* 투명 클릭 영역 (단서) */
     .interactive-zone {
       position: absolute;
       cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 8px;
-      transition: all 0.2s ease-in-out;
+      display: flex; justify-content: center; align-items: center;
+      border-radius: 8px; transition: all 0.2s ease-in-out;
       border: 2px solid transparent;
     }
-    
-    .interactive-zone::before {
-      content: '🔍';
-      font-size: 24px;
-      opacity: 0;
-      transition: 0.2s;
-      filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8));
-    }
-    
-    .interactive-zone:hover {
-      background-color: rgba(56, 189, 248, 0.25);
-      border: 2px dashed #38bdf8;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
-    }
-    
-    .interactive-zone:hover::before {
-      opacity: 1;
-      transform: translateY(-5px);
-    }
+    .interactive-zone::before { content: '🔍'; font-size: 24px; opacity: 0; transition: 0.2s; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); }
+    .interactive-zone:hover { background-color: rgba(56, 189, 248, 0.25); border: 2px dashed #38bdf8; }
+    .interactive-zone:hover::before { opacity: 1; transform: translateY(-5px); }
 
-    .draggable-item { cursor: grab; z-index: 60 !important; touch-action: none; }
-    .draggable-item:active { cursor: grabbing; }
+    /* 드래그 가능한 가림막 아이템 */
+    .art-item {
+      position: absolute;
+      cursor: grab;
+      display: flex; justify-content: center; align-items: center;
+      transform-origin: bottom center;
+      filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
+    }
+    .art-item:active { cursor: grabbing; }
+    .draggable-item { z-index: 60 !important; touch-action: none; }
 
-    .pixel-npc { position: absolute; z-index: 50; display: flex; flex-direction: column; align-items: center; bottom: 8%; }
-    #boss-npc { cursor: pointer; right: 22%; }
-    #player-npc { pointer-events: none; left: 22%; }
+    /* 캐릭터 기본 설정 */
+    .pixel-npc { position: absolute; z-index: 50; display: flex; flex-direction: column; align-items: center; transition: all 0.3s ease; }
+    #boss-npc { cursor: pointer; }
+    #player-npc { pointer-events: none; }
 
     .door-tag {
-      background: rgba(15, 23, 42, 0.95);
-      color: #f8fafc;
-      font-size: clamp(9px, 1.2vw, 11px);
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: 1px solid #38bdf8;
-      margin-top: 6px;
-      white-space: nowrap;
-      font-weight: bold;
+      background: rgba(15, 23, 42, 0.95); color: #f8fafc; font-size: clamp(9px, 1.2vw, 11px);
+      padding: 4px 10px; border-radius: 6px; border: 1px solid #38bdf8; margin-top: 6px;
+      white-space: nowrap; font-weight: bold;
     }
 
     #dialogue-box {
-      width: 100%; height: 22%;
-      background: #090d16;
-      border-top: 2px solid #38bdf8;
-      padding: 12px 20px;
-      position: relative;
-      display: flex; flex-direction: column; justify-content: space-between;
-      z-index: 100;
+      width: 100%; height: 22%; background: #090d16; border-top: 2px solid #38bdf8;
+      padding: 12px 20px; position: relative; display: flex; flex-direction: column; justify-content: space-between; z-index: 100;
     }
     #dialogue-text { font-size: clamp(11px, 1.8vw, 14px); line-height: 1.6; color: #f1f5f9; font-weight: bold; white-space: pre-line; }
 
@@ -163,7 +143,7 @@
       <div class="modal-card">
         <h2 style="font-size: 18px; color:#38bdf8; text-align:center; margin-bottom:12px;">🔬 분석기술팀 신입사원의 칼퇴기</h2>
         <p style="font-size: 12px; line-height: 1.6; color:#cbd5e1; text-align:center;">
-          배경 이미지 속 숨겨진 단서를 탐색하여 미션을 완수하세요!<br>
+          방 안의 구조물을 치우고 숨겨진 단서를 탐색하세요!<br>
           <span style="color:#ef4444;">[경고]</span> 오답 제출 시 <b>-2,000점</b> 감점!
         </p>
         <input type="text" id="nickname-input" class="start-input" placeholder="소속 / 이름 (예: EFA1 / 홍길동)..." maxlength="20">
@@ -181,38 +161,14 @@
     </div>
 
     <div id="screen">
-      <!-- 👨‍💼 남성 파트장 캐릭터 (앞머리를 풍성하게 채워 이마 가림) -->
+      <!-- 👨‍💼 파트장님 (JS에서 동적으로 스타일 변경) -->
       <div class="pixel-npc" id="boss-npc">
-        <svg id="boss-svg" width="80" height="110" viewBox="0 0 64 96">
-          <path d="M14,24 C14,40 18,50 20,50 L44,50 C46,50 50,40 50,24 Z" fill="#1e293b"/>
-          <rect x="16" y="24" width="32" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
-          <path d="M14,28 Q 32,38 50,28 L 48,16 Q 32,8 16,16 Z" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
-          <path d="M14,28 L22,34 L28,29 L36,35 L44,29 L50,28" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
-          <rect x="22" y="34" width="6" height="8" rx="2" fill="#000"/>
-          <rect x="23" y="35" width="2" height="3" fill="#fff"/>
-          <rect x="36" y="34" width="6" height="8" rx="2" fill="#000"/>
-          <rect x="37" y="35" width="2" height="3" fill="#fff"/>
-          <rect x="31" y="44" width="2" height="1" fill="#c08060"/>
-          <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
-          <path d="M22,50 L42,50 L44,68 L20,68 Z" fill="#2563eb" stroke="#000" stroke-width="2"/>
-          <line x1="22" y1="56" x2="42" y2="56" stroke="#1e3a8a" stroke-width="1"/>
-          <line x1="22" y1="62" x2="44" y2="62" stroke="#1e3a8a" stroke-width="1"/>
-          <line x1="28" y1="50" x2="28" y2="68" stroke="#1e3a8a" stroke-width="1"/>
-          <line x1="36" y1="50" x2="36" y2="68" stroke="#1e3a8a" stroke-width="1"/>
-          <path d="M20,50 L12,65 L16,68 L22,52 Z" fill="#2563eb" stroke="#000" stroke-width="1.5"/>
-          <path d="M44,50 L52,65 L48,68 L42,52 Z" fill="#2563eb" stroke="#000" stroke-width="1.5"/>
-          <circle cx="14" cy="68" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
-          <circle cx="50" cy="68" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
-          <rect x="22" y="68" width="8" height="18" fill="#1e3a8a" stroke="#000" stroke-width="2"/>
-          <rect x="34" y="68" width="8" height="18" fill="#1e3a8a" stroke="#000" stroke-width="2"/>
-          <rect x="20" y="86" width="12" height="6" fill="#fff" stroke="#000" stroke-width="1.5" rx="3"/>
-          <rect x="32" y="86" width="12" height="6" fill="#fff" stroke="#000" stroke-width="1.5" rx="3"/>
-        </svg>
-        <div id="boss-tag" class="door-tag">김주헌 파트장님</div>
+        <svg id="boss-svg" width="80" height="110" viewBox="0 0 64 96"></svg>
+        <div id="boss-tag" class="door-tag">파트장님</div>
       </div>
 
-      <!-- 👩‍💼 여성 신입 캐릭터 (앞머리 꽉 채움) -->
-      <div class="pixel-npc" id="player-npc">
+      <!-- 👩‍💼 여성 신입사원 (앞머리 꽉 채움) -->
+      <div class="pixel-npc" id="player-npc" style="bottom: 8%; left: 22%;">
         <svg width="80" height="110" viewBox="0 0 64 96">
           <path d="M12,24 C8,45 14,52 20,54 L44,54 C50,52 56,45 52,24 Z" fill="#4a2e1b"/>
           <rect x="16" y="24" width="32" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
@@ -247,13 +203,13 @@
 
       <div id="interactive-layer"></div>
 
-      <!-- 다음 방 문 -->
-      <div class="pixel-npc" id="door-obj" style="bottom: 8%; right: 4%;">
+      <!-- 다음 방으로 이동하는 문 (클릭 가능) -->
+      <div class="pixel-npc interactive-zone" id="door-obj" style="bottom: 12%; right: 4%; width: 65px; height: 95px; cursor: pointer; z-index: 70;">
         <svg width="55" height="75" viewBox="0 0 55 75">
           <rect x="2" y="2" width="51" height="71" fill="#0f172a" stroke="#38bdf8" stroke-width="2.5" rx="4"/>
           <circle cx="42" cy="40" r="4" fill="#facc15"/>
         </svg>
-        <div class="door-tag" id="door-label">🔒 다음 방</div>
+        <div class="door-tag" id="door-label" style="position: absolute; bottom: -30px;">🔒 다음 방</div>
       </div>
     </div>
 
@@ -261,7 +217,7 @@
       <div id="dialogue-text">대사가 출력됩니다.</div>
     </div>
 
-    <!-- 미니게임 / 퀴즈 모달 -->
+    <!-- 미니게임 모달 -->
     <div id="minigame-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card">
         <button id="minigame-close-btn" class="modal-close-btn">✖</button>
@@ -270,6 +226,7 @@
       </div>
     </div>
 
+    <!-- 퀴즈 모달 -->
     <div id="quiz-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card">
         <button id="quiz-close-btn" class="modal-close-btn">✖</button>
@@ -278,7 +235,7 @@
         <div class="quiz-hint" id="qz-hint" style="display:none;">💡 힌트: </div>
         <div id="qz-choices-container" class="quiz-choice-list" style="display:none;"></div>
         <div id="qz-input-container" class="quiz-input-group" style="display:none;">
-          <input type="text" id="qz-input" class="quiz-input" placeholder="정답을 입력하세요..." />
+          <input type="text" id="qz-input" class="quiz-input" placeholder="정답을 입력하세요... (엔터키 제출)" />
           <button id="qz-submit-btn" class="quiz-submit-btn">제출 ➔</button>
         </div>
       </div>
@@ -286,42 +243,43 @@
   </div>
 
   <script>
+    // 점수 차등 지급 반영 (6000 ~ 7500점)
     const questionBank = {
       1: {
         subjective: [
-          { id: "r1_s1", title: "📝 1관: EFA1 이메일 규격", question: "김주헌 파트장님이 요청하신 이메일 제목 맨 앞 필수 대괄호 태그명은?", hint: "💡 힌트: 대괄호 안 프로젝트명 (예: S1FA PJT)", answers: ["S1FA PJT", "S1FAPJT"], successMsg: "김주헌 파트장님: 이메일 규격 숙지 확인!" },
-          { id: "r1_s2", title: "📝 1관: 수납함 밑 비밀 메모", question: "수납함 밑에서 찾은 비밀 메모! EFA1 장비 신뢰성 테스트 목표 수치는?", hint: "💡 힌트: 백분율 수치 (예: 100% 또는 100)", answers: ["100%", "100", "99%"], successMsg: "김주헌 파트장님: 목표치 확인 완료!" }
+          { id: "r1_s1", title: "📝 1관: EFA1 이메일 규격", question: "김주헌 파트장님이 요청하신 이메일 제목 맨 앞 필수 대괄호 태그명은?", hint: "💡 힌트: 대괄호 안 프로젝트명 (예: S1FA PJT)", answers: ["S1FA PJT", "S1FAPJT"], score: 6500, successMsg: "김주헌 파트장님: 이메일 규격 숙지 확인!" },
+          { id: "r1_s2", title: "📝 1관: 수납함 밑 비밀 메모", question: "수납함 밑에서 찾은 비밀 메모! EFA1 장비 신뢰성 테스트 목표 수치는?", hint: "💡 힌트: 백분율 수치 (예: 100% 또는 100)", answers: ["100%", "100", "99%"], score: 7500, successMsg: "김주헌 파트장님: 목표치 확인 완료!" }
         ],
         objective: [
-          { id: "r1_o1", title: "☎️ 1관: 부재중 전화 응대", question: "파트장님 부재중일 때 외부 전화 응대로 올바른 것은?", choices: ["1. 담배 피우러 가셨는데요?", "2. 자리에 안 계시니 나중에 거세요.", "3. 잠시 자리를 비우셨습니다. 메모 남겨드릴까요?", "4. 몰라요."], answerIdx: 2, successMsg: "김주헌 파트장님: 완벽한 비즈니스 응대!" },
-          { id: "r1_o2", title: "💻 1관: 이석 시 PC 보안", question: "퇴근전 이석 시 올바른 보안 조치는?", choices: ["1. 모니터만 끈다", "2. 화면 잠금(Win+L)을 누른다", "3. 메모장에 비번 노출", "4. 그냥 간다"], answerIdx: 1, successMsg: "김주헌 파트장님: 철저한 보안 통과!" }
+          { id: "r1_o1", title: "☎️ 1관: 부재중 전화 응대", question: "파트장님 부재중일 때 외부 전화 응대로 올바른 것은?", choices: ["1. 담배 피우러 가셨는데요?", "2. 자리에 안 계시니 나중에 거세요.", "3. 잠시 자리를 비우셨습니다. 메모 남겨드릴까요?", "4. 몰라요."], answerIdx: 2, score: 6000, successMsg: "김주헌 파트장님: 완벽한 비즈니스 응대!" },
+          { id: "r1_o2", title: "💻 1관: 이석 시 PC 보안", question: "퇴근전 이석 시 올바른 보안 조치는?", choices: ["1. 모니터만 끈다", "2. 화면 잠금(Win+L)을 누른다", "3. 메모장에 비번 노출", "4. 그냥 간다"], answerIdx: 1, score: 6000, successMsg: "김주헌 파트장님: 철저한 보안 통과!" }
         ]
       },
       2: {
         subjective: [
-          { id: "r2_s1", title: "📝 2관: 보고서 작성법", question: "결론과 핵심 요약을 맨 앞에 먼저 작성하는 3글자 보고 방식은?", hint: "💡 힌트: ㄷㄱㅅ 작성법", answers: ["두괄식", "두괄식 작성"], successMsg: "김진석 파트장님: 두괄식 보고 가독성 굿!" },
-          { id: "r2_s2", title: "🔌 2관: 서버 장애 복구", question: "케이블 연결 성공! 원인 분석을 위해 확보해야 하는 2글자 데이터는?", hint: "💡 힌트: ㄹㄱ 또는 log", answers: ["로그", "log", "LOG"], successMsg: "김진석 파트장님: 시스템 로그 확보 완료!" }
+          { id: "r2_s1", title: "📝 2관: 보고서 작성법", question: "결론과 핵심 요약을 맨 앞에 먼저 작성하는 3글자 보고 방식은?", hint: "💡 힌트: ㄷㄱㅅ 작성법", answers: ["두괄식", "두괄식 작성"], score: 7000, successMsg: "김진석 파트장님: 두괄식 보고 가독성 굿!" },
+          { id: "r2_s2", title: "🔌 2관: 서버 장애 복구", question: "케이블 연결 성공! 원인 분석을 위해 확보해야 하는 2글자 데이터는?", hint: "💡 힌트: ㄹㄱ 또는 log", answers: ["로그", "log", "LOG"], score: 7500, successMsg: "김진석 파트장님: 시스템 로그 확보 완료!" }
         ],
         objective: [
-          { id: "r2_o1", title: "⚙️ 2관: 형상 관리 수칙", question: "소스 코드 수정 후 메인 서버 반영 전 필수 조치는?", choices: ["1. 바로 메인에 올린다", "2. 로컬 테스트 및 영향을 검증한다", "3. 주석 삭제", "4. 퇴근 1분전 반영"], answerIdx: 1, successMsg: "김진석 파트장님: 안정적인 형상 관리 통과!" }
+          { id: "r2_o1", title: "⚙️ 2관: 형상 관리 수칙", question: "소스 코드 수정 후 메인 서버 반영 전 필수 조치는?", choices: ["1. 바로 메인에 올린다", "2. 로컬 테스트 및 영향을 검증한다", "3. 주석 삭제", "4. 퇴근 1분전 반영"], answerIdx: 1, score: 6500, successMsg: "김진석 파트장님: 안정적인 형상 관리 통과!" }
         ]
       },
       3: {
         subjective: [
-          { id: "r3_s1", title: "📝 3관: UX 검증", question: "사용자 직관성을 최우선하는 기획 개념의 2글자 영문 약어는?", hint: "💡 힌트: 사용자 경험 (영문 2글자)", answers: ["UX", "ux"], successMsg: "윤지혜 파트장님: UX 편의성이 최고죠!" },
-          { id: "r3_s2", title: "🔍 3관: 모니터 단서", question: "VSEM 전자현미경의 정밀 측정 단위 나노미터의 영문 약어는?", hint: "💡 힌트: 예) nm", answers: ["nm", "NM"], successMsg: "윤지혜 파트장님: 정밀 나노 단위 확인 완료!" }
+          { id: "r3_s1", title: "📝 3관: UX 검증", question: "사용자 직관성을 최우선하는 기획 개념의 2글자 영문 약어는?", hint: "💡 힌트: 사용자 경험 (영문 2글자)", answers: ["UX", "ux"], score: 6000, successMsg: "윤지혜 파트장님: UX 편의성이 최고죠!" },
+          { id: "r3_s2", title: "🔍 3관: 모니터 단서", question: "VSEM 전자현미경의 정밀 측정 단위 나노미터의 영문 약어는?", hint: "💡 힌트: 예) nm", answers: ["nm", "NM"], score: 7000, successMsg: "윤지혜 파트장님: 정밀 나노 단위 확인 완료!" }
         ],
         objective: [
-          { id: "r3_o1", title: "🔬 3관: 정밀 시편 취급", question: "VSEM 분석용 정밀 시편 취급 수칙으로 올바른 것은?", choices: ["1. 맨손으로 만진다", "2. 전용 핀셋과 제어 장갑을 착용한다", "3. 서류 더미에 둔다", "4. 물로 씻는다"], answerIdx: 1, successMsg: "윤지혜 파트장님: 장비 수칙 통과!" }
+          { id: "r3_o1", title: "🔬 3관: 정밀 시편 취급", question: "VSEM 분석용 정밀 시편 취급 수칙으로 올바른 것은?", choices: ["1. 맨손으로 만진다", "2. 전용 핀셋과 제어 장갑을 착용한다", "3. 서류 더미에 둔다", "4. 물로 씻는다"], answerIdx: 1, score: 6500, successMsg: "윤지혜 파트장님: 장비 수칙 통과!" }
         ]
       },
       4: {
         subjective: [
-          { id: "r4_s1", title: "📝 4관: 최종 출하 점검", question: "프로젝트 최종 출하 전 데이터 백업과 함께 점검해야 하는 핵심 2글자 단어는?", hint: "💡 힌트: ㅂㅇ", answers: ["보안", "테스트"], successMsg: "손승준 PL님: 최종 점검 완료!" },
-          { id: "r4_s2", title: "🔐 4관: 캔틴 금고 문서", question: "프로젝트 최종 승인자 권한을 가진 2글자 직책 영문 약어는?", hint: "💡 힌트: 프로젝트 리더", answers: ["PL", "pl"], successMsg: "손승준 PL님: 최종 승인권자 확인!" }
+          { id: "r4_s1", title: "📝 4관: 최종 출하 점검", question: "프로젝트 최종 출하 전 데이터 백업과 함께 점검해야 하는 핵심 2글자 단어는?", hint: "💡 힌트: ㅂㅇ", answers: ["보안", "테스트"], score: 7000, successMsg: "손승준 PL님: 최종 점검 완료!" },
+          { id: "r4_s2", title: "🔐 4관: 캔틴 금고 문서", question: "프로젝트 최종 승인자 권한을 가진 2글자 직책 영문 약어는?", hint: "💡 힌트: 프로젝트 리더", answers: ["PL", "pl"], score: 7500, successMsg: "손승준 PL님: 최종 승인권자 확인!" }
         ],
         objective: [
-          { id: "r4_o1", title: "🚀 4관: 신입사원의 자세", question: "프로젝트 성공을 위해 가장 필요한 역량은?", choices: ["1. 독단적 처리", "2. 적극적 질문과 소통", "3. 눈치 야근", "4. 지각"], answerIdx: 1, successMsg: "손승준 PL님: 훌륭한 마음가짐입니다!" }
+          { id: "r4_o1", title: "🚀 4관: 신입사원의 자세", question: "프로젝트 성공을 위해 가장 필요한 역량은?", choices: ["1. 독단적 처리", "2. 적극적 질문과 소통", "3. 눈치 야근", "4. 지각"], answerIdx: 1, score: 6500, successMsg: "손승준 PL님: 훌륭한 마음가짐입니다!" }
         ]
       }
     };
@@ -335,7 +293,6 @@
     let roomSolved = { 1: { q1: false, q2: false, q3: false }, 2: { q1: false, q2: false, q3: false }, 3: { q1: false, q2: false, q3: false }, 4: { q1: false, q2: false, q3: false } };
     let assignedQuizzes = { 1: {}, 2: {}, 3: {}, 4: {} };
 
-    /* 💡 1관 배경 파일명을 webp 형식으로 정확히 수정 완료 */
     const roomBgImages = {
       1: "./24618_2.webp",
       2: "./24645.webp",
@@ -344,10 +301,10 @@
     };
 
     const roomData = {
-      1: { title: "S1FA PJT : 1관 분석기술팀 EFA1 파트", bossName: "김주헌 파트장님", welcomeMsg: "오피스 데스크와 수납함을 정돈해 두었네. 배경 화면 속 단서를 클릭해보게." },
-      2: { title: "S1FA PJT : 2관 분석기술팀 EFA2 파트", bossName: "김진석 파트장님", welcomeMsg: "책상 위 타공판의 케이블을 복구하고 데스크를 점검하세요." },
-      3: { title: "S1FA PJT : 3관 분석기술팀 PFA/VSEM 파트", bossName: "윤지혜 파트장님", welcomeMsg: "실험대 위 모니터를 확인하고 미션을 해결하세요." },
-      4: { title: "S1FA PJT : 4관 분석기술팀 PL실", bossName: "손승준 PL님", welcomeMsg: "캔틴룸 테이블 쪽 단서를 찾아 비밀 금고를 여세요!" }
+      1: { title: "S1FA PJT : 1관 분석기술팀 EFA1 파트", bossName: "김주헌 파트장님", welcomeMsg: "오피스 데스크를 정돈해 두었네. 방 안의 구조물을 치워가며 숨겨진 단서를 찾게." },
+      2: { title: "S1FA PJT : 2관 분석기술팀 EFA2 파트", bossName: "김진석 파트장님", welcomeMsg: "책상 위 장애물들을 치우고 케이블과 단서를 확인하세요." },
+      3: { title: "S1FA PJT : 3관 분석기술팀 PFA/VSEM 파트", bossName: "윤지혜 파트장님", welcomeMsg: "실험대 위 장비들을 탐색하고 미션을 해결하세요." },
+      4: { title: "S1FA PJT : 4관 분석기술팀 PL실", bossName: "손승준 PL님", welcomeMsg: "캔틴룸 주변 물건을 치워 비밀 금고를 찾아내세요!" }
     };
 
     function generateQuizzes() {
@@ -361,12 +318,117 @@
       }
     }
 
+    // 👨‍💼 파트장님 의상 & 외모 & 위치 커스텀 (윤지혜 파트장님은 긴 생머리, 앞머리 없음)
+    function renderBossNPC(r) {
+      const bossNPC = document.getElementById('boss-npc');
+      const bossSvg = document.getElementById('boss-svg');
+      document.getElementById('boss-tag').innerText = roomData[r].bossName;
+
+      if (r === 1) {
+        // 김주헌 (우측 배치, 체크셔츠)
+        bossNPC.style.right = '22%'; bossNPC.style.left = 'auto'; bossNPC.style.bottom = '8%';
+        bossSvg.innerHTML = `
+          <path d="M14,24 C14,40 18,50 20,50 L44,50 C46,50 50,40 50,24 Z" fill="#1e293b"/>
+          <rect x="16" y="24" width="32" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
+          <path d="M14,28 Q 32,38 50,28 L 48,16 Q 32,8 16,16 Z" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <path d="M14,28 L22,34 L28,29 L36,35 L44,29 L50,28" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <rect x="22" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="23" y="35" width="2" height="3" fill="#fff"/>
+          <rect x="36" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="37" y="35" width="2" height="3" fill="#fff"/>
+          <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
+          <!-- 블루 체크 셔츠 -->
+          <path d="M22,50 L42,50 L44,68 L20,68 Z" fill="#2563eb" stroke="#000" stroke-width="2"/>
+          <line x1="22" y1="56" x2="42" y2="56" stroke="#1e3a8a" stroke-width="1"/><line x1="28" y1="50" x2="28" y2="68" stroke="#1e3a8a" stroke-width="1"/>
+          <path d="M20,50 L12,65 L16,68 L22,52 Z" fill="#2563eb" stroke="#000" stroke-width="1.5"/>
+          <path d="M44,50 L52,65 L48,68 L42,52 Z" fill="#2563eb" stroke="#000" stroke-width="1.5"/>
+          <circle cx="14" cy="68" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/><circle cx="50" cy="68" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
+          <rect x="22" y="68" width="8" height="18" fill="#1e3a8a" stroke="#000" stroke-width="2"/><rect x="34" y="68" width="8" height="18" fill="#1e3a8a" stroke="#000" stroke-width="2"/>
+          <rect x="20" y="86" width="12" height="6" fill="#fff" stroke="#000" stroke-width="1.5" rx="3"/><rect x="32" y="86" width="12" height="6" fill="#fff" stroke="#000" stroke-width="1.5" rx="3"/>
+        `;
+      } else if (r === 2) {
+        // 김진석 (중앙 우측 배치, 그린 스웨터)
+        bossNPC.style.right = '18%'; bossNPC.style.left = 'auto'; bossNPC.style.bottom = '10%';
+        bossSvg.innerHTML = `
+          <path d="M14,24 C14,40 18,50 20,50 L44,50 C46,50 50,40 50,24 Z" fill="#1e293b"/>
+          <rect x="16" y="24" width="32" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
+          <path d="M14,28 Q 32,38 50,28 L 48,16 Q 32,8 16,16 Z" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <path d="M14,28 L22,34 L28,29 L36,35 L44,29 L50,28" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <!-- 안경 -->
+          <rect x="20" y="32" width="10" height="8" fill="none" stroke="#333" stroke-width="1.5"/>
+          <rect x="34" y="32" width="10" height="8" fill="none" stroke="#333" stroke-width="1.5"/>
+          <line x1="30" y1="36" x2="34" y2="36" stroke="#333" stroke-width="1.5"/>
+          <rect x="22" y="34" width="6" height="4" fill="#000"/><rect x="36" y="34" width="6" height="4" fill="#000"/>
+          <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
+          <!-- 그린 스웨터 -->
+          <path d="M22,50 L42,50 L44,70 L20,70 Z" fill="#065f46" stroke="#000" stroke-width="2"/>
+          <path d="M20,50 L12,65 L16,68 L22,52 Z" fill="#065f46" stroke="#000" stroke-width="1.5"/>
+          <path d="M44,50 L52,65 L48,68 L42,52 Z" fill="#065f46" stroke="#000" stroke-width="1.5"/>
+          <circle cx="14" cy="68" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/><circle cx="50" cy="68" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
+          <rect x="22" y="70" width="8" height="16" fill="#1e293b" stroke="#000" stroke-width="2"/><rect x="34" y="70" width="8" height="16" fill="#1e293b" stroke="#000" stroke-width="2"/>
+          <rect x="20" y="86" width="12" height="6" fill="#000" stroke="#000" stroke-width="1.5" rx="3"/><rect x="32" y="86" width="12" height="6" fill="#000" stroke="#000" stroke-width="1.5" rx="3"/>
+        `;
+      } else if (r === 3) {
+        // 윤지혜 (좌측 배치, 앞머리 없는 긴 생머리 여자, 가운)
+        bossNPC.style.left = '70%'; bossNPC.style.right = 'auto'; bossNPC.style.bottom = '8%';
+        bossSvg.innerHTML = `
+          <!-- 긴 생머리 뒷배경 -->
+          <rect x="12" y="24" width="40" height="55" fill="#4a2e1b" rx="6"/>
+          <rect x="16" y="24" width="32" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
+          <!-- 앞머리 없음. 가르마 5:5 얼굴을 감싸는 머리 -->
+          <path d="M 32,24 Q 24,24 16,36 L 14,55 L 20,55 L 24,30 Z" fill="#4a2e1b" stroke="#000" stroke-width="1"/>
+          <path d="M 32,24 Q 40,24 48,36 L 50,55 L 44,55 L 40,30 Z" fill="#4a2e1b" stroke="#000" stroke-width="1"/>
+          <!-- 여성스럽고 예쁜 눈 -->
+          <rect x="20" y="34" width="8" height="10" rx="3" fill="#000"/>
+          <rect x="21" y="35" width="3" height="4" fill="#fff"/>
+          <rect x="36" y="34" width="8" height="10" rx="3" fill="#000"/>
+          <rect x="37" y="35" width="3" height="4" fill="#fff"/>
+          <rect x="31" y="44" width="2" height="1" fill="#c08060"/>
+          <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
+          <!-- 연구원 가운 -->
+          <path d="M20,50 L44,50 L46,80 L18,80 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+          <path d="M32,50 L32,80" stroke="#cbd5e1" stroke-width="1.5"/>
+          <path d="M20,50 L14,60 L18,63 L22,52 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+          <path d="M44,50 L50,60 L46,63 L42,52 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+          <circle cx="16" cy="63" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
+          <circle cx="48" cy="63" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
+          <!-- 스커트/다리 -->
+          <rect x="22" y="80" width="8" height="6" fill="#1e293b"/>
+          <rect x="34" y="80" width="8" height="6" fill="#1e293b"/>
+          <rect x="22" y="86" width="8" height="10" fill="#fde0c6"/>
+          <rect x="34" y="86" width="8" height="10" fill="#fde0c6"/>
+          <rect x="20" y="96" width="10" height="6" fill="#000" rx="2"/>
+          <rect x="34" y="96" width="10" height="6" fill="#000" rx="2"/>
+        `;
+      } else if (r === 4) {
+        // 손승준 PL (블랙 정장)
+        bossNPC.style.right = '28%'; bossNPC.style.left = 'auto'; bossNPC.style.bottom = '6%';
+        bossSvg.innerHTML = `
+          <path d="M14,24 C14,40 18,50 20,50 L44,50 C46,50 50,40 50,24 Z" fill="#1e293b"/>
+          <rect x="16" y="24" width="32" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
+          <path d="M14,28 Q 32,38 50,28 L 48,16 Q 32,8 16,16 Z" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <path d="M14,28 L22,34 L28,29 L36,35 L44,29 L50,28" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <rect x="22" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="23" y="35" width="2" height="3" fill="#fff"/>
+          <rect x="36" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="37" y="35" width="2" height="3" fill="#fff"/>
+          <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
+          <!-- 블랙 수트 -->
+          <path d="M22,50 L42,50 L44,70 L20,70 Z" fill="#0f172a" stroke="#000" stroke-width="2"/>
+          <polygon points="28,50 36,50 32,60" fill="#fff"/>
+          <polygon points="31,50 33,50 32,56" fill="#dc2626"/>
+          <path d="M20,50 L12,65 L16,68 L22,52 Z" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <path d="M44,50 L52,65 L48,68 L42,52 Z" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <circle cx="14" cy="68" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/><circle cx="50" cy="68" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
+          <rect x="22" y="70" width="8" height="16" fill="#0f172a" stroke="#000" stroke-width="2"/><rect x="34" y="70" width="8" height="16" fill="#0f172a" stroke="#000" stroke-width="2"/>
+          <rect x="20" y="86" width="12" height="6" fill="#000" stroke="#000" stroke-width="1.5" rx="3"/><rect x="32" y="86" width="12" height="6" fill="#000" stroke="#000" stroke-width="1.5" rx="3"/>
+        `;
+      }
+    }
+
     function renderRoomBackground(r) {
       const screenElem = document.getElementById('screen');
       screenElem.style.backgroundImage = `url('${roomBgImages[r]}')`;
-      document.getElementById('boss-tag').innerText = roomData[r].bossName;
+      renderBossNPC(r);
     }
 
+    /* 드래그 낚시(맥거핀) 기능 부활 & 숨겨진 히트박스 적용 */
     function renderInteractiveElements(r) {
       const layer = document.getElementById('interactive-layer');
       layer.innerHTML = '';
@@ -374,9 +436,19 @@
       if (r === 1) {
         layer.innerHTML = `
           <div id="elem-m1" class="interactive-zone" style="bottom: 50%; left: 30%; width: 120px; height: 90px;" title="모니터 화면 확인"></div>
+          <!-- 숨겨진 메모 (바닥) -->
           <div id="elem-secret-memo" class="interactive-zone" style="bottom: 40%; left: 52%; width: 60px; height: 60px; z-index:42;" title="숨겨진 메모"></div>
+          <!-- 가짜 덮개 (수납함) -->
+          <div id="drag-box-real" class="art-item draggable-item" style="bottom: 40%; left: 52%; width: 60px; height: 50px; z-index: 55;" title="파일 박스 (드래그로 치우기)">
+            <svg width="60" height="50" viewBox="0 0 60 50">
+              <rect width="56" height="46" fill="#cbd5e1" stroke="#475569" stroke-width="2" rx="4"/>
+              <rect x="8" y="10" width="40" height="6" fill="#f8fafc"/>
+              <rect x="8" y="24" width="40" height="6" fill="#f8fafc"/>
+            </svg>
+          </div>
           <div id="elem-p1" class="interactive-zone" style="bottom: 45%; left: 68%; width: 70px; height: 50px;" title="업무 전화기"></div>
         `;
+        makeElementDraggable(document.getElementById('drag-box-real'), () => setDialogue("신입사원: 서류 수납함을 치우니 밑에서 시크릿 메모지가 나왔다!"));
         document.getElementById('elem-m1').addEventListener('click', () => openQuizObj(assignedQuizzes[1].q1, 'q1'));
         document.getElementById('elem-secret-memo').addEventListener('click', () => openQuizObj(assignedQuizzes[1].q2, 'q2'));
         document.getElementById('elem-p1').addEventListener('click', () => openQuizObj(assignedQuizzes[1].q3, 'q3'));
@@ -385,8 +457,16 @@
         layer.innerHTML = `
           <div id="elem-m2" class="interactive-zone" style="bottom: 50%; left: 35%; width: 100px; height: 80px;" title="와이드 모니터"></div>
           <div id="elem-cable" class="interactive-zone" style="bottom: 45%; left: 50%; width: 70px; height: 50px;" title="단선 케이블 복구"></div>
+          <!-- 낚시용 드래그 아이템 (맥거핀) -->
+          <div id="drag-cup-fake" class="art-item draggable-item" style="bottom: 42%; left: 60%; width: 30px; height: 40px; z-index: 55;" title="텀블러 (드래그)">
+            <svg width="24" height="34" viewBox="0 0 24 34">
+              <rect width="20" height="30" fill="#0f766e" stroke="#134e4a" stroke-width="2" rx="3"/>
+              <rect x="2" y="4" width="16" height="4" fill="#cbd5e1"/>
+            </svg>
+          </div>
           <div id="elem-p2" class="interactive-zone" style="bottom: 45%; left: 25%; width: 80px; height: 60px;" title="전화기"></div>
         `;
+        makeElementDraggable(document.getElementById('drag-cup-fake'), () => setDialogue("신입사원: 텀블러 밑을 확인했지만... 꽝이다! 아주 깨끗하다."));
         document.getElementById('elem-m2').addEventListener('click', () => openQuizObj(assignedQuizzes[2].q1, 'q1'));
         document.getElementById('elem-cable').addEventListener('click', () => openWireMiniGame('q2'));
         document.getElementById('elem-p2').addEventListener('click', () => openQuizObj(assignedQuizzes[2].q3, 'q3'));
@@ -394,9 +474,17 @@
       } else if (r === 3) {
         layer.innerHTML = `
           <div id="elem-stain-mon" class="interactive-zone" style="bottom: 50%; left: 32%; width: 110px; height: 80px;" title="분석 모니터"></div>
-          <div id="elem-m3" class="interactive-zone" style="bottom: 45%; left: 55%; width: 80px; height: 100px;" title="분석 장비"></div>
+          <!-- 가려진 장비 단서 -->
+          <div id="elem-m3" class="interactive-zone" style="bottom: 45%; left: 55%; width: 80px; height: 100px; z-index: 42;" title="분석 장비 단서"></div>
+          <div id="drag-note" class="art-item draggable-item" style="bottom: 45%; left: 55%; width: 60px; height: 50px; z-index: 55;" title="연구 노트 (드래그)">
+            <svg width="40" height="35" viewBox="0 0 40 35">
+              <rect width="36" height="30" fill="#ffffff" stroke="#475569" stroke-width="2" rx="2"/>
+              <line x1="10" y1="10" x2="26" y2="10" stroke="#cbd5e1" stroke-width="2"/>
+            </svg>
+          </div>
           <div id="elem-p3" class="interactive-zone" style="bottom: 45%; left: 20%; width: 70px; height: 50px;" title="전화기"></div>
         `;
+        makeElementDraggable(document.getElementById('drag-note'), () => setDialogue("신입사원: 연구 노트를 치우니 장비의 정밀 수치가 나타났다!"));
         document.getElementById('elem-stain-mon').addEventListener('click', () => openStainMiniGame('q1'));
         document.getElementById('elem-m3').addEventListener('click', () => openQuizObj(assignedQuizzes[3].q2, 'q2'));
         document.getElementById('elem-p3').addEventListener('click', () => openQuizObj(assignedQuizzes[3].q3, 'q3'));
@@ -404,17 +492,52 @@
       } else if (r === 4) {
         layer.innerHTML = `
           <div id="elem-m4" class="interactive-zone" style="bottom: 52%; left: 35%; width: 100px; height: 70px;" title="수납장 단서"></div>
+          <!-- 가려진 금고 -->
           <div id="elem-secret-safe" class="interactive-zone" style="bottom: 40%; left: 52%; width: 70px; height: 70px; z-index:42;" title="비밀 금고"></div>
+          <div id="drag-water-real" class="art-item draggable-item" style="bottom: 40%; left: 52%; width: 70px; height: 80px; z-index: 55;" title="생수통 (드래그)">
+            <svg width="40" height="55" viewBox="0 0 40 55">
+              <rect width="36" height="50" fill="#ffffff" stroke="#475569" stroke-width="2" rx="4"/>
+              <rect x="6" y="8" width="24" height="12" fill="#0284c7"/>
+            </svg>
+          </div>
           <div id="elem-p4" class="interactive-zone" style="bottom: 45%; left: 65%; width: 80px; height: 60px;" title="전화기"></div>
         `;
+        makeElementDraggable(document.getElementById('drag-water-real'), () => setDialogue("신입사원: 낑낑... 무거운 생수통을 치우니 뒤에 비밀 금고가 숨겨져 있었다!"));
         document.getElementById('elem-m4').addEventListener('click', () => openQuizObj(assignedQuizzes[4].q1, 'q1'));
         document.getElementById('elem-secret-safe').addEventListener('click', () => openQuizObj(assignedQuizzes[4].q2, 'q2'));
         document.getElementById('elem-p4').addEventListener('click', () => openQuizObj(assignedQuizzes[4].q3, 'q3'));
       }
-
       updateDoorStatusUI();
     }
 
+    // 마우스/터치 드래그 로직
+    function makeElementDraggable(elem, onMoved) {
+      if (!elem) return;
+      let isDragging = false, startX, startY, initLeft, initTop;
+
+      const down = (e) => {
+        isDragging = true;
+        const evt = e.touches ? e.touches[0] : e;
+        startX = evt.clientX; startY = evt.clientY;
+        initLeft = elem.offsetLeft; initTop = elem.offsetTop;
+      };
+
+      const move = (e) => {
+        if (!isDragging) return;
+        const evt = e.touches ? e.touches[0] : e;
+        const dx = evt.clientX - startX, dy = evt.clientY - startY;
+        elem.style.left = (initLeft + dx) + 'px';
+        elem.style.top = (initTop + dy) + 'px';
+        if (Math.abs(dx) > 30 || Math.abs(dy) > 30) { if (onMoved) { onMoved(); onMoved = null; } }
+      };
+
+      const up = () => { isDragging = false; };
+      elem.addEventListener('mousedown', down); elem.addEventListener('touchstart', down);
+      window.addEventListener('mousemove', move); window.addEventListener('touchmove', move);
+      window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
+    }
+
+    // 문의 클릭 이벤트 연동 및 UI 업데이트
     function updateDoorStatusUI() {
       const door = document.getElementById('door-obj');
       const doorLabel = document.getElementById('door-label');
@@ -422,7 +545,7 @@
 
       if (solved.q1 && solved.q2 && solved.q3) {
         door.style.opacity = '1';
-        doorLabel.innerText = currentRoom === 4 ? "🚪 최종 탈출!" : `🚪 ${currentRoom + 1}관 이동!`;
+        doorLabel.innerText = currentRoom === 4 ? "🚪 탈출하기!" : `🚪 ${currentRoom + 1}관 입장`;
         doorLabel.style.background = '#22c55e';
       } else {
         door.style.opacity = '0.6';
@@ -431,7 +554,9 @@
       }
     }
 
+    // 중복 풀이 방지 적용
     function openWireMiniGame(slotKey) {
+      if (roomSolved[currentRoom][slotKey]) return alert("✅ 이미 해결한 미션입니다!");
       const mgTitle = document.getElementById('mg-title'), mgBody = document.getElementById('mg-body');
       mgTitle.innerText = "🔌 2관 미션: 케이블 선 연결";
       mgBody.innerHTML = `
@@ -456,10 +581,7 @@
               p.style.opacity = '0.3'; sel.elem.style.opacity = '0.3';
               count++; sel = null;
               if (count >= 2) {
-                setTimeout(() => {
-                  document.getElementById('minigame-modal').style.display = 'none';
-                  openQuizObj(assignedQuizzes[2][slotKey], slotKey);
-                }, 300);
+                setTimeout(() => { document.getElementById('minigame-modal').style.display = 'none'; openQuizObj(assignedQuizzes[2][slotKey], slotKey); }, 300);
               }
             } else { sel.elem.style.transform = 'scale(1)'; sel = null; }
           }
@@ -468,6 +590,7 @@
     }
 
     function openStainMiniGame(slotKey) {
+      if (roomSolved[currentRoom][slotKey]) return alert("✅ 이미 해결한 미션입니다!");
       const mgTitle = document.getElementById('mg-title'), mgBody = document.getElementById('mg-body');
       mgTitle.innerText = "🔍 3관 미션: 모니터 얼룩 닦기";
       mgBody.innerHTML = `
@@ -485,16 +608,14 @@
         s.addEventListener('click', () => {
           s.style.display = 'none'; count++;
           if (count >= 2) {
-            setTimeout(() => {
-              document.getElementById('minigame-modal').style.display = 'none';
-              openQuizObj(assignedQuizzes[3][slotKey], slotKey);
-            }, 300);
+            setTimeout(() => { document.getElementById('minigame-modal').style.display = 'none'; openQuizObj(assignedQuizzes[3][slotKey], slotKey); }, 300);
           }
         });
       });
     }
 
     function openQuizObj(qData, slotKey) {
+      if (roomSolved[currentRoom][slotKey]) return alert("✅ 이미 해결한 미션입니다!");
       activeQuizObj = qData; currentSlotKey = slotKey;
       document.getElementById('qz-title').innerText = qData.title;
       document.getElementById('qz-question').innerText = qData.question;
@@ -508,6 +629,8 @@
       if (qData.answers) {
         hintElem.style.display = 'inline-block'; hintElem.innerText = qData.hint;
         choicesContainer.style.display = 'none'; inputContainer.style.display = 'flex';
+        // 모달 열릴 때 포커스 처리
+        setTimeout(() => document.getElementById('qz-input').focus(), 100);
       } else {
         hintElem.style.display = 'none'; inputContainer.style.display = 'none';
         choicesContainer.style.display = 'flex';
@@ -534,10 +657,12 @@
     }
 
     function handleSuccess() {
-      totalScore += 1000;
+      // 차등 점수 지급
+      const acquiredScore = activeQuizObj.score || 6000;
+      totalScore += acquiredScore;
       updateScoreUI();
       if (currentSlotKey) roomSolved[currentRoom][currentSlotKey] = true;
-      setDialogue(`${activeQuizObj.successMsg}\n(+1,000점 획득! 현재 총점: ${totalScore}점)`);
+      setDialogue(`${activeQuizObj.successMsg}\n(+${acquiredScore.toLocaleString()}점 획득! 현재 총점: ${totalScore.toLocaleString()}점)`);
       updateDoorStatusUI();
       document.getElementById('quiz-modal').style.display = 'none';
     }
@@ -545,11 +670,11 @@
     function handleFail() {
       totalScore = Math.max(0, totalScore - 2000);
       updateScoreUI();
-      alert(`❌ 오답입니다! -2,000점 감점되었습니다. (현재 점수: ${totalScore}점)`);
+      alert(`❌ 오답입니다! -2,000점 감점되었습니다. (현재 점수: ${totalScore.toLocaleString()}점)`);
     }
 
     function updateScoreUI() {
-      document.getElementById('user-stats').innerText = `점수: ${totalScore}점 | ${playerNickname}`;
+      document.getElementById('user-stats').innerText = `점수: ${totalScore.toLocaleString()}점 | ${playerNickname}`;
     }
 
     function setDialogue(txt) { document.getElementById('dialogue-text').innerText = txt; }
@@ -573,12 +698,35 @@
         triggerRoomChange(1);
       });
 
+      // 네비게이션 버튼 
       document.getElementById('prev-btn').addEventListener('click', () => { if (currentRoom > 1) triggerRoomChange(currentRoom - 1); });
       document.getElementById('next-btn').addEventListener('click', () => {
         const solved = roomSolved[currentRoom];
-        if (!solved.q1 || !solved.q2 || !solved.q3) return alert("현재 방의 3개 미션을 모두 완료해야 이동할 수 있습니다!");
+        if (!solved.q1 || !solved.q2 || !solved.q3) return alert("현재 방의 모든 미션을 완수해야 문이 열립니다!");
         if (currentRoom < 4) triggerRoomChange(currentRoom + 1);
-        else alert(`🎉 모든 미션을 완수했습니다! 최종 점수: ${totalScore}점`);
+        else alert(`🎉 모든 미션을 완수했습니다! 최종 점수: ${totalScore.toLocaleString()}점`);
+      });
+
+      // 문 오브젝트 직접 클릭 이벤트 
+      document.getElementById('door-obj').addEventListener('click', () => {
+        const solved = roomSolved[currentRoom];
+        if (!solved.q1 || !solved.q2 || !solved.q3) return alert("현재 방의 3개 미션을 모두 완수해야 문이 열립니다!");
+        if (currentRoom < 4) triggerRoomChange(currentRoom + 1);
+        else alert(`🎉 탈출 성공! 고생하셨습니다! 최종 점수: ${totalScore.toLocaleString()}점`);
+      });
+
+      // 엔터키 제출 이벤트
+      document.getElementById('qz-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          checkSubjective();
+        }
+      });
+      document.getElementById('nickname-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('start-btn').click();
+        }
       });
 
       document.getElementById('qz-submit-btn').addEventListener('click', checkSubjective);
@@ -588,5 +736,3 @@
   </script>
 </body>
 </html>
-
-
