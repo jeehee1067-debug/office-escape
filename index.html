@@ -15,12 +15,12 @@
     }
 
     body {
-      background: #222;
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      color: #333;
+      color: #fff;
       padding: 10px;
     }
 
@@ -28,21 +28,21 @@
       width: 100%;
       max-width: 960px;
       aspect-ratio: 4 / 3;
-      background-color: #f8fafc;
-      border: 12px solid #334155;
+      background-color: #0b0f19;
+      border: 3px solid #38bdf8;
       border-radius: 12px;
       position: relative;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      box-shadow: 0 0 50px rgba(56, 189, 248, 0.25);
     }
 
     #top-nav {
       height: 10%;
       min-height: 44px;
-      background: #e2e8f0;
-      border-bottom: 4px solid #334155;
+      background: #1e293b;
+      border-bottom: 2px solid #38bdf8;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -50,78 +50,99 @@
       z-index: 100;
     }
 
-    #room-title { font-size: clamp(11px, 1.8vw, 15px); font-weight: bold; color: #0f172a; }
-    #user-stats { font-size: clamp(10px, 1.4vw, 13px); font-weight: bold; color: #0f172a; background: #fff; padding: 5px 10px; border: 2px solid #334155; border-radius: 6px; }
+    #room-title { font-size: clamp(11px, 1.8vw, 15px); font-weight: bold; color: #38bdf8; }
+    #user-stats { font-size: clamp(10px, 1.4vw, 13px); font-weight: bold; color: #facc15; background: #090d16; padding: 5px 10px; border: 1.5px solid #facc15; border-radius: 6px; }
 
     .nav-btn-group { display: flex; gap: 6px; }
-    .nav-btn { background: #fff; color: #0f172a; border: 2px solid #334155; padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 6px; box-shadow: 2px 2px 0px #334155; transition: transform 0.1s; }
-    .nav-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+    .nav-btn { background: #0f172a; color: #fff; border: 1.5px solid #38bdf8; padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 6px; }
+    .nav-btn:hover { background: #38bdf8; color: #0f172a; }
 
-    /* 포켓몬 스타일 일러스트 배경 적용 화면 */
     #screen { 
       width: 100%; height: 68%; 
       position: relative; 
-      background-color: #f1f5f9;
+      background-color: #cbd5e1; 
+      background-size: cover;
+      background-position: bottom center;
+      background-repeat: no-repeat;
       overflow: hidden; 
       image-rendering: pixelated;
     }
     
     #interactive-layer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 40; }
 
-    .interactive-zone { position: absolute; cursor: pointer; display: flex; justify-content: center; align-items: center; border-radius: 8px; transition: all 0.2s ease-in-out; border: 2px dashed #64748b; background: rgba(255,255,255,0.4); }
-    .interactive-zone::before { content: '🔍'; font-size: 20px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); }
-    .interactive-zone:hover { background-color: rgba(56, 189, 248, 0.4); border: 2px solid #0284c7; }
+    /* 투명 클릭 영역 (단서) */
+    .interactive-zone {
+      position: absolute;
+      cursor: pointer;
+      display: flex; justify-content: center; align-items: center;
+      border-radius: 8px; transition: all 0.2s ease-in-out;
+      border: 2px solid transparent;
+    }
+    .interactive-zone::before { content: '🔍'; font-size: 24px; opacity: 0; transition: 0.2s; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); }
+    .interactive-zone:hover { background-color: rgba(56, 189, 248, 0.25); border: 2px dashed #38bdf8; }
+    .interactive-zone:hover::before { opacity: 1; transform: translateY(-5px); }
 
-    .art-item { position: absolute; cursor: grab; display: flex; justify-content: center; align-items: center; transform-origin: bottom center; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); }
+    /* 드래그 가능한 가림막 아이템 */
+    .art-item {
+      position: absolute;
+      cursor: grab;
+      display: flex; justify-content: center; align-items: center;
+      transform-origin: bottom center;
+      filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
+    }
     .art-item:active { cursor: grabbing; }
     .draggable-item { z-index: 60 !important; touch-action: none; }
 
+    /* 캐릭터 기본 설정 */
     .pixel-npc { position: absolute; z-index: 50; display: flex; flex-direction: column; align-items: center; transition: all 0.3s ease; }
     #boss-npc { cursor: pointer; }
     #player-npc { pointer-events: none; }
 
-    .door-tag { background: #fff; color: #0f172a; font-size: clamp(9px, 1.2vw, 11px); padding: 4px 10px; border-radius: 6px; border: 2px solid #0f172a; margin-top: 6px; white-space: nowrap; font-weight: bold; box-shadow: 2px 2px 0px #0f172a; }
+    .door-tag {
+      background: rgba(15, 23, 42, 0.95); color: #f8fafc; font-size: clamp(9px, 1.2vw, 11px);
+      padding: 4px 10px; border-radius: 6px; border: 1px solid #38bdf8; margin-top: 6px;
+      white-space: nowrap; font-weight: bold;
+    }
 
     #dialogue-box {
-      background: #fff; border: 4px solid #334155;
+      width: 100%; height: 22%; background: #090d16; border-top: 2px solid #38bdf8;
       padding: 12px 20px; position: relative; display: flex; flex-direction: column; justify-content: space-between; z-index: 100;
-      border-radius: 8px;
-      margin: 8px;
-      height: 20%;
-      width: calc(100% - 16px);
-      box-shadow: inset 0 0 0 2px #cbd5e1;
     }
-    #dialogue-text { font-size: clamp(11px, 1.8vw, 14px); line-height: 1.6; color: #0f172a; font-weight: bold; white-space: pre-line; }
+    #dialogue-text { font-size: clamp(11px, 1.8vw, 14px); line-height: 1.6; color: #f1f5f9; font-weight: bold; white-space: pre-line; }
 
-    .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 15px; z-index: 1000; }
-    .modal-card { background: #fff; border: 4px solid #0f172a; border-radius: 12px; width: 100%; max-width: 520px; padding: 22px; color: #0f172a; position: relative; box-shadow: 4px 4px 0px #0f172a; }
-    .modal-close-btn { position: absolute; top: -12px; right: -12px; background: #fff; color: #ef4444; border: 4px solid #0f172a; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 2px 2px 0px #0f172a; }
+    .modal-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(2, 6, 23, 0.88); backdrop-filter: blur(6px);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      padding: 15px; z-index: 1000;
+    }
+    .modal-card { background: #0f172a; border: 2px solid #38bdf8; border-radius: 12px; width: 100%; max-width: 520px; padding: 22px; color: #fff; position: relative; }
+    .modal-close-btn { position: absolute; top: 12px; right: 14px; background: #1e293b; color: #f87171; border: 1px solid #ef4444; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-weight: bold; }
 
-    .quiz-title { font-size: 16px; color: #0f172a; margin-bottom: 12px; font-weight: bold; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-    .quiz-q { font-size: 14px; margin-bottom: 12px; line-height: 1.5; color: #0f172a; font-weight: bold; }
-    .quiz-hint { display: inline-block; background: #fef08a; color: #854d0e; font-size: 11px; padding: 4px 8px; border-radius: 4px; border: 1px solid #ca8a04; margin-bottom: 12px; font-weight: bold; }
+    .quiz-title { font-size: 15px; color: #38bdf8; margin-bottom: 10px; font-weight: bold; }
+    .quiz-q { font-size: 13px; margin-bottom: 12px; line-height: 1.5; color: #f8fafc; font-weight: bold; }
+    .quiz-hint { display: inline-block; background: #1e293b; color: #facc15; font-size: 11px; padding: 4px 8px; border-radius: 4px; border: 1px solid #facc15; margin-bottom: 12px; }
     .quiz-choice-list { display: flex; flex-direction: column; gap: 8px; }
-    .quiz-choice-item { background: #f8fafc; border: 2px solid #94a3b8; padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; color: #0f172a; }
-    .quiz-choice-item:hover { background: #e0f2fe; border-color: #0284c7; }
+    .quiz-choice-item { background: #1e293b; border: 1.5px solid #334155; padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; color: #f1f5f9; }
+    .quiz-choice-item:hover { background: #2563eb; color: #fff; }
     .quiz-input-group { display: flex; gap: 8px; }
-    .quiz-input { flex: 1; padding: 10px; font-size: 13px; background: #f8fafc; border: 2px solid #94a3b8; border-radius: 6px; color: #0f172a; font-weight: bold; }
-    .quiz-submit-btn { background: #ef4444; color: #fff; border: 2px solid #7f1d1d; padding: 0 18px; font-size: 13px; font-weight: bold; cursor: pointer; border-radius: 6px; box-shadow: 2px 2px 0px #7f1d1d; }
-    .start-input { width: 100%; padding: 12px; font-size: 13px; background: #f8fafc; border: 2px solid #94a3b8; border-radius: 6px; color: #0f172a; margin: 16px 0; font-weight: bold; }
-    .start-btn { width: 100%; background: #3b82f6; color: #fff; border: 2px solid #1e3a8a; padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 6px; box-shadow: 2px 2px 0px #1e3a8a; }
+    .quiz-input { flex: 1; padding: 10px; font-size: 13px; background: #020617; border: 1.5px solid #38bdf8; border-radius: 6px; color: #fff; font-weight: bold; }
+    .quiz-submit-btn { background: #2563eb; color: #fff; border: none; padding: 0 18px; font-size: 13px; font-weight: bold; cursor: pointer; border-radius: 6px; }
+    .start-input { width: 100%; padding: 12px; font-size: 13px; background: #020617; border: 1.5px solid #38bdf8; border-radius: 6px; color: #fff; margin: 16px 0; font-weight: bold; }
+    .start-btn { width: 100%; background: #2563eb; color: #fff; border: none; padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 6px; }
 
-    .wire-port { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #000; cursor: pointer; display: inline-block; }
+    .wire-port { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; display: inline-block; }
     .wire-red { background: #ef4444; } .wire-blue { background: #3b82f6; } .wire-yellow { background: #eab308; }
     .stain-spot { width: 44px; height: 44px; background: rgba(180, 83, 9, 0.85); border-radius: 50%; position: absolute; cursor: pointer; display: flex; justify-content: center; align-items: center; border: 2px dashed #facc15; }
   </style>
 </head>
 <body>
-  <audio id="bgm" loop src="battle.mp3"></audio>
 
   <div id="game-container">
     <div id="start-modal" class="modal-overlay">
       <div class="modal-card">
-        <h2 style="font-size: 18px; color:#e3350d; text-align:center; margin-bottom:12px;">🔬 방탈출 : 신입사원의 칼퇴기</h2>
-        <p style="font-size: 13px; line-height: 1.6; color:#475569; text-align:center; font-weight:bold;">
+        <h2 style="font-size: 18px; color:#38bdf8; text-align:center; margin-bottom:12px;">🔬 분석기술팀 신입사원의 칼퇴기</h2>
+        <p style="font-size: 12px; line-height: 1.6; color:#cbd5e1; text-align:center;">
           방 안의 구조물을 치우고 숨겨진 단서를 탐색하세요!<br>
           <span style="color:#ef4444;">[경고]</span> 오답 제출 시 <b>-2,000점</b> 감점!
         </p>
@@ -140,13 +161,13 @@
     </div>
 
     <div id="screen">
-      <!-- 👨‍💼 파트장님 -->
+      <!-- 👨‍💼 파트장님 (JS에서 동적으로 스타일 변경) -->
       <div class="pixel-npc" id="boss-npc">
         <svg id="boss-svg" width="80" height="110" viewBox="0 0 64 96"></svg>
         <div id="boss-tag" class="door-tag">파트장님</div>
       </div>
 
-      <!-- 👩‍💼 여성 신입사원 -->
+      <!-- 👩‍💼 여성 신입사원 (앞머리 꽉 채움) -->
       <div class="pixel-npc" id="player-npc" style="bottom: 8%; left: 22%;">
         <svg width="80" height="110" viewBox="0 0 64 96">
           <path d="M12,24 C8,45 14,52 20,54 L44,54 C50,52 56,45 52,24 Z" fill="#4a2e1b"/>
@@ -182,10 +203,10 @@
 
       <div id="interactive-layer"></div>
 
-      <!-- 다음 방으로 이동하는 문 -->
+      <!-- 다음 방으로 이동하는 문 (클릭 가능) -->
       <div class="pixel-npc interactive-zone" id="door-obj" style="bottom: 12%; right: 4%; width: 65px; height: 95px; cursor: pointer; z-index: 70;">
         <svg width="55" height="75" viewBox="0 0 55 75">
-          <rect x="2" y="2" width="51" height="71" fill="#0f172a" stroke="#cbd5e1" stroke-width="2.5" rx="4"/>
+          <rect x="2" y="2" width="51" height="71" fill="#0f172a" stroke="#38bdf8" stroke-width="2.5" rx="4"/>
           <circle cx="42" cy="40" r="4" fill="#facc15"/>
         </svg>
         <div class="door-tag" id="door-label" style="position: absolute; bottom: -30px;">🔒 다음 방</div>
@@ -222,6 +243,7 @@
   </div>
 
   <script>
+    // 점수 차등 지급 반영 (6000 ~ 7500점)
     const questionBank = {
       1: {
         subjective: [
@@ -271,35 +293,39 @@
     let roomSolved = { 1: { q1: false, q2: false, q3: false }, 2: { q1: false, q2: false, q3: false }, 3: { q1: false, q2: false, q3: false }, 4: { q1: false, q2: false, q3: false } };
     let assignedQuizzes = { 1: {}, 2: {}, 3: {}, 4: {} };
 
-    const roomData = {
-      1: { title: "S1FA PJT : 1관 분석기술팀 EFA1 파트", bossName: "김주헌 파트장님", welcomeMsg: "오피스 데스크를 정돈해 두었네.\n방 안의 구조물을 치워가며 숨겨진 단서를 찾게." },
-      2: { title: "S1FA PJT : 2관 분석기술팀 EFA2 파트", bossName: "김진석 파트장님", welcomeMsg: "책상 위 장애물들을 치우고\n케이블과 단서를 확인하세요." },
-      3: { title: "S1FA PJT : 3관 분석기술팀 PFA/VSEM 파트", bossName: "윤지혜 파트장님", welcomeMsg: "실험대 위 장비들을 탐색하고\n미션을 해결하세요." },
-      4: { title: "S1FA PJT : 4관 분석기술팀 PL실", bossName: "손승준 PL님", welcomeMsg: "캔틴룸 주변 물건을 치워\n비밀 금고를 찾아내세요!" }
+    const roomBgImages = {
+      1: "./24618_2.webp",
+      2: "./24645.webp",
+      3: "./24646.jpg",
+      4: "./24647.png"
     };
 
-    // 무작위 문제은행 섞기 시스템
+    const roomData = {
+      1: { title: "S1FA PJT : 1관 분석기술팀 EFA1 파트", bossName: "김주헌 파트장님", welcomeMsg: "오피스 데스크를 정돈해 두었네. 방 안의 구조물을 치워가며 숨겨진 단서를 찾게." },
+      2: { title: "S1FA PJT : 2관 분석기술팀 EFA2 파트", bossName: "김진석 파트장님", welcomeMsg: "책상 위 장애물들을 치우고 케이블과 단서를 확인하세요." },
+      3: { title: "S1FA PJT : 3관 분석기술팀 PFA/VSEM 파트", bossName: "윤지혜 파트장님", welcomeMsg: "실험대 위 장비들을 탐색하고 미션을 해결하세요." },
+      4: { title: "S1FA PJT : 4관 분석기술팀 PL실", bossName: "손승준 PL님", welcomeMsg: "캔틴룸 주변 물건을 치워 비밀 금고를 찾아내세요!" }
+    };
+
     function generateQuizzes() {
       for (let r = 1; r <= 4; r++) {
         const bank = questionBank[r];
-        let allQ = [...(bank.subjective || []), ...(bank.objective || [])];
-        allQ.sort(() => Math.random() - 0.5); 
-        
         assignedQuizzes[r] = {
-          q1: allQ[0],
-          q2: allQ[1] || allQ[0],
-          q3: allQ[2] || allQ[0]
+          q1: bank.subjective[0],
+          q2: bank.subjective[1] || bank.objective[0],
+          q3: bank.objective[1] || bank.objective[0]
         };
       }
     }
 
-    // 👨‍💼 파트장님 렌더링
+    // 👨‍💼 파트장님 의상 & 외모 & 위치 커스텀 (윤지혜 파트장님은 긴 생머리, 앞머리 없음)
     function renderBossNPC(r) {
       const bossNPC = document.getElementById('boss-npc');
       const bossSvg = document.getElementById('boss-svg');
       document.getElementById('boss-tag').innerText = roomData[r].bossName;
 
       if (r === 1) {
+        // 김주헌 (우측 배치, 체크셔츠)
         bossNPC.style.right = '22%'; bossNPC.style.left = 'auto'; bossNPC.style.bottom = '8%';
         bossSvg.innerHTML = `
           <path d="M14,24 C14,40 18,50 20,50 L44,50 C46,50 50,40 50,24 Z" fill="#1e293b"/>
@@ -309,6 +335,7 @@
           <rect x="22" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="23" y="35" width="2" height="3" fill="#fff"/>
           <rect x="36" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="37" y="35" width="2" height="3" fill="#fff"/>
           <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
+          <!-- 블루 체크 셔츠 -->
           <path d="M22,50 L42,50 L44,68 L20,68 Z" fill="#2563eb" stroke="#000" stroke-width="2"/>
           <line x1="22" y1="56" x2="42" y2="56" stroke="#1e3a8a" stroke-width="1"/><line x1="28" y1="50" x2="28" y2="68" stroke="#1e3a8a" stroke-width="1"/>
           <path d="M20,50 L12,65 L16,68 L22,52 Z" fill="#2563eb" stroke="#000" stroke-width="1.5"/>
@@ -318,17 +345,20 @@
           <rect x="20" y="86" width="12" height="6" fill="#fff" stroke="#000" stroke-width="1.5" rx="3"/><rect x="32" y="86" width="12" height="6" fill="#fff" stroke="#000" stroke-width="1.5" rx="3"/>
         `;
       } else if (r === 2) {
+        // 김진석 (중앙 우측 배치, 그린 스웨터)
         bossNPC.style.right = '18%'; bossNPC.style.left = 'auto'; bossNPC.style.bottom = '10%';
         bossSvg.innerHTML = `
           <path d="M14,24 C14,40 18,50 20,50 L44,50 C46,50 50,40 50,24 Z" fill="#1e293b"/>
           <rect x="16" y="24" width="32" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
           <path d="M14,28 Q 32,38 50,28 L 48,16 Q 32,8 16,16 Z" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
           <path d="M14,28 L22,34 L28,29 L36,35 L44,29 L50,28" fill="#0f172a" stroke="#000" stroke-width="1.5"/>
+          <!-- 안경 -->
           <rect x="20" y="32" width="10" height="8" fill="none" stroke="#333" stroke-width="1.5"/>
           <rect x="34" y="32" width="10" height="8" fill="none" stroke="#333" stroke-width="1.5"/>
           <line x1="30" y1="36" x2="34" y2="36" stroke="#333" stroke-width="1.5"/>
           <rect x="22" y="34" width="6" height="4" fill="#000"/><rect x="36" y="34" width="6" height="4" fill="#000"/>
           <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
+          <!-- 그린 스웨터 -->
           <path d="M22,50 L42,50 L44,70 L20,70 Z" fill="#065f46" stroke="#000" stroke-width="2"/>
           <path d="M20,50 L12,65 L16,68 L22,52 Z" fill="#065f46" stroke="#000" stroke-width="1.5"/>
           <path d="M44,50 L52,65 L48,68 L42,52 Z" fill="#065f46" stroke="#000" stroke-width="1.5"/>
@@ -337,24 +367,30 @@
           <rect x="20" y="86" width="12" height="6" fill="#000" stroke="#000" stroke-width="1.5" rx="3"/><rect x="32" y="86" width="12" height="6" fill="#000" stroke="#000" stroke-width="1.5" rx="3"/>
         `;
       } else if (r === 3) {
+        // 윤지혜 (좌측 배치, 앞머리 없는 긴 생머리 여자, 가운)
         bossNPC.style.left = '70%'; bossNPC.style.right = 'auto'; bossNPC.style.bottom = '8%';
         bossSvg.innerHTML = `
+          <!-- 긴 생머리 뒷배경 -->
           <rect x="12" y="24" width="40" height="55" fill="#4a2e1b" rx="6"/>
           <rect x="16" y="24" width="32" height="26" rx="10" fill="#fde0c6" stroke="#000" stroke-width="2"/>
+          <!-- 앞머리 없음. 가르마 5:5 얼굴을 감싸는 머리 -->
           <path d="M 32,24 Q 24,24 16,36 L 14,55 L 20,55 L 24,30 Z" fill="#4a2e1b" stroke="#000" stroke-width="1"/>
           <path d="M 32,24 Q 40,24 48,36 L 50,55 L 44,55 L 40,30 Z" fill="#4a2e1b" stroke="#000" stroke-width="1"/>
+          <!-- 여성스럽고 예쁜 눈 -->
           <rect x="20" y="34" width="8" height="10" rx="3" fill="#000"/>
           <rect x="21" y="35" width="3" height="4" fill="#fff"/>
           <rect x="36" y="34" width="8" height="10" rx="3" fill="#000"/>
           <rect x="37" y="35" width="3" height="4" fill="#fff"/>
           <rect x="31" y="44" width="2" height="1" fill="#c08060"/>
           <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
+          <!-- 연구원 가운 -->
           <path d="M20,50 L44,50 L46,80 L18,80 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
           <path d="M32,50 L32,80" stroke="#cbd5e1" stroke-width="1.5"/>
           <path d="M20,50 L14,60 L18,63 L22,52 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
           <path d="M44,50 L50,60 L46,63 L42,52 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
           <circle cx="16" cy="63" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
           <circle cx="48" cy="63" r="3" fill="#fde0c6" stroke="#000" stroke-width="1"/>
+          <!-- 스커트/다리 -->
           <rect x="22" y="80" width="8" height="6" fill="#1e293b"/>
           <rect x="34" y="80" width="8" height="6" fill="#1e293b"/>
           <rect x="22" y="86" width="8" height="10" fill="#fde0c6"/>
@@ -363,6 +399,7 @@
           <rect x="34" y="96" width="10" height="6" fill="#000" rx="2"/>
         `;
       } else if (r === 4) {
+        // 손승준 PL (블랙 정장)
         bossNPC.style.right = '28%'; bossNPC.style.left = 'auto'; bossNPC.style.bottom = '6%';
         bossSvg.innerHTML = `
           <path d="M14,24 C14,40 18,50 20,50 L44,50 C46,50 50,40 50,24 Z" fill="#1e293b"/>
@@ -372,6 +409,7 @@
           <rect x="22" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="23" y="35" width="2" height="3" fill="#fff"/>
           <rect x="36" y="34" width="6" height="8" rx="2" fill="#000"/><rect x="37" y="35" width="2" height="3" fill="#fff"/>
           <path d="M 28,47 Q 32,49 36,47" stroke="#000" stroke-width="1.5" fill="none"/>
+          <!-- 블랙 수트 -->
           <path d="M22,50 L42,50 L44,70 L20,70 Z" fill="#0f172a" stroke="#000" stroke-width="2"/>
           <polygon points="28,50 36,50 32,60" fill="#fff"/>
           <polygon points="31,50 33,50 32,56" fill="#dc2626"/>
@@ -384,67 +422,23 @@
       }
     }
 
-    // 캔버스 배경을 포켓몬 사무실 인테리어 일러스트 스타일로 순수 SVG 드로잉 구현
     function renderRoomBackground(r) {
       const screenElem = document.getElementById('screen');
-      let svgBgContent = '';
-
-      if (r === 1) {
-        svgBgContent = `
-          <svg width="100%" height="100%" viewBox="0 0 640 400" preserveAspectRatio="none">
-            <rect width="640" height="400" fill="#cbd5e1"/>
-            <rect x="40" y="40" width="560" height="240" fill="#f8fafc" stroke="#334155" stroke-width="4"/>
-            <!-- 책상 및 PC -->
-            <rect x="120" y="160" width="160" height="80" fill="#94a3b8" stroke="#334155" stroke-width="3"/>
-            <rect x="150" y="110" width="80" height="60" fill="#0f172a" stroke="#334155" stroke-width="3"/>
-            <rect x="360" y="160" width="160" height="80" fill="#94a3b8" stroke="#334155" stroke-width="3"/>
-          </svg>
-        `;
-      } else if (r === 2) {
-        svgBgContent = `
-          <svg width="100%" height="100%" viewBox="0 0 640 400" preserveAspectRatio="none">
-            <rect width="640" height="400" fill="#94a3b8"/>
-            <rect x="40" y="40" width="560" height="240" fill="#e2e8f0" stroke="#1e293b" stroke-width="4"/>
-            <!-- 서버랙 및 케이블 존 -->
-            <rect x="100" y="80" width="100" height="180" fill="#334155" stroke="#0f172a" stroke-width="3"/>
-            <rect x="440" y="80" width="100" height="180" fill="#334155" stroke="#0f172a" stroke-width="3"/>
-          </svg>
-        `;
-      } else if (r === 3) {
-        svgBgContent = `
-          <svg width="100%" height="100%" viewBox="0 0 640 400" preserveAspectRatio="none">
-            <rect width="640" height="400" fill="#cbd5e1"/>
-            <rect x="40" y="40" width="560" height="240" fill="#f1f5f9" stroke="#0f172a" stroke-width="4"/>
-            <!-- 실험대 및 장비 -->
-            <rect x="160" y="150" width="320" height="90" fill="#64748b" stroke="#0f172a" stroke-width="3"/>
-            <circle cx="320" cy="120" r="30" fill="#334155" stroke="#0f172a" stroke-width="3"/>
-          </svg>
-        `;
-      } else if (r === 4) {
-        svgBgContent = `
-          <svg width="100%" height="100%" viewBox="0 0 640 400" preserveAspectRatio="none">
-            <rect width="640" height="400" fill="#64748b"/>
-            <rect x="40" y="40" width="560" height="240" fill="#e2e8f0" stroke="#0f172a" stroke-width="4"/>
-            <!-- PL실 및 캐비닛 -->
-            <rect x="80" y="70" width="120" height="180" fill="#475569" stroke="#0f172a" stroke-width="3"/>
-            <rect x="440" y="70" width="120" height="180" fill="#475569" stroke="#0f172a" stroke-width="3"/>
-          </svg>
-        `;
-      }
-
-      screenElem.innerHTML = svgBgContent + '<div id="interactive-layer"></div>';
+      screenElem.style.backgroundImage = `url('${roomBgImages[r]}')`;
       renderBossNPC(r);
     }
 
+    /* 드래그 낚시(맥거핀) 기능 부활 & 숨겨진 히트박스 적용 */
     function renderInteractiveElements(r) {
       const layer = document.getElementById('interactive-layer');
-      if (!layer) return;
       layer.innerHTML = '';
 
       if (r === 1) {
         layer.innerHTML = `
           <div id="elem-m1" class="interactive-zone" style="bottom: 50%; left: 30%; width: 120px; height: 90px;" title="모니터 화면 확인"></div>
+          <!-- 숨겨진 메모 (바닥) -->
           <div id="elem-secret-memo" class="interactive-zone" style="bottom: 40%; left: 52%; width: 60px; height: 60px; z-index:42;" title="숨겨진 메모"></div>
+          <!-- 가짜 덮개 (수납함) -->
           <div id="drag-box-real" class="art-item draggable-item" style="bottom: 40%; left: 52%; width: 60px; height: 50px; z-index: 55;" title="파일 박스 (드래그로 치우기)">
             <svg width="60" height="50" viewBox="0 0 60 50">
               <rect width="56" height="46" fill="#cbd5e1" stroke="#475569" stroke-width="2" rx="4"/>
@@ -463,6 +457,7 @@
         layer.innerHTML = `
           <div id="elem-m2" class="interactive-zone" style="bottom: 50%; left: 35%; width: 100px; height: 80px;" title="와이드 모니터"></div>
           <div id="elem-cable" class="interactive-zone" style="bottom: 45%; left: 50%; width: 70px; height: 50px;" title="단선 케이블 복구"></div>
+          <!-- 낚시용 드래그 아이템 (맥거핀) -->
           <div id="drag-cup-fake" class="art-item draggable-item" style="bottom: 42%; left: 60%; width: 30px; height: 40px; z-index: 55;" title="텀블러 (드래그)">
             <svg width="24" height="34" viewBox="0 0 24 34">
               <rect width="20" height="30" fill="#0f766e" stroke="#134e4a" stroke-width="2" rx="3"/>
@@ -479,6 +474,7 @@
       } else if (r === 3) {
         layer.innerHTML = `
           <div id="elem-stain-mon" class="interactive-zone" style="bottom: 50%; left: 32%; width: 110px; height: 80px;" title="분석 모니터"></div>
+          <!-- 가려진 장비 단서 -->
           <div id="elem-m3" class="interactive-zone" style="bottom: 45%; left: 55%; width: 80px; height: 100px; z-index: 42;" title="분석 장비 단서"></div>
           <div id="drag-note" class="art-item draggable-item" style="bottom: 45%; left: 55%; width: 60px; height: 50px; z-index: 55;" title="연구 노트 (드래그)">
             <svg width="40" height="35" viewBox="0 0 40 35">
@@ -496,6 +492,7 @@
       } else if (r === 4) {
         layer.innerHTML = `
           <div id="elem-m4" class="interactive-zone" style="bottom: 52%; left: 35%; width: 100px; height: 70px;" title="수납장 단서"></div>
+          <!-- 가려진 금고 -->
           <div id="elem-secret-safe" class="interactive-zone" style="bottom: 40%; left: 52%; width: 70px; height: 70px; z-index:42;" title="비밀 금고"></div>
           <div id="drag-water-real" class="art-item draggable-item" style="bottom: 40%; left: 52%; width: 70px; height: 80px; z-index: 55;" title="생수통 (드래그)">
             <svg width="40" height="55" viewBox="0 0 40 55">
@@ -513,6 +510,7 @@
       updateDoorStatusUI();
     }
 
+    // 마우스/터치 드래그 로직
     function makeElementDraggable(elem, onMoved) {
       if (!elem) return;
       let isDragging = false, startX, startY, initLeft, initTop;
@@ -539,6 +537,7 @@
       window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
     }
 
+    // 문의 클릭 이벤트 연동 및 UI 업데이트
     function updateDoorStatusUI() {
       const door = document.getElementById('door-obj');
       const doorLabel = document.getElementById('door-label');
@@ -551,20 +550,21 @@
       } else {
         door.style.opacity = '0.6';
         doorLabel.innerText = "🔒 다음 방";
-        doorLabel.style.background = '#fff';
+        doorLabel.style.background = 'transparent';
       }
     }
 
+    // 중복 풀이 방지 적용
     function openWireMiniGame(slotKey) {
       if (roomSolved[currentRoom][slotKey]) return alert("✅ 이미 해결한 미션입니다!");
       const mgTitle = document.getElementById('mg-title'), mgBody = document.getElementById('mg-body');
       mgTitle.innerText = "🔌 2관 미션: 케이블 선 연결";
       mgBody.innerHTML = `
-        <p style="font-size:12px; color:#475569; margin-bottom:12px; font-weight:bold;">같은 색 단자를 클릭해 연결하세요!</p>
-        <div style="display:flex; justify-content:space-around; align-items:center; background:#f8fafc; padding:15px; border:2px solid #cbd5e1; border-radius:8px;">
+        <p style="font-size:12px; color:#cbd5e1; margin-bottom:12px;">같은 색 단자를 클릭해 연결하세요!</p>
+        <div style="display:flex; justify-content:space-around; align-items:center; background:#020617; padding:15px; border:2px solid #38bdf8; border-radius:8px;">
           <div class="wire-port wire-red" data-color="red"></div>
           <div class="wire-port wire-blue" data-color="blue"></div>
-          <div style="font-size:12px; color:#854d0e; font-weight:bold;">선택 대기...</div>
+          <div style="font-size:12px; color:#facc15;">선택 대기...</div>
           <div class="wire-port wire-blue" data-color="blue"></div>
           <div class="wire-port wire-red" data-color="red"></div>
         </div>
@@ -594,9 +594,9 @@
       const mgTitle = document.getElementById('mg-title'), mgBody = document.getElementById('mg-body');
       mgTitle.innerText = "🔍 3관 미션: 모니터 얼룩 닦기";
       mgBody.innerHTML = `
-        <p style="font-size:12px; color:#475569; margin-bottom:12px; font-weight:bold;">화면 얼룩을 클릭해 정밀 단위를 확인하세요!</p>
-        <div style="position:relative; width:100%; height:140px; background:#1e293b; border:4px solid #0f172a; border-radius:8px; display:flex; justify-content:center; align-items:center;">
-          <div style="font-size:13px; color:#38bdf8; font-weight:bold;">[ VSEM 정밀 단위 : nm ]</div>
+        <p style="font-size:12px; color:#cbd5e1; margin-bottom:12px;">화면 얼룩을 클릭해 정밀 단위를 확인하세요!</p>
+        <div style="position:relative; width:100%; height:140px; background:#1e1b4b; border:2px solid #38bdf8; border-radius:8px; display:flex; justify-content:center; align-items:center;">
+          <div style="font-size:13px; color:#38bdf8;">[ VSEM 정밀 단위 : nm ]</div>
           <div class="stain-spot" style="top:20px; left:50px;">🧹</div>
           <div class="stain-spot" style="top:70px; left:220px;">🧹</div>
         </div>
@@ -629,6 +629,7 @@
       if (qData.answers) {
         hintElem.style.display = 'inline-block'; hintElem.innerText = qData.hint;
         choicesContainer.style.display = 'none'; inputContainer.style.display = 'flex';
+        // 모달 열릴 때 포커스 처리
         setTimeout(() => document.getElementById('qz-input').focus(), 100);
       } else {
         hintElem.style.display = 'none'; inputContainer.style.display = 'none';
@@ -656,6 +657,7 @@
     }
 
     function handleSuccess() {
+      // 차등 점수 지급
       const acquiredScore = activeQuizObj.score || 6000;
       totalScore += acquiredScore;
       updateScoreUI();
@@ -690,40 +692,30 @@
       document.getElementById('start-btn').addEventListener('click', () => {
         const name = document.getElementById('nickname-input').value.trim();
         if (!name) return alert("이름을 입력하세요!");
-        
-        const bgm = document.getElementById('bgm');
-        if (bgm) {
-          bgm.volume = 0.3;
-          bgm.play().catch(e => console.log('BGM Play Error:', e));
-        }
-
         playerNickname = name;
         document.getElementById('start-modal').style.display = 'none';
         updateScoreUI();
         triggerRoomChange(1);
       });
 
+      // 네비게이션 버튼 
       document.getElementById('prev-btn').addEventListener('click', () => { if (currentRoom > 1) triggerRoomChange(currentRoom - 1); });
       document.getElementById('next-btn').addEventListener('click', () => {
         const solved = roomSolved[currentRoom];
         if (!solved.q1 || !solved.q2 || !solved.q3) return alert("현재 방의 모든 미션을 완수해야 문이 열립니다!");
-        if (currentRoom < 4) {
-          triggerRoomChange(currentRoom + 1);
-        } else {
-          alert(`🎉 모든 미션을 완수했습니다! 최종 점수: ${totalScore.toLocaleString()}점`);
-        }
+        if (currentRoom < 4) triggerRoomChange(currentRoom + 1);
+        else alert(`🎉 모든 미션을 완수했습니다! 최종 점수: ${totalScore.toLocaleString()}점`);
       });
 
+      // 문 오브젝트 직접 클릭 이벤트 
       document.getElementById('door-obj').addEventListener('click', () => {
         const solved = roomSolved[currentRoom];
         if (!solved.q1 || !solved.q2 || !solved.q3) return alert("현재 방의 3개 미션을 모두 완수해야 문이 열립니다!");
-        if (currentRoom < 4) {
-          triggerRoomChange(currentRoom + 1);
-        } else {
-          alert(`🎉 탈출 성공! 고생하셨습니다! 최종 점수: ${totalScore.toLocaleString()}점`);
-        }
+        if (currentRoom < 4) triggerRoomChange(currentRoom + 1);
+        else alert(`🎉 탈출 성공! 고생하셨습니다! 최종 점수: ${totalScore.toLocaleString()}점`);
       });
 
+      // 엔터키 제출 이벤트
       document.getElementById('qz-input').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
