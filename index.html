@@ -1,1 +1,708 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>S1FA PJT 방탈출 : 분석기술팀 신입사원의 칼퇴기</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      user-select: none;
+      font-family: 'Galmuri9', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #fff;
+      padding: 10px;
+    }
+
+    #game-container {
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 4 / 3;
+      background-color: #0b0f19;
+      border: 3px solid #38bdf8;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 50px rgba(56, 189, 248, 0.25);
+    }
+
+    #top-nav {
+      height: 10%;
+      min-height: 44px;
+      background: #1e293b;
+      border-bottom: 2px solid #38bdf8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      z-index: 100;
+    }
+
+    #room-title { font-size: clamp(11px, 1.8vw, 15px); font-weight: bold; color: #38bdf8; }
+    #user-stats { font-size: clamp(10px, 1.4vw, 13px); font-weight: bold; color: #facc15; background: #090d16; padding: 5px 10px; border: 1.5px solid #facc15; border-radius: 6px; }
+
+    .nav-btn-group { display: flex; gap: 6px; }
+    .nav-btn { background: #0f172a; color: #fff; border: 1.5px solid #38bdf8; padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 6px; }
+    .nav-btn:hover { background: #38bdf8; color: #0f172a; }
+
+    #screen { 
+      width: 100%; height: 68%; 
+      position: relative; 
+      background-color: #020617; 
+      overflow: hidden; 
+      image-rendering: pixelated;
+    }
+    #bg-svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+    #interactive-layer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 40; }
+
+    .art-item {
+      position: absolute;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .art-item:hover { transform: translateY(-3px) scale(1.05); filter: drop-shadow(0px 0px 8px #38bdf8); }
+    .draggable-item { cursor: grab; z-index: 60 !important; touch-action: none; }
+    .draggable-item:active { cursor: grabbing; }
+
+    .pixel-npc { position: absolute; z-index: 50; display: flex; flex-direction: column; align-items: center; }
+    #boss-npc { cursor: pointer; }
+    #player-npc { pointer-events: none; }
+
+    .door-tag {
+      background: rgba(15, 23, 42, 0.95);
+      color: #f8fafc;
+      font-size: clamp(9px, 1.2vw, 11px);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #38bdf8;
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+
+    #dialogue-box {
+      width: 100%; height: 22%;
+      background: #090d16;
+      border-top: 2px solid #38bdf8;
+      padding: 12px 20px;
+      position: relative;
+      display: flex; flex-direction: column; justify-content: space-between;
+      z-index: 100;
+    }
+    #dialogue-text { font-size: clamp(11px, 1.8vw, 14px); line-height: 1.6; color: #f1f5f9; font-weight: bold; white-space: pre-line; }
+
+    .modal-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(2, 6, 23, 0.88); backdrop-filter: blur(6px);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      padding: 15px; z-index: 1000;
+    }
+    .modal-card { background: #0f172a; border: 2px solid #38bdf8; border-radius: 12px; width: 100%; max-width: 520px; padding: 22px; color: #fff; position: relative; }
+    .modal-close-btn { position: absolute; top: 12px; right: 14px; background: #1e293b; color: #f87171; border: 1px solid #ef4444; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-weight: bold; }
+
+    .quiz-title { font-size: 15px; color: #38bdf8; margin-bottom: 10px; font-weight: bold; }
+    .quiz-q { font-size: 13px; margin-bottom: 12px; line-height: 1.5; color: #f8fafc; font-weight: bold; }
+    .quiz-hint { display: inline-block; background: #1e293b; color: #facc15; font-size: 11px; padding: 4px 8px; border-radius: 4px; border: 1px solid #facc15; margin-bottom: 12px; }
+    .quiz-choice-list { display: flex; flex-direction: column; gap: 8px; }
+    .quiz-choice-item { background: #1e293b; border: 1.5px solid #334155; padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; color: #f1f5f9; }
+    .quiz-choice-item:hover { background: #2563eb; color: #fff; }
+    .quiz-input-group { display: flex; gap: 8px; }
+    .quiz-input { flex: 1; padding: 10px; font-size: 13px; background: #020617; border: 1.5px solid #38bdf8; border-radius: 6px; color: #fff; font-weight: bold; }
+    .quiz-submit-btn { background: #2563eb; color: #fff; border: none; padding: 0 18px; font-size: 13px; font-weight: bold; cursor: pointer; border-radius: 6px; }
+    .start-input { width: 100%; padding: 12px; font-size: 13px; background: #020617; border: 1.5px solid #38bdf8; border-radius: 6px; color: #fff; margin: 16px 0; font-weight: bold; }
+    .start-btn { width: 100%; background: #2563eb; color: #fff; border: none; padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 6px; }
+
+    .wire-port { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; display: inline-block; }
+    .wire-red { background: #ef4444; } .wire-blue { background: #3b82f6; } .wire-yellow { background: #eab308; }
+    .stain-spot { width: 44px; height: 44px; background: rgba(180, 83, 9, 0.85); border-radius: 50%; position: absolute; cursor: pointer; display: flex; justify-content: center; align-items: center; border: 2px dashed #facc15; }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <div id="start-modal" class="modal-overlay">
+      <div class="modal-card">
+        <h2 style="font-size: 18px; color:#38bdf8; text-align:center; margin-bottom:12px;">🔬 분석기술팀 신입사원의 칼퇴기</h2>
+        <p style="font-size: 12px; line-height: 1.6; color:#cbd5e1; text-align:center;">
+          레고 스타일의 픽셀 아트 공간 속 단서를 탐색하여 미션을 완수하세요!<br>
+          <span style="color:#ef4444;">[경고]</span> 오답 제출 시 <b>-2,000점</b> 감점!
+        </p>
+        <input type="text" id="nickname-input" class="start-input" placeholder="소속 / 이름 (예: EFA1 / 홍길동)..." maxlength="20">
+        <button id="start-btn" class="start-btn">사무실 입장하기 ➔</button>
+      </div>
+    </div>
+
+    <div id="top-nav">
+      <div id="room-title">S1FA PJT : 1관 분석기술팀 EFA1 파트</div>
+      <div id="user-stats">점수: 0점</div>
+      <div class="nav-btn-group">
+        <button id="prev-btn" class="nav-btn">◄ 이전관</button>
+        <button id="next-btn" class="nav-btn">다음관 ►</button>
+        <button id="reset-btn" class="nav-btn" style="border-color:#ef4444; color:#f87171;">🔄 초기화</button>
+      </div>
+    </div>
+
+    <div id="screen">
+      <svg id="bg-svg" viewBox="0 0 800 500" preserveAspectRatio="none"></svg>
+
+      <!-- 파트장님 NPC (레고 블록 픽셀 스타일) -->
+      <div class="pixel-npc" id="boss-npc" style="top: 36%; left: 77%;">
+        <svg id="boss-svg" width="70" height="100" viewBox="0 0 70 100"></svg>
+        <div id="boss-tag" class="door-tag">김주헌 파트장님</div>
+      </div>
+
+      <!-- 플레이어 NPC (레고 블록 픽셀 스타일 신입사원) -->
+      <div class="pixel-npc" id="player-npc" style="top: 38%; left: 8%;">
+        <svg width="60" height="90" viewBox="0 0 60 90">
+          <rect x="15" y="4" width="30" height="14" rx="3" fill="#1e293b"/>
+          <rect x="12" y="16" width="36" height="24" rx="4" fill="#fde047" stroke="#000" stroke-width="1.5"/>
+          <rect x="20" y="24" width="4" height="4" fill="#000"/>
+          <rect x="36" y="24" width="4" height="4" fill="#000"/>
+          <rect x="25" y="32" width="10" height="3" fill="#000"/>
+          <rect x="10" y="40" width="40" height="35" fill="#2563eb" rx="2"/>
+          <rect x="18" y="75" width="8" height="15" fill="#000"/>
+          <rect x="34" y="75" width="8" height="15" fill="#000"/>
+        </svg>
+        <div id="player-tag" class="door-tag">신입사원</div>
+      </div>
+
+      <div id="interactive-layer"></div>
+
+      <div class="pixel-npc" id="door-obj" style="top: 6%; right: 2%; opacity: 0.85;">
+        <svg width="50" height="70" viewBox="0 0 50 70">
+          <rect x="2" y="2" width="46" height="66" fill="#0f172a" stroke="#38bdf8" stroke-width="2" rx="4"/>
+          <circle cx="40" cy="38" r="3" fill="#facc15"/>
+        </svg>
+        <div class="door-tag" id="door-label">🔒 다음 방</div>
+      </div>
+    </div>
+
+    <div id="dialogue-box">
+      <div id="dialogue-text">대사가 출력됩니다.</div>
+    </div>
+
+    <div id="minigame-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card">
+        <button id="minigame-close-btn" class="modal-close-btn">✖</button>
+        <div class="quiz-title" id="mg-title">🔧 특수 미션</div>
+        <div id="mg-body" style="margin-top:10px; text-align:center;"></div>
+      </div>
+    </div>
+
+    <div id="quiz-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card">
+        <button id="quiz-close-btn" class="modal-close-btn">✖</button>
+        <div class="quiz-title" id="qz-title">📋 퀴즈</div>
+        <div class="quiz-q" id="qz-question">질문</div>
+        <div class="quiz-hint" id="qz-hint" style="display:none;">💡 힌트: </div>
+        <div id="qz-choices-container" class="quiz-choice-list" style="display:none;"></div>
+        <div id="qz-input-container" class="quiz-input-group" style="display:none;">
+          <input type="text" id="qz-input" class="quiz-input" placeholder="정답을 입력하세요..." />
+          <button id="qz-submit-btn" class="quiz-submit-btn">제출 ➔</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const questionBank = {
+      1: {
+        subjective: [
+          { id: "r1_s1", title: "📝 1관: EFA1 이메일 규격", question: "김주헌 파트장님이 요청하신 이메일 제목 맨 앞 필수 대괄호 태그명은?", hint: "💡 힌트: 대괄호 안 프로젝트명 (예: S1FA PJT)", answers: ["S1FA PJT", "S1FAPJT"], successMsg: "김주헌 파트장님: 이메일 규격 숙지 확인!" },
+          { id: "r1_s2", title: "📝 1관: 수납함 밑 비밀 메모", question: "수납함 밑에서 찾은 비밀 메모! EFA1 장비 신뢰성 테스트 목표 수치는?", hint: "💡 힌트: 백분율 수치 (예: 100% 또는 100)", answers: ["100%", "100", "99%"], successMsg: "김주헌 파트장님: 목표치 확인 완료!" }
+        ],
+        objective: [
+          { id: "r1_o1", title: "☎️ 1관: 부재중 전화 응대", question: "파트장님 부재중일 때 외부 전화 응대로 올바른 것은?", choices: ["1. 담배 피우러 가셨는데요?", "2. 자리에 안 계시니 나중에 거세요.", "3. 잠시 자리를 비우셨습니다. 메모 남겨드릴까요?", "4. 몰라요."], answerIdx: 2, successMsg: "김주헌 파트장님: 완벽한 비즈니스 응대!" },
+          { id: "r1_o2", title: "💻 1관: 이석 시 PC 보안", question: "퇴근전 이석 시 올바른 보안 조치는?", choices: ["1. 모니터만 끈다", "2. 화면 잠금(Win+L)을 누른다", "3. 메모장에 비번 노출", "4. 그냥 간다"], answerIdx: 1, successMsg: "김주헌 파트장님: 철저한 보안 통과!" }
+        ]
+      },
+      2: {
+        subjective: [
+          { id: "r2_s1", title: "📝 2관: 보고서 작성법", question: "결론과 핵심 요약을 맨 앞에 먼저 작성하는 3글자 보고 방식은?", hint: "💡 힌트: ㄷㄱㅅ 작성법", answers: ["두괄식", "두괄식 작성"], successMsg: "김진석 파트장님: 두괄식 보고 가독성 굿!" },
+          { id: "r2_s2", title: "🔌 2관: 서버 장애 복구", question: "케이블 연결 성공! 원인 분석을 위해 확보해야 하는 2글자 데이터는?", hint: "💡 힌트: ㄹㄱ 또는 log", answers: ["로그", "log", "LOG"], successMsg: "김진석 파트장님: 시스템 로그 확보 완료!" }
+        ],
+        objective: [
+          { id: "r2_o1", title: "⚙️ 2관: 형상 관리 수칙", question: "소스 코드 수정 후 메인 서버 반영 전 필수 조치는?", choices: ["1. 바로 메인에 올린다", "2. 로컬 테스트 및 영향을 검증한다", "3. 주석 삭제", "4. 퇴근 1분전 반영"], answerIdx: 1, successMsg: "김진석 파트장님: 안정적인 형상 관리 통과!" }
+        ]
+      },
+      3: {
+        subjective: [
+          { id: "r3_s1", title: "📝 3관: UX 검증", question: "사용자 직관성을 최우선하는 기획 개념의 2글자 영문 약어는?", hint: "💡 힌트: 사용자 경험 (영문 2글자)", answers: ["UX", "ux"], successMsg: "윤지혜 파트장님: UX 편의성이 최고죠!" },
+          { id: "r3_s2", title: "🔍 3관: 모니터 단서", question: "VSEM 전자현미경의 정밀 측정 단위 나노미터의 영문 약어는?", hint: "💡 힌트: 예) nm", answers: ["nm", "NM"], successMsg: "윤지혜 파트장님: 정밀 나노 단위 확인 완료!" }
+        ],
+        objective: [
+          { id: "r3_o1", title: "🔬 3관: 정밀 시편 취급", question: "VSEM 분석용 정밀 시편 취급 수칙으로 올바른 것은?", choices: ["1. 맨손으로 만진다", "2. 전용 핀셋과 제어 장갑을 착용한다", "3. 서류 더미에 둔다", "4. 물로 씻는다"], answerIdx: 1, successMsg: "윤지혜 파트장님: 장비 수칙 통과!" }
+        ]
+      },
+      4: {
+        subjective: [
+          { id: "r4_s1", title: "📝 4관: 최종 출하 점검", question: "프로젝트 최종 출하 전 데이터 백업과 함께 점검해야 하는 핵심 2글자 단어는?", hint: "💡 힌트: ㅂㅇ", answers: ["보안", "테스트"], successMsg: "손승준 PL님: 최종 점검 완료!" },
+          { id: "r4_s2", title: "🔐 4관: 캔틴 금고 문서", question: "프로젝트 최종 승인자 권한을 가진 2글자 직책 영문 약어는?", hint: "💡 힌트: 프로젝트 리더", answers: ["PL", "pl"], successMsg: "손승준 PL님: 최종 승인권자 확인!" }
+        ],
+        objective: [
+          { id: "r4_o1", title: "🚀 4관: 신입사원의 자세", question: "프로젝트 성공을 위해 가장 필요한 역량은?", choices: ["1. 독단적 처리", "2. 적극적 질문과 소통", "3. 눈치 야근", "4. 지각"], answerIdx: 1, successMsg: "손승준 PL님: 훌륭한 마음가짐입니다!" }
+        ]
+      }
+    };
+
+    let playerNickname = "EFA1 / 신입사원";
+    let currentRoom = 1;
+    let totalScore = 0;
+    let activeQuizObj = null;
+    let currentSlotKey = null;
+
+    let roomSolved = {
+      1: { q1: false, q2: false, q3: false },
+      2: { q1: false, q2: false, q3: false },
+      3: { q1: false, q2: false, q3: false },
+      4: { q1: false, q2: false, q3: false }
+    };
+
+    let assignedQuizzes = { 1: {}, 2: {}, 3: {}, 4: {} };
+
+    const roomData = {
+      1: { title: "S1FA PJT : 1관 분석기술팀 EFA1 파트", bossName: "김주헌 파트장님", welcomeMsg: "김주헌 파트장님: 오피스 데스크와 수납함을 정돈해 두었네. 단서를 찾아보게." },
+      2: { title: "S1FA PJT : 2관 분석기술팀 EFA2 파트", bossName: "김진석 파트장님", welcomeMsg: "김진석 파트장님: EFA2 개발 파트입니다. 책상 위 타공판의 케이블을 복구하세요." },
+      3: { title: "S1FA PJT : 3관 분석기술팀 PFA/VSEM 파트", bossName: "윤지혜 파트장님", welcomeMsg: "윤지혜 파트장님: 분석실입니다. 실험대 위 모니터를 확인하고 미션을 해결하세요." },
+      4: { title: "S1FA PJT : 4관 분석기술팀 PL실", bossName: "손승준 PL님", welcomeMsg: "손승준 PL님: 캔틴룸 바 테이블입니다. 정수기 쪽 단서를 찾아 비밀 금고를 여세요!" }
+    };
+
+    function generateQuizzes() {
+      for (let r = 1; r <= 4; r++) {
+        const bank = questionBank[r];
+        assignedQuizzes[r] = {
+          q1: bank.subjective[0],
+          q2: bank.subjective[1] || bank.objective[0],
+          q3: bank.objective[1] || bank.objective[0]
+        };
+      }
+    }
+
+    function renderRoomBackground(r) {
+      const svg = document.getElementById('bg-svg');
+      if (r === 1) {
+        svg.innerHTML = `
+          <rect width="800" height="320" fill="#1e293b"/>
+          <rect x="30" y="70" width="160" height="180" fill="#fef08a" opacity="0.3"/>
+          <rect x="30" y="70" width="160" height="180" fill="none" stroke="#94a3b8" stroke-width="6"/>
+          <rect x="0" y="15" width="800" height="15" fill="#334155"/>
+          <rect x="120" y="45" width="560" height="40" fill="none" stroke="#f8fafc" stroke-width="6"/>
+          <rect y="320" width="800" height="180" fill="#0f172a"/>
+          <rect x="130" y="270" width="540" height="85" fill="#f8fafc" rx="4"/>
+          <rect x="130" y="255" width="540" height="18" fill="#cbd5e1"/>
+        `;
+      } else if (r === 2) {
+        svg.innerHTML = `
+          <rect width="800" height="320" fill="#f1f5f9"/>
+          <rect x="50" y="35" width="700" height="12" fill="#ffffff"/>
+          <rect x="50" y="37" width="700" height="8" fill="#38bdf8"/>
+          <rect x="640" y="60" width="130" height="200" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="3"/>
+          <rect y="320" width="800" height="180" fill="#e2e8f0"/>
+          <rect x="90" y="260" width="580" height="90" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+        `;
+      } else if (r === 3) {
+        svg.innerHTML = `
+          <rect width="800" height="320" fill="#e2e8f0"/>
+          <rect x="200" y="0" width="35" height="110" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+          <polygon points="170,150 270,150 235,110 200,110" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+          <rect x="520" y="0" width="35" height="110" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+          <polygon points="490,150 590,150 555,110 520,110" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+          <rect y="320" width="800" height="180" fill="#cbd5e1"/>
+          <rect x="70" y="260" width="660" height="95" fill="#334155" stroke="#1e293b" stroke-width="3"/>
+        `;
+      } else if (r === 4) {
+        svg.innerHTML = `
+          <rect width="800" height="320" fill="#334155"/>
+          <rect x="200" y="60" width="400" height="210" fill="#cbd5e1" stroke="#94a3b8" stroke-width="3"/>
+          <rect x="270" y="0" width="25" height="60" fill="#18181b"/>
+          <rect x="255" y="60" width="55" height="8" fill="#fef08a"/>
+          <rect x="370" y="0" width="25" height="60" fill="#18181b"/>
+          <rect x="355" y="60" width="55" height="8" fill="#fef08a"/>
+          <rect x="470" y="0" width="25" height="60" fill="#18181b"/>
+          <rect x="455" y="60" width="55" height="8" fill="#fef08a"/>
+          <rect y="320" width="800" height="180" fill="#1e293b"/>
+          <rect x="160" y="270" width="560" height="100" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
+        `;
+      }
+      renderBossNPC(r);
+    }
+
+    function renderBossNPC(r) {
+      const bossSvg = document.getElementById('boss-svg');
+      const bossTag = document.getElementById('boss-tag');
+      bossTag.innerText = roomData[r].bossName;
+
+      if (r === 3) {
+        bossSvg.innerHTML = `
+          <rect x="15" y="4" width="30" height="14" rx="3" fill="#582f0e"/>
+          <rect x="12" y="16" width="36" height="24" rx="4" fill="#fde047" stroke="#000" stroke-width="1.5"/>
+          <rect x="20" y="24" width="4" height="4" fill="#000"/>
+          <rect x="36" y="24" width="4" height="4" fill="#000"/>
+          <rect x="25" y="32" width="10" height="3" fill="#be185d"/>
+          <rect x="10" y="40" width="40" height="35" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" rx="2"/>
+          <rect x="18" y="75" width="8" height="15" fill="#1e293b"/>
+          <rect x="34" y="75" width="8" height="15" fill="#1e293b"/>
+        `;
+      } else {
+        let suitColor = "#0f172a";
+        if (r === 2) suitColor = "#064e3b";
+        else if (r === 4) suitColor = "#451a03";
+
+        bossSvg.innerHTML = `
+          <rect x="15" y="4" width="30" height="14" rx="3" fill="#1e293b"/>
+          <rect x="12" y="16" width="36" height="24" rx="4" fill="#fde047" stroke="#000" stroke-width="1.5"/>
+          <rect x="20" y="24" width="4" height="4" fill="#000"/>
+          <rect x="36" y="24" width="4" height="4" fill="#000"/>
+          <rect x="22" y="21" width="8" height="5" fill="#ffffff" stroke="#000" stroke-width="1"/>
+          <rect x="40" y="21" width="8" height="5" fill="#ffffff" stroke="#000" stroke-width="1"/>
+          <rect x="10" y="40" width="40" height="35" fill="${suitColor}" rx="2"/>
+          <polygon points="28,40 32,40 34,60 26,60" fill="#dc2626"/>
+          <rect x="18" y="75" width="8" height="15" fill="#000"/>
+          <rect x="34" y="75" width="8" height="15" fill="#000"/>
+        `;
+      }
+    }
+
+    function renderInteractiveElements(r) {
+      const layer = document.getElementById('interactive-layer');
+      layer.innerHTML = '';
+
+      if (r === 1) {
+        layer.innerHTML = `
+          <div id="elem-m1" class="art-item" style="top:38%; left:22%;" title="메인 모니터">
+            <svg width="110" height="80" viewBox="0 0 110 80">
+              <rect x="5" y="5" width="100" height="50" fill="#030712" stroke="#38bdf8" stroke-width="2.5" rx="4"/>
+              <rect x="10" y="10" width="90" height="40" fill="#0284c7" opacity="0.9"/>
+              <rect x="48" y="55" width="14" height="15" fill="#64748b"/>
+            </svg>
+          </div>
+          <div id="elem-secret-memo" class="art-item" style="top:56%; left:50%; z-index:42;" title="비밀 메모지">
+            <svg width="40" height="40" viewBox="0 0 40 40">
+              <rect width="36" height="36" fill="#fef08a" stroke="#b45309" stroke-width="1.5" rx="2"/>
+            </svg>
+          </div>
+          <div id="drag-box-real" class="art-item draggable-item" style="top:52%; left:48%; z-index:45;" title="플라스틱 서류 수납함 (드래그)">
+            <svg width="70" height="55" viewBox="0 0 70 55">
+              <rect width="65" height="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2.5" rx="4"/>
+              <line x1="5" y1="18" x2="60" y2="18" stroke="#e2e8f0" stroke-width="2"/>
+            </svg>
+          </div>
+          <div id="elem-p1" class="art-item" style="top:45%; left:10%;" title="업무 전화기">
+            <svg width="50" height="40" viewBox="0 0 50 40">
+              <rect y="6" width="45" height="30" fill="#1e293b" stroke="#38bdf8" stroke-width="2" rx="3"/>
+            </svg>
+          </div>
+        `;
+        makeElementDraggable(document.getElementById('drag-box-real'), () => {
+          setDialogue("신입사원: 서류 수납함을 치우니 밑에서 시크릿 메모지가 나왔다!");
+        });
+        document.getElementById('elem-m1').addEventListener('click', () => openQuizObj(assignedQuizzes[1].q1, 'q1'));
+        document.getElementById('elem-secret-memo').addEventListener('click', () => openQuizObj(assignedQuizzes[1].q2, 'q2'));
+        document.getElementById('elem-p1').addEventListener('click', () => openQuizObj(assignedQuizzes[1].q3, 'q3'));
+
+      } else if (r === 2) {
+        layer.innerHTML = `
+          <div id="elem-m2" class="art-item" style="top:38%; left:22%;" title="와이드 모니터">
+            <svg width="110" height="80" viewBox="0 0 110 80">
+              <rect x="5" y="10" width="100" height="45" fill="#0f172a" stroke="#10b981" stroke-width="2" rx="4"/>
+              <rect x="48" y="55" width="14" height="15" fill="#94a3b8"/>
+            </svg>
+          </div>
+          <div id="elem-cable" class="art-item" style="top:50%; left:45%;" title="단선 케이블">
+            <svg width="55" height="35" viewBox="0 0 55 35">
+              <path d="M 5,10 Q 20,10 25,18 M 30,18 Q 40,25 50,25" stroke="#ef4444" stroke-width="4" fill="none"/>
+            </svg>
+          </div>
+          <div id="drag-cup-fake" class="art-item draggable-item" style="top:48%; left:60%;" title="텀블러 (드래그)">
+            <svg width="30" height="40" viewBox="0 0 30 40">
+              <rect x="4" y="8" width="20" height="28" fill="#065f46" stroke="#a7f3d0" stroke-width="2" rx="3"/>
+            </svg>
+          </div>
+          <div id="elem-p2" class="art-item" style="top:48%; left:10%;" title="전화기">
+            <svg width="50" height="40" viewBox="0 0 50 40">
+              <rect y="6" width="45" height="30" fill="#064e3b" stroke="#10b981" stroke-width="2" rx="3"/>
+            </svg>
+          </div>
+        `;
+        makeElementDraggable(document.getElementById('drag-cup-fake'), () => setDialogue("신입사원: 텀블러 밑을 확인했지만 깨끗하다."));
+        document.getElementById('elem-m2').addEventListener('click', () => openQuizObj(assignedQuizzes[2].q1, 'q1'));
+        document.getElementById('elem-cable').addEventListener('click', () => openWireMiniGame('q2'));
+        document.getElementById('elem-p2').addEventListener('click', () => openQuizObj(assignedQuizzes[2].q3, 'q3'));
+
+      } else if (r === 3) {
+        layer.innerHTML = `
+          <div id="elem-stain-mon" class="art-item" style="top:36%; left:16%;" title="분석 모니터">
+            <svg width="100" height="80" viewBox="0 0 100 80">
+              <rect x="5" y="5" width="90" height="55" fill="#1e1b4b" stroke="#a855f7" stroke-width="2.5" rx="4"/>
+              <circle cx="30" cy="25" r="8" fill="#d97706" opacity="0.8"/>
+            </svg>
+          </div>
+          <div id="elem-m3" class="art-item" style="top:28%; left:42%;" title="타워 분석 장비">
+            <svg width="75" height="110" viewBox="0 0 75 110">
+              <rect x="8" y="8" width="58" height="90" fill="#334155" stroke="#a855f7" stroke-width="2" rx="4"/>
+            </svg>
+          </div>
+          <div id="drag-note" class="art-item draggable-item" style="top:55%; left:58%;" title="연구 노트 (드래그)">
+            <svg width="40" height="35" viewBox="0 0 40 35">
+              <rect width="36" height="30" fill="#ffffff" stroke="#475569" stroke-width="1.5" rx="2"/>
+            </svg>
+          </div>
+          <div id="elem-p3" class="art-item" style="top:48%; left:8%;" title="전화기">
+            <svg width="50" height="40" viewBox="0 0 50 40">
+              <rect y="6" width="45" height="30" fill="#1e1b4b" stroke="#a855f7" stroke-width="2" rx="3"/>
+            </svg>
+          </div>
+        `;
+        makeElementDraggable(document.getElementById('drag-note'), () => setDialogue("신입사원: 연구 노트를 치우니 정밀 수치가 적혀있다!"));
+        document.getElementById('elem-stain-mon').addEventListener('click', () => openStainMiniGame('q1'));
+        document.getElementById('elem-m3').addEventListener('click', () => openQuizObj(assignedQuizzes[3].q2, 'q2'));
+        document.getElementById('elem-p3').addEventListener('click', () => openQuizObj(assignedQuizzes[3].q3, 'q3'));
+
+      } else if (r === 4) {
+        layer.innerHTML = `
+          <div id="elem-m4" class="art-item" style="top:24%; left:36%;" title="캔틴 수납장">
+            <svg width="100" height="50" viewBox="0 0 100 50">
+              <rect width="90" height="40" fill="#e2e8f0" stroke="#fbbf24" stroke-width="2" rx="3"/>
+            </svg>
+          </div>
+          <div id="elem-secret-safe" class="art-item" style="top:40%; left:58%; z-index:42;" title="비밀 금고">
+            <svg width="60" height="60" viewBox="0 0 60 60">
+              <rect width="55" height="55" fill="#0f172a" stroke="#fbbf24" stroke-width="3" rx="5"/>
+              <circle cx="27" cy="27" r="10" fill="#facc15"/>
+            </svg>
+          </div>
+          <div id="drag-water-real" class="art-item draggable-item" style="top:36%; left:56%; z-index:45;" title="정수기 (드래그)">
+            <svg width="50" height="65" viewBox="0 0 50 65">
+              <rect width="44" height="55" fill="#ffffff" stroke="#475569" stroke-width="2" rx="4"/>
+              <rect x="8" y="8" width="28" height="16" fill="#0284c7"/>
+            </svg>
+          </div>
+          <div id="elem-p4" class="art-item" style="top:48%; left:10%;" title="전화기">
+            <svg width="50" height="40" viewBox="0 0 50 40">
+              <rect y="6" width="45" height="30" fill="#1e1b4b" stroke="#fbbf24" stroke-width="2" rx="3"/>
+            </svg>
+          </div>
+        `;
+        makeElementDraggable(document.getElementById('drag-water-real'), () => {
+          setDialogue("신입사원: 정수기를 치우니 뒤쪽 벽면에 숨겨져 있던 비밀 금고가 나왔다!");
+        });
+        document.getElementById('elem-m4').addEventListener('click', () => openQuizObj(assignedQuizzes[4].q1, 'q1'));
+        document.getElementById('elem-secret-safe').addEventListener('click', () => openQuizObj(assignedQuizzes[4].q2, 'q2'));
+        document.getElementById('elem-p4').addEventListener('click', () => openQuizObj(assignedQuizzes[4].q3, 'q3'));
+      }
+
+      updateDoorStatusUI();
+    }
+
+    function makeElementDraggable(elem, onMoved) {
+      if (!elem) return;
+      let isDragging = false, startX, startY, initLeft, initTop;
+
+      const down = (e) => {
+        isDragging = true;
+        const evt = e.touches ? e.touches[0] : e;
+        startX = evt.clientX; startY = evt.clientY;
+        initLeft = elem.offsetLeft; initTop = elem.offsetTop;
+      };
+
+      const move = (e) => {
+        if (!isDragging) return;
+        const evt = e.touches ? e.touches[0] : e;
+        const dx = evt.clientX - startX, dy = evt.clientY - startY;
+        elem.style.left = (initLeft + dx) + 'px';
+        elem.style.top = (initTop + dy) + 'px';
+        if (Math.abs(dx) > 20 || Math.abs(dy) > 20) { if (onMoved) { onMoved(); onMoved = null; } }
+      };
+
+      const up = () => { isDragging = false; };
+      elem.addEventListener('mousedown', down); elem.addEventListener('touchstart', down);
+      window.addEventListener('mousemove', move); window.addEventListener('touchmove', move);
+      window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
+    }
+
+    function updateDoorStatusUI() {
+      const door = document.getElementById('door-obj');
+      const doorLabel = document.getElementById('door-label');
+      const solved = roomSolved[currentRoom];
+
+      if (solved.q1 && solved.q2 && solved.q3) {
+        door.style.opacity = '1';
+        doorLabel.innerText = currentRoom === 4 ? "🚪 최종 탈출!" : `🚪 ${currentRoom + 1}관 이동!`;
+        doorLabel.style.background = '#22c55e';
+      } else {
+        door.style.opacity = '0.6';
+        doorLabel.innerText = "🔒 다음 방";
+        doorLabel.style.background = 'transparent';
+      }
+    }
+
+    function openWireMiniGame(slotKey) {
+      const mgTitle = document.getElementById('mg-title'), mgBody = document.getElementById('mg-body');
+      mgTitle.innerText = "🔌 2관 미션: 케이블 선 연결";
+      mgBody.innerHTML = `
+        <p style="font-size:12px; color:#cbd5e1; margin-bottom:12px;">같은 색 단자를 클릭해 연결하세요!</p>
+        <div style="display:flex; justify-content:space-around; align-items:center; background:#020617; padding:15px; border:2px solid #38bdf8; border-radius:8px;">
+          <div class="wire-port wire-red" data-color="red"></div>
+          <div class="wire-port wire-blue" data-color="blue"></div>
+          <div style="font-size:12px; color:#facc15;">선택 대기...</div>
+          <div class="wire-port wire-blue" data-color="blue"></div>
+          <div class="wire-port wire-red" data-color="red"></div>
+        </div>
+      `;
+      document.getElementById('minigame-modal').style.display = 'flex';
+
+      let sel = null, count = 0;
+      mgBody.querySelectorAll('.wire-port').forEach(p => {
+        p.addEventListener('click', () => {
+          const c = p.getAttribute('data-color');
+          if (!sel) { sel = { c, elem: p }; p.style.transform = 'scale(1.2)'; }
+          else {
+            if (sel.elem !== p && sel.c === c) {
+              p.style.opacity = '0.3'; sel.elem.style.opacity = '0.3';
+              count++; sel = null;
+              if (count >= 2) {
+                setTimeout(() => {
+                  document.getElementById('minigame-modal').style.display = 'none';
+                  openQuizObj(assignedQuizzes[2][slotKey], slotKey);
+                }, 300);
+              }
+            } else { sel.elem.style.transform = 'scale(1)'; sel = null; }
+          }
+        });
+      });
+    }
+
+    function openStainMiniGame(slotKey) {
+      const mgTitle = document.getElementById('mg-title'), mgBody = document.getElementById('mg-body');
+      mgTitle.innerText = "🔍 3관 미션: 모니터 얼룩 닦기";
+      mgBody.innerHTML = `
+        <p style="font-size:12px; color:#cbd5e1; margin-bottom:12px;">화면 얼룩을 클릭해 정밀 단위를 확인하세요!</p>
+        <div style="position:relative; width:100%; height:140px; background:#1e1b4b; border:2px solid #38bdf8; border-radius:8px; display:flex; justify-content:center; align-items:center;">
+          <div style="font-size:13px; color:#38bdf8;">[ VSEM 정밀 단위 : nm ]</div>
+          <div class="stain-spot" style="top:20px; left:50px;">🧹</div>
+          <div class="stain-spot" style="top:70px; left:220px;">🧹</div>
+        </div>
+      `;
+      document.getElementById('minigame-modal').style.display = 'flex';
+
+      let count = 0;
+      mgBody.querySelectorAll('.stain-spot').forEach(s => {
+        s.addEventListener('click', () => {
+          s.style.display = 'none'; count++;
+          if (count >= 2) {
+            setTimeout(() => {
+              document.getElementById('minigame-modal').style.display = 'none';
+              openQuizObj(assignedQuizzes[3][slotKey], slotKey);
+            }, 300);
+          }
+        });
+      });
+    }
+
+    function openQuizObj(qData, slotKey) {
+      activeQuizObj = qData; currentSlotKey = slotKey;
+      document.getElementById('qz-title').innerText = qData.title;
+      document.getElementById('qz-question').innerText = qData.question;
+
+      const hintElem = document.getElementById('qz-hint');
+      const choicesContainer = document.getElementById('qz-choices-container');
+      const inputContainer = document.getElementById('qz-input-container');
+
+      choicesContainer.innerHTML = ''; document.getElementById('qz-input').value = '';
+
+      if (qData.answers) {
+        hintElem.style.display = 'inline-block'; hintElem.innerText = qData.hint;
+        choicesContainer.style.display = 'none'; inputContainer.style.display = 'flex';
+      } else {
+        hintElem.style.display = 'none'; inputContainer.style.display = 'none';
+        choicesContainer.style.display = 'flex';
+        qData.choices.forEach((c, idx) => {
+          const btn = document.createElement('div');
+          btn.className = 'quiz-choice-item'; btn.innerText = c;
+          btn.addEventListener('click', () => checkAnswer(idx));
+          choicesContainer.appendChild(btn);
+        });
+      }
+      document.getElementById('quiz-modal').style.display = 'flex';
+    }
+
+    function checkAnswer(chosenIdx) {
+      if (chosenIdx === activeQuizObj.answerIdx) handleSuccess();
+      else handleFail();
+    }
+
+    function checkSubjective() {
+      const val = document.getElementById('qz-input').value.trim().toLowerCase().replace(/\s+/g, '');
+      const ok = activeQuizObj.answers.some(a => a.toLowerCase().replace(/\s+/g, '') === val);
+      if (ok) handleSuccess();
+      else handleFail();
+    }
+
+    function handleSuccess() {
+      totalScore += 1000;
+      updateScoreUI();
+      if (currentSlotKey) roomSolved[currentRoom][currentSlotKey] = true;
+      setDialogue(`${activeQuizObj.successMsg}\n(+1,000점 획득! 현재 총점: ${totalScore}점)`);
+      updateDoorStatusUI();
+      document.getElementById('quiz-modal').style.display = 'none';
+    }
+
+    function handleFail() {
+      totalScore = Math.max(0, totalScore - 2000);
+      updateScoreUI();
+      alert(`❌ 오답입니다! -2,000점 감점되었습니다. (현재 점수: ${totalScore}점)`);
+    }
+
+    function updateScoreUI() {
+      document.getElementById('user-stats').innerText = `점수: ${totalScore}점 | ${playerNickname}`;
+    }
+
+    function setDialogue(txt) { document.getElementById('dialogue-text').innerText = txt; }
+
+    function triggerRoomChange(toRoom) {
+      currentRoom = toRoom;
+      document.getElementById('room-title').innerText = roomData[toRoom].title;
+      renderRoomBackground(toRoom);
+      renderInteractiveElements(toRoom);
+      setDialogue(roomData[toRoom].welcomeMsg);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      generateQuizzes();
+      document.getElementById('start-btn').addEventListener('click', () => {
+        const name = document.getElementById('nickname-input').value.trim();
+        if (!name) return alert("이름을 입력하세요!");
+        playerNickname = name;
+        document.getElementById('start-modal').style.display = 'none';
+        updateScoreUI();
+        triggerRoomChange(1);
+      });
+
+      document.getElementById('prev-btn').addEventListener('click', () => { if (currentRoom > 1) triggerRoomChange(currentRoom - 1); });
+      document.getElementById('next-btn').addEventListener('click', () => {
+        const solved = roomSolved[currentRoom];
+        if (!solved.q1 || !solved.q2 || !solved.q3) return alert("현재 방의 3개 미션을 모두 완료해야 이동할 수 있습니다!");
+        if (currentRoom < 4) triggerRoomChange(currentRoom + 1);
+        else alert(`🎉 모든 미션을 완수했습니다! 최종 점수: ${totalScore}점`);
+      });
+
+      document.getElementById('qz-submit-btn').addEventListener('click', checkSubjective);
+      document.getElementById('quiz-close-btn').addEventListener('click', () => document.getElementById('quiz-modal').style.display = 'none');
+      document.getElementById('minigame-close-btn').addEventListener('click', () => document.getElementById('minigame-modal').style.display = 'none');
+    });
+  </script>
+</body>
+</html>
 
