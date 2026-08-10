@@ -1,1 +1,1594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>S1FA PJT 방탈출 : 신입사원의 칼퇴기</title>
+  <!-- 갈무리 레트로 픽셀 폰트 로드 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: 'Galmuri9', monospace;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #fff;
+      padding: 10px;
+    }
+
+    /* 모바일 반응형 프레임 */
+    #game-container {
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 4 / 3;
+      background-color: #0f172a;
+      border: 4px solid #38bdf8;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.4), inset 0 0 20px rgba(0,0,0,0.8);
+    }
+
+    /* 상단 내비게이션 바 */
+    #top-nav {
+      height: 10%;
+      min-height: 42px;
+      background: #1e293b;
+      border-bottom: 3px solid #38bdf8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 12px;
+      z-index: 100;
+    }
+
+    #room-title {
+      font-size: clamp(10px, 1.8vw, 14px);
+      font-weight: bold;
+      color: #38bdf8;
+      text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+    }
+
+    #user-stats {
+      font-size: clamp(9px, 1.5vw, 12px);
+      font-weight: bold;
+      color: #facc15;
+      background: #020617;
+      padding: 4px 8px;
+      border: 2px solid #facc15;
+      border-radius: 6px;
+      box-shadow: 0 0 8px rgba(250, 204, 21, 0.3);
+    }
+
+    .nav-btn-group {
+      display: flex;
+      gap: 4px;
+    }
+
+    .nav-btn {
+      background: #0f172a;
+      color: #fff;
+      border: 1.5px solid #38bdf8;
+      padding: 4px 8px;
+      font-size: clamp(9px, 1.4vw, 11px);
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      background: #38bdf8;
+      color: #0f172a;
+    }
+
+    /* 메인 픽셀 화면 */
+    #screen {
+      width: 100%;
+      height: 68%;
+      position: relative;
+      background-color: #020617;
+      overflow: hidden;
+    }
+
+    .pixel-render {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    #bg-svg {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0; left: 0;
+    }
+
+    /* 동적 인터랙티브 레이어 */
+    #interactive-layer {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 40;
+    }
+
+    .pixel-item {
+      position: absolute;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .pixel-item:hover {
+      transform: scale(1.08);
+      filter: drop-shadow(0px 0px 6px #facc15);
+    }
+
+    .draggable-item {
+      cursor: grab;
+      z-index: 60 !important;
+      touch-action: none;
+    }
+
+    .draggable-item:active {
+      cursor: grabbing;
+    }
+
+    /* NPC 및 출입문 배치 */
+    .pixel-npc {
+      position: absolute;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #boss-npc { top: 38%; left: 52%; cursor: pointer; }
+    #player-npc { top: 38%; left: 30%; pointer-events: none; }
+    #door-obj { top: 5%; right: 4%; cursor: pointer; z-index: 50; }
+
+    .door-tag {
+      background: rgba(15, 23, 42, 0.9);
+      color: #f8fafc;
+      font-size: clamp(8px, 1.2vw, 11px);
+      padding: 3px 6px;
+      border-radius: 4px;
+      border: 1px solid #38bdf8;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    /* 하단 대사창 */
+    #dialogue-box {
+      width: 100%;
+      height: 22%;
+      background: #090d16;
+      border-top: 3px solid #38bdf8;
+      padding: 10px 16px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-sizing: border-box;
+      z-index: 100;
+    }
+
+    #dialogue-text {
+      font-size: clamp(11px, 1.8vw, 14px);
+      line-height: 1.5;
+      color: #f1f5f9;
+      white-space: pre-line;
+      font-weight: bold;
+    }
+
+    #next-arrow {
+      position: absolute;
+      bottom: 10px;
+      right: 14px;
+      width: 0; height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 9px solid #facc15;
+      animation: bounce 0.8s infinite alternate;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(5px); }
+    }
+
+    /* 모달 디자인 공통 */
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(2, 6, 23, 0.88);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      z-index: 1000;
+    }
+
+    .modal-card {
+      background: #0f172a;
+      border: 3px solid #38bdf8;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 540px;
+      padding: 20px;
+      color: #fff;
+      position: relative;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: #1e293b;
+      color: #f87171;
+      border: 2px solid #ef4444;
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .quiz-title {
+      font-size: clamp(13px, 2vw, 15px);
+      color: #38bdf8;
+      margin-bottom: 10px;
+      font-weight: bold;
+      padding-right: 30px;
+    }
+
+    .quiz-q {
+      font-size: clamp(11px, 1.7vw, 13px);
+      margin-bottom: 10px;
+      line-height: 1.4;
+      color: #f8fafc;
+      font-weight: bold;
+    }
+
+    .quiz-hint {
+      display: inline-block;
+      background: #1e293b;
+      color: #facc15;
+      font-size: clamp(10px, 1.4vw, 11px);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid #facc15;
+      margin-bottom: 10px;
+    }
+
+    .quiz-choice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .quiz-choice-item {
+      background: #1e293b;
+      border: 2px solid #334155;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: clamp(11px, 1.6vw, 12px);
+      font-weight: bold;
+      color: #f1f5f9;
+    }
+
+    .quiz-choice-item:hover {
+      background: #2563eb;
+      border-color: #60a5fa;
+      color: #fff;
+    }
+
+    .quiz-input-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .quiz-input {
+      flex: 1;
+      padding: 10px;
+      font-size: clamp(11px, 1.6vw, 13px);
+      background: #020617;
+      border: 2px solid #38bdf8;
+      border-radius: 6px;
+      color: #fff;
+      outline: none;
+      font-weight: bold;
+    }
+
+    .quiz-submit-btn {
+      background: #2563eb;
+      color: #fff;
+      border: 2px solid #60a5fa;
+      padding: 0 16px;
+      font-size: clamp(11px, 1.6vw, 13px);
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .start-input {
+      width: 100%;
+      padding: 10px;
+      font-size: 13px;
+      background: #020617;
+      border: 2px solid #38bdf8;
+      border-radius: 6px;
+      color: #fff;
+      margin: 14px 0;
+      font-weight: bold;
+    }
+
+    .start-btn {
+      width: 100%;
+      background: #2563eb;
+      color: #fff;
+      border: 2px solid #60a5fa;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+
+    .leaderboard-table th, .leaderboard-table td {
+      border: 1px solid #334155;
+      padding: 6px;
+      text-align: center;
+    }
+
+    .leaderboard-table th { background: #1e293b; color: #38bdf8; }
+    .leaderboard-table td { background: #020617; }
+
+    .wire-port {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      cursor: pointer;
+      display: inline-block;
+    }
+    .wire-red { background: #ef4444; }
+    .wire-blue { background: #3b82f6; }
+    .wire-yellow { background: #eab308; }
+
+    .stain-spot {
+      width: 40px;
+      height: 40px;
+      background: rgba(180, 83, 9, 0.85);
+      border-radius: 50%;
+      position: absolute;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px dashed #facc15;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <!-- 시작 모달 (심플한 감점 경고 문구 적용) -->
+    <div id="start-modal" class="modal-overlay">
+      <div class="modal-card">
+        <h2 style="font-size: clamp(16px, 2.5vw, 19px); color:#38bdf8; text-align:center; margin-bottom:10px;">🚀 S1FA PJT 방탈출 : 신입사원의 칼퇴기</h2>
+        <p style="font-size: clamp(10px, 1.5vw, 12px); line-height: 1.5; color:#cbd5e1; text-align:center;">
+          4개관의 모든 퀴즈와 미션을 해결하고 칼퇴에 성공하세요!<br>
+          <span style="color:#ef4444;">[경고]</span> 오답 제출 시 <b>-2,000점</b>이 차감됩니다!
+        </p>
+        <input type="text" id="nickname-input" class="start-input" placeholder="파트명 / 이름 (예: EFA1 / 홍길동)..." maxlength="20">
+        <button id="start-btn" class="start-btn">게임 시작하기 ➔</button>
+      </div>
+    </div>
+
+    <!-- 상단 내비게이션 바 -->
+    <div id="top-nav">
+      <div id="room-title">S1FA PJT : 1관 EFA1 파트</div>
+      <div id="user-stats">점수: 0점</div>
+      <div class="nav-btn-group">
+        <button id="prev-btn" class="nav-btn">◄ 이전</button>
+        <button id="next-btn" class="nav-btn">다음 ►</button>
+        <button id="reset-btn" class="nav-btn" style="border-color:#ef4444; color:#f87171;">🔄 초기화</button>
+      </div>
+    </div>
+
+    <!-- 메인 픽셀 화면 -->
+    <div id="screen">
+      <svg id="bg-svg" class="pixel-render" viewBox="0 0 320 200" preserveAspectRatio="none"></svg>
+
+      <!-- NPC: 파트장님/PL님 -->
+      <div class="pixel-npc" id="boss-npc">
+        <svg id="boss-svg" width="50" height="70" viewBox="0 0 30 40" class="pixel-render"></svg>
+        <div id="boss-tag" class="door-tag">김주헌 파트장님</div>
+      </div>
+
+      <!-- Player: 신입사원 -->
+      <div class="pixel-npc" id="player-npc">
+        <svg width="50" height="70" viewBox="0 0 30 40" class="pixel-render">
+          <rect x="7" y="3" width="16" height="7" fill="#0f172a"/>
+          <rect x="7" y="9" width="16" height="11" fill="#fde047"/>
+          <rect x="10" y="12" width="3" height="3" fill="#0f172a"/>
+          <rect x="17" y="12" width="3" height="3" fill="#0f172a"/>
+          <path d="M 12,17 Q 15,19 18,17" stroke="#0f172a" fill="none" stroke-width="1"/>
+          <rect x="6" y="20" width="18" height="12" fill="#2563eb"/>
+          <path d="M 6,24 L 24,24 M 6,28 L 24,28 M 12,20 L 12,32 M 18,20 L 18,32" stroke="#1d4ed8" stroke-width="1"/>
+          <rect x="8" y="32" width="5" height="7" fill="#1e3a8a"/>
+          <rect x="17" y="32" width="5" height="7" fill="#1e3a8a"/>
+          <rect x="7" y="37" width="6" height="3" fill="#ffffff"/>
+          <rect x="17" y="37" width="6" height="3" fill="#ffffff"/>
+        </svg>
+        <div id="player-tag" class="door-tag">신입사원</div>
+      </div>
+
+      <!-- 동적 인터랙티브 사물 레이어 -->
+      <div id="interactive-layer"></div>
+
+      <!-- 출입문 -->
+      <div class="pixel-npc" id="door-obj" style="opacity:0.5;">
+        <svg width="34" height="42" viewBox="0 0 20 25" class="pixel-render">
+          <rect x="2" y="1" width="16" height="23" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+          <circle cx="15" cy="13" r="1.5" fill="#facc15"/>
+        </svg>
+        <div class="door-tag" id="door-label">🔒 다음 방</div>
+      </div>
+    </div>
+
+    <!-- 하단 대사창 -->
+    <div id="dialogue-box">
+      <div id="dialogue-text">대사가 출력됩니다.</div>
+      <div id="next-arrow"></div>
+    </div>
+
+    <!-- 미니게임 모달 -->
+    <div id="minigame-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card">
+        <button id="minigame-close-btn" class="modal-close-btn">✖</button>
+        <div class="quiz-title" id="mg-title">🔧 특수 미션</div>
+        <div id="mg-body" style="margin-top:10px; text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- 퀴즈 모달 -->
+    <div id="quiz-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card">
+        <button id="quiz-close-btn" class="modal-close-btn">✖</button>
+        <div class="quiz-title" id="qz-title">📋 퀴즈</div>
+        <div class="quiz-q" id="qz-question">질문</div>
+        <div class="quiz-hint" id="qz-hint" style="display:none;">💡 힌트: </div>
+        
+        <div id="qz-choices-container" class="quiz-choice-list" style="display:none;"></div>
+
+        <div id="qz-input-container" class="quiz-input-group" style="display:none;">
+          <input type="text" id="qz-input" class="quiz-input" placeholder="정답을 입력하세요..." />
+          <button id="qz-submit-btn" class="quiz-submit-btn">제출 ➔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 엔딩 모달 -->
+    <div id="ending-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="text-align: center;">
+        <h2 style="font-size:18px; color:#4ade80; margin-bottom:6px;">🎉 12개 미션 완수! 칼퇴 성공!</h2>
+        <p id="final-summary" style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#cbd5e1;"></p>
+        
+        <h3 style="font-size:12px; text-align:left; margin-top:8px; color:#38bdf8;">🏆 S1FA PJT 랭킹 순위표</h3>
+        <div style="max-height: 150px; overflow-y: auto; margin-bottom: 12px;">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>파트 / 이름</th>
+                <th>점수</th>
+                <th>소요시간</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+          </table>
+        </div>
+        <button id="restart-btn" class="start-btn">다시 도전하기 🔄</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================
+       글로벌 상태 변수 & 세션 데이터
+    ========================================== */
+    let userIp = "default_user";
+    let playerNickname = "EFA1 / 신입사원";
+    let currentRoom = 1;
+    let totalScore = 0;
+    let gameStartTime = 0;
+    let quizStartTime = 0;
+    let activeQuizKey = null;
+
+    let wireSelectedPort = null;
+    let wireConnectedCount = 0;
+    let stainCleanedCount = 0;
+
+    let roomSolved = {
+      1: { q1: false, q2: false, q3: false },
+      2: { q1: false, q2: false, q3: false },
+      3: { q1: false, q2: false, q3: false },
+      4: { q1: false, q2: false, q3: false }
+    };
+
+    const roomData = {
+      1: {
+        title: "S1FA PJT : 1관 EFA1 파트 (김주헌 파트장님)",
+        bossName: "김주헌 파트장님",
+        welcomeMsg: "김주헌 파트장님: 어이 신입~ EFA1 파트에 온 걸 환영하네! 서류를 드래그해서 치워 숨겨진 단서를 찾게."
+      },
+      2: {
+        title: "S1FA PJT : 2관 EFA2 파트 (김진석 파트장님)",
+        bossName: "김진석 파트장님",
+        welcomeMsg: "김진석 파트장님: 반가워요! EFA2 개발 파트입니다. 끊어진 서버 전용 케이블을 찾아서 올바르게 연결해 보세요."
+      },
+      3: {
+        title: "S1FA PJT : 3관 PFA/VSEM 파트 (윤지혜 파트장님)",
+        bossName: "윤지혜 파트장님",
+        welcomeMsg: "윤지혜 파트장님: 오셨군요! PFA/VSEM 파트입니다. 모니터 얼룩을 닦다 보면 진짜 단서가 나옵니다."
+      },
+      4: {
+        title: "S1FA PJT : 4관 S1FA PL실 (손승준 PL님)",
+        bossName: "손승준 PL님",
+        welcomeMsg: "손승준 PL님: 환영합니다! 마지막 4관 PL실입니다. 벽의 로드맵 액자를 치워 비밀 금고를 발견하세요!"
+      }
+    };
+
+    /* ==========================================
+       총 12개 주관식 / 객관식 퀴즈 데이터
+    ========================================== */
+    const quizzes = {
+      // 1관
+      r1_q1: {
+        type: "subjective",
+        title: "📝 1관: EFA1 파트 기획 [주관식]",
+        question: "김주헌 파트장님이 요청하신 이메일 제목 양식 맨 앞에 필수로 넣어야 하는 프로젝트 대괄호 태그명은?",
+        hint: "💡 힌트: 대괄호 안 프로젝트명 (예: S1FA PJT)",
+        answers: ["S1FA PJT", "S1FAPJT", "S1FA"],
+        successMsg: "김주헌 파트장님: 좋아! 비즈니스 이메일 규격을 잘 알고 있군."
+      },
+      r1_q2: {
+        type: "subjective",
+        title: "📝 1관: 서류 밑 비밀 메모 [주관식]",
+        question: "진짜 서류 밑에서 찾은 비밀 메모다! EFA1 파트 장비 신뢰성 테스트 목표 수치는?",
+        hint: "💡 힌트: 백분율 수치 (예: 100% 또는 100)",
+        answers: ["100%", "100", "99%", "99"],
+        successMsg: "김주헌 파트장님: 서류 밑 비밀 메모를 아주 잘 찾아냈군!"
+      },
+      r1_q3: {
+        type: "objective",
+        title: "☎️ 1관: EFA1 파트 긴급 전화 [객관식]",
+        question: "파트장님 부재중일 때 외부 거래처 전화를 받았다. 가장 적절한 응대는?",
+        choices: [
+          "1. 지금 담배 피우러 나가셨는데요?",
+          "2. 지금 자리에 안 계셔서 나중에 다시 걸어주세요.",
+          "3. 현재 잠시 자리를 비우셨습니다. 메모나 연락처를 남겨드릴까요?",
+          "4. 모르겠습니다. 다른 분한테 전화해 보세요."
+        ],
+        answerIdx: 2,
+        successMsg: "김주헌 파트장님: 깔끔한 업무 응대야! 1관 미션 완수!"
+      },
+
+      // 2관
+      r2_q1: {
+        type: "subjective",
+        title: "📝 2관: EFA2 파트 코드 리뷰 [주관식]",
+        question: "보고서 작성 시 결론과 핵심 요약을 맨 앞에 먼저 작성하는 3글자 보고 방식은?",
+        hint: "💡 힌트: ㄷㄱㅅ 작성법",
+        answers: ["두괄식", "두괄식 작성", "두괄식작성"],
+        successMsg: "김진석 파트장님: 두괄식 보고! 가독성이 핵심입니다."
+      },
+      r2_q2: {
+        type: "subjective",
+        title: "🔌 2관: 서버 케이블 복구 분석 [주관식]",
+        question: "서버 케이블 연결 성공! 장애 원인 분석을 위해 개발자가 즉시 확보해야 하는 시스템 2글자 데이터는?",
+        hint: "💡 힌트: 2글자 단어 (ㄹㄱ 또는 log)",
+        answers: ["로그", "log", "LOG"],
+        successMsg: "김진석 파트장님: 케이블 복구와 로그 분석까지 완벽합니다!"
+      },
+      r2_q3: {
+        type: "objective",
+        title: "☎️ 2관: EFA2 파트 서버 장애 [객관식]",
+        question: "개발 서버 장애 발생 시 가장 먼저 조치해야 할 올바른 행동은?",
+        choices: [
+          "1. 서버실 전원 코드를 뽑아버린다.",
+          "2. 담당 개발자와 파트장님께 장애 현상을 공유하고 로그를 즉시 확보한다.",
+          "3. 퇴근시간까지 기다렸다가 내일 확인한다.",
+          "4. 장애 사실을 은폐한다."
+        ],
+        answerIdx: 1,
+        successMsg: "김진석 파트장님: 완벽한 장애 대응 프로세스입니다!"
+      },
+
+      // 3관
+      r3_q1: {
+        type: "subjective",
+        title: "📝 3관: PFA/VSEM 파트 UX/검증 [주관식]",
+        question: "사용자의 직관성과 편의성을 최우선으로 검증하는 기획/디자인 개념의 2글자 영문 약어는?",
+        hint: "💡 힌트: 사용자 경험 (영문 2글자)",
+        answers: ["UX", "ux", "Ux"],
+        successMsg: "윤지혜 파트장님: 정답이에요! UX 편의성이 최우선이죠."
+      },
+      r3_q2: {
+        type: "subjective",
+        title: "🔍 3관: 깨끗해진 모니터 측정 단위 [주관식]",
+        question: "얼룩을 닦아내니 단위가 보인다! VSEM 전자현미경의 정밀 측정 단위 나노미터의 2글자 영문 약어는?",
+        hint: "💡 힌트: 나노미터 약어 (예: nm)",
+        answers: ["nm", "NM", "Nm"],
+        successMsg: "윤지혜 파트장님: 모니터를 깨끗이 닦아내어 단서를 잘 발견하셨네요!"
+      },
+      r3_q3: {
+        type: "objective",
+        title: "☎️ 3관: PFA/VSEM 파트 타부서 협조 [객관식]",
+        question: "타 팀에서 긴급 데이터 검증을 요청할 때 올바른 업무 태도는?",
+        choices: [
+          "1. 우리 팀 업무가 아니니 바로 거절한다.",
+          "2. 요청 내용을 확인하고 파트장님 공유 후 처리 일정을 안내한다.",
+          "3. 메시지를 읽고 답장을 하지 않는다.",
+          "4. 화부터 낸다."
+        ],
+        answerIdx: 1,
+        successMsg: "윤지혜 파트장님: 협업 매너와 일정 공유가 훌륭합니다!"
+      },
+
+      // 4관
+      r4_q1: {
+        type: "subjective",
+        title: "📝 4관: S1FA PL실 최종 출하 [주관식]",
+        question: "프로젝트 최종 출하 전 데이터 백업과 함께 점검해야 하는 핵심 2글자 단어는?",
+        hint: "💡 힌트: 2글자 단어 (ㅂㅇ)",
+        answers: ["보안", "테스트", "통합테스트"],
+        successMsg: "손승준 PL님: 훌륭합니다! 최종 리스크 점검 완벽!"
+      },
+      r4_q2: {
+        type: "subjective",
+        title: "🔐 4관: 액자 뒤 비밀 금고 문서 [주관식]",
+        question: "액자 뒤 비밀 금고에서 꺼낸 서류다! 프로젝트 최종 승인자 권한을 가진 2글자 직책 영문 약어는?",
+        hint: "💡 힌트: 프로젝트 리더 (영문 2글자)",
+        answers: ["PL", "pl", "Pl"],
+        successMsg: "손승준 PL님: 액자 뒤 금고를 잘 찾아냈군요! 최종 승인자 확인 완료!"
+      },
+      r4_q3: {
+        type: "objective",
+        title: "☎️ 4관: S1FA PL실 최종 퇴근 보안 [객관식]",
+        question: "퇴근 전 사무실 보안 점검 사항 중 잘못된(틀린) 것은?",
+        choices: [
+          "1. 중요 보안 서류는 캐비닛에 넣고 잠근다.",
+          "2. PC 화면을 잠그거나 전원을 끈다.",
+          "3. 마지막 퇴근자는 창문과 출입문을 잠근다.",
+          "4. 퇴근 전 메인 서버 전원 코드를 뽑아둔다."
+        ],
+        answerIdx: 3,
+        successMsg: "손승준 PL님: 좋습니다! 모든 보안 통과, 최종 칼퇴 성공!"
+      }
+    };
+
+    /* IP 및 세션 로드 */
+    async function fetchUserIp() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const data = await res.json();
+        if (data && data.ip) {
+          userIp = data.ip.replace(/[^a-zA-Z0-9]/g, "_");
+        }
+      } catch (e) {
+        userIp = "local_browser_session";
+      }
+    }
+
+    function saveGameState() {
+      const state = {
+        userIp, playerNickname, currentRoom, totalScore, gameStartTime, roomSolved, lastUpdated: Date.now()
+      };
+      localStorage.setItem('s1fa_state_' + userIp, JSON.stringify(state));
+      localStorage.setItem('s1fa_latest_session', JSON.stringify(state));
+    }
+
+    function loadGameState() {
+      let saved = localStorage.getItem('s1fa_state_' + userIp) || localStorage.getItem('s1fa_latest_session');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) { return null; }
+      }
+      return null;
+    }
+
+    function resetGameProgress() {
+      if (confirm("정말로 모든 진행 상황을 초기화하고 첫 화면부터 다시 시작하시겠습니까?")) {
+        localStorage.removeItem('s1fa_state_' + userIp);
+        localStorage.removeItem('s1fa_latest_session');
+        location.reload();
+      }
+    }
+
+    function startGame() {
+      const input = document.getElementById('nickname-input').value.trim();
+      if (!input) {
+        alert("소속 파트명과 이름을 입력해 주세요!\n(예: EFA1 / 홍길동)");
+        return;
+      }
+      playerNickname = input;
+      gameStartTime = Date.now();
+
+      document.getElementById('player-tag').innerText = playerNickname;
+      document.getElementById('start-modal').style.display = 'none';
+
+      saveGameState();
+      updateScoreUI();
+      renderRoomBackground(1);
+      renderInteractiveElements(1);
+      setDialogue(roomData[1].welcomeMsg);
+    }
+
+    function restoreGame(savedState) {
+      playerNickname = savedState.playerNickname || "EFA1 / 신입사원";
+      currentRoom = savedState.currentRoom || 1;
+      totalScore = savedState.totalScore || 0;
+      gameStartTime = savedState.gameStartTime || Date.now();
+      roomSolved = savedState.roomSolved || roomSolved;
+
+      document.getElementById('player-tag').innerText = playerNickname;
+      document.getElementById('start-modal').style.display = 'none';
+
+      updateScoreUI();
+      triggerRoomChange(currentRoom);
+      setDialogue(`[진행 상황 복구 완료]\n${playerNickname} 님, 이전 접속 위치(${currentRoom}관)에서 이어서 진행합니다!`);
+    }
+
+    function calculateQuizScore(timeTakenMs) {
+      const timeInSec = timeTakenMs / 1000;
+      return Math.max(300, Math.round(10000 - (timeInSec * 145)));
+    }
+
+    function updateScoreUI() {
+      document.getElementById('user-stats').innerText = `점수: ${totalScore.toLocaleString()}점 | ${playerNickname}`;
+    }
+
+    /* 배경 픽셀 SVG 렌더링 */
+    function renderRoomBackground(roomNum) {
+      const svg = document.getElementById('bg-svg');
+      let content = "";
+
+      if (roomNum === 1) {
+        content = `
+          <rect x="0" y="0" width="320" height="130" fill="#1e293b"/>
+          <rect x="0" y="130" width="320" height="70" fill="#475569"/>
+          <path d="M 0,130 L 320,130" stroke="#0f172a" stroke-width="2"/>
+          <rect x="70" y="10" width="180" height="55" fill="#ffffff" stroke="#0f172a" stroke-width="2.5"/>
+          <rect x="190" y="14" width="52" height="10" fill="#1d4ed8" rx="2"/>
+          <text x="193" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
+          <text x="80" y="24" fill="#0f172a" font-size="8" font-weight="bold">S1FA PJT : 1관 EFA1 파트</text>
+          <path d="M 80,32 L 240,32 M 80,42 L 220,42" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <rect x="10" y="20" width="50" height="90" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+          <circle cx="20" cy="30" r="2" fill="#22c55e"/><circle cx="28" cy="30" r="2" fill="#ef4444"/>
+          <path d="M 60,110 L 260,110 L 260,150 L 235,150 L 235,125 L 85,125 L 85,150 L 60,150 Z" fill="#cbd5e1" stroke="#0f172a" stroke-width="2"/>
+        `;
+      } else if (roomNum === 2) {
+        content = `
+          <rect x="0" y="0" width="320" height="130" fill="#064e3b"/>
+          <rect x="0" y="130" width="320" height="70" fill="#115e59"/>
+          <path d="M 0,130 L 320,130" stroke="#022c22" stroke-width="2"/>
+          <rect x="70" y="10" width="180" height="55" fill="#ffffff" stroke="#022c22" stroke-width="2.5"/>
+          <rect x="190" y="14" width="52" height="10" fill="#1d4ed8" rx="2"/>
+          <text x="193" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
+          <text x="80" y="24" fill="#022c22" font-size="8" font-weight="bold">S1FA PJT : 2관 EFA2 파트</text>
+          <path d="M 80,32 L 240,32 M 80,42 L 220,42" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <path d="M 60,110 L 260,110 L 260,150 L 235,150 L 235,125 L 85,125 L 85,150 L 60,150 Z" fill="#a7f3d0" stroke="#022c22" stroke-width="2"/>
+        `;
+      } else if (roomNum === 3) {
+        content = `
+          <rect x="0" y="0" width="320" height="130" fill="#4c1d95"/>
+          <rect x="0" y="130" width="320" height="70" fill="#a5f3fc"/>
+          <path d="M 0,130 L 320,130" stroke="#312e81" stroke-width="2"/>
+          <rect x="70" y="10" width="180" height="55" fill="#ffffff" stroke="#312e81" stroke-width="2.5"/>
+          <rect x="190" y="14" width="52" height="10" fill="#1d4ed8" rx="2"/>
+          <text x="193" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
+          <text x="80" y="24" fill="#312e81" font-size="8" font-weight="bold">S1FA PJT : 3관 PFA/VSEM 파트</text>
+          <path d="M 80,32 L 240,32 M 80,42 L 220,42" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <path d="M 60,110 L 260,110 L 260,150 L 235,150 L 235,125 L 85,125 L 85,150 L 60,150 Z" fill="#e9d5ff" stroke="#312e81" stroke-width="2"/>
+        `;
+      } else if (roomNum === 4) {
+        content = `
+          <rect x="0" y="0" width="320" height="130" fill="#1e1b4b"/>
+          <rect x="0" y="130" width="320" height="70" fill="#92400e"/>
+          <path d="M 0,130 L 320,130" stroke="#451a03" stroke-width="2"/>
+          <rect x="70" y="10" width="180" height="55" fill="#ffffff" stroke="#312e81" stroke-width="2.5"/>
+          <rect x="190" y="14" width="52" height="10" fill="#1d4ed8" rx="2"/>
+          <text x="193" y="21" fill="#ffffff" font-size="5" font-weight="bold">SAMSUNG</text>
+          <text x="80" y="24" fill="#312e81" font-size="8" font-weight="bold">S1FA PJT : 4관 S1FA PL실</text>
+          <path d="M 80,32 L 240,32 M 80,42 L 220,42" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <path d="M 60,110 L 260,110 L 260,150 L 235,150 L 235,125 L 85,125 L 85,150 L 60,150 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2"/>
+        `;
+      }
+
+      svg.innerHTML = content;
+      renderBossNPC(roomNum);
+    }
+
+    function renderBossNPC(roomNum) {
+      const bossSvg = document.getElementById('boss-svg');
+      const bossTag = document.getElementById('boss-tag');
+      bossTag.innerText = roomData[roomNum].bossName;
+
+      let content = "";
+
+      if (roomNum === 3) {
+        content = `
+          <rect x="6" y="2" width="18" height="6" fill="#582f0e"/>
+          <rect x="4" y="4" width="22" height="22" fill="#582f0e"/>
+          <rect x="8" y="7" width="14" height="11" fill="#fde047"/>
+          <rect x="9" y="10" width="3" height="3" fill="#0f172a"/>
+          <rect x="18" y="10" width="3" height="3" fill="#0f172a"/>
+          <line x1="12" y1="15" x2="16" y2="15" stroke="#be185d" stroke-width="1.2"/>
+          <rect x="6" y="19" width="18" height="13" fill="#be185d"/>
+          <polygon points="12,19 18,19 17,26 13,26" fill="#ffffff"/>
+          <rect x="8" y="32" width="5" height="6" fill="#831843"/>
+          <rect x="17" y="32" width="5" height="6" fill="#831843"/>
+          <rect x="7" y="37" width="6" height="3" fill="#000"/>
+          <rect x="17" y="37" width="6" height="3" fill="#000"/>
+        `;
+      } else {
+        let hairColor = "#1e293b";
+        let glasses = true;
+        let suitColor = "#0f172a";
+
+        if (roomNum === 2) { suitColor = "#064e3b"; glasses = false; }
+        else if (roomNum === 4) { suitColor = "#312e81"; }
+
+        content = `
+          <rect x="8" y="2" width="14" height="6" fill="${hairColor}"/>
+          <rect x="6" y="4" width="18" height="5" fill="${hairColor}"/>
+          <rect x="7" y="8" width="16" height="12" fill="#fde047"/>
+          <path d="M 9,10 L 13,12 M 21,10 L 17,12" stroke="#0f172a" stroke-width="1.2"/>
+        `;
+
+        if (glasses) {
+          content += `
+            <rect x="8" y="11" width="6" height="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+            <rect x="16" y="11" width="6" height="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+            <line x1="14" y1="12" x2="16" y2="12" stroke="#0f172a" stroke-width="1"/>
+          `;
+        } else {
+          content += `
+            <rect x="10" y="12" width="3" height="3" fill="#000"/>
+            <rect x="17" y="12" width="3" height="3" fill="#000"/>
+          `;
+        }
+
+        content += `
+          <line x1="12" y1="17" x2="18" y2="17" stroke="#0f172a" stroke-width="1"/>
+          <rect x="5" y="20" width="20" height="12" fill="${suitColor}"/>
+          <polygon points="13,20 17,20 16,28 14,28" fill="#dc2626"/>
+          <polygon points="10,20 13,20 12,27" fill="#ffffff"/>
+          <polygon points="20,20 17,20 18,27" fill="#ffffff"/>
+          <rect x="7" y="32" width="6" height="7" fill="#1e293b"/>
+          <rect x="17" y="32" width="6" height="7" fill="#1e293b"/>
+          <rect x="6" y="37" width="7" height="3" fill="#000"/>
+          <rect x="17" y="37" width="7" height="3" fill="#000"/>
+        `;
+      }
+
+      bossSvg.innerHTML = content;
+    }
+
+    function setDialogue(text) {
+      document.getElementById('dialogue-text').innerText = text;
+    }
+
+    /* 레트로 SVG 그래픽 사물 생성 및 배치 */
+    function renderInteractiveElements(roomNum) {
+      const layer = document.getElementById('interactive-layer');
+      layer.innerHTML = '';
+
+      if (roomNum === 1) { // 1관: EFA1
+        layer.innerHTML = `
+          <!-- 1-1. 진짜 PC 모니터 -->
+          <div id="elem-m1" class="pixel-item" style="top:40%; left:22%;" title="메인 모니터">
+            <svg width="40" height="34" viewBox="0 0 20 17" class="pixel-render">
+              <rect x="2" y="2" width="16" height="10" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
+              <rect x="4" y="4" width="12" height="6" fill="#0284c7"/>
+              <rect x="8" y="12" width="4" height="3" fill="#64748b"/>
+              <rect x="6" y="15" width="8" height="2" fill="#334155"/>
+            </svg>
+          </div>
+
+          <!-- 1-2. 가짜 서브 모니터 -->
+          <div id="fake-mon1" class="pixel-item" style="top:40%; left:31%;" title="서브 모니터">
+            <svg width="34" height="30" viewBox="0 0 17 15" class="pixel-render">
+              <rect x="2" y="2" width="13" height="8" fill="#1e293b" stroke="#64748b" stroke-width="1"/>
+              <rect x="4" y="4" width="9" height="4" fill="#334155"/>
+              <rect x="7" y="10" width="3" height="3" fill="#475569"/>
+            </svg>
+          </div>
+
+          <!-- 2-1. 서류 밑 숨겨진 시크릿 메모지 -->
+          <div id="elem-secret-memo" class="pixel-item" style="top:62%; left:24%; z-index:42;" title="비밀 메모지">
+            <svg width="24" height="28" viewBox="0 0 12 14" class="pixel-render">
+              <rect x="1" y="1" width="10" height="12" fill="#fef08a" stroke="#b45309" stroke-width="1"/>
+              <line x1="3" y1="4" x2="9" y2="4" stroke="#d97706" stroke-width="1"/>
+              <line x1="3" y1="7" x2="8" y2="7" stroke="#d97706" stroke-width="1"/>
+            </svg>
+          </div>
+
+          <!-- 2-2. 진짜 드래그 보안 서류 -->
+          <div id="drag-paper-real" class="pixel-item draggable-item" style="top:60%; left:22%; z-index:45;" title="보안 서류 (드래그)">
+            <svg width="32" height="32" viewBox="0 0 16 16" class="pixel-render">
+              <rect x="2" y="2" width="11" height="13" fill="#ffffff" stroke="#0f172a" stroke-width="1"/>
+              <rect x="4" y="4" width="7" height="2" fill="#ef4444"/>
+              <line x1="4" y1="8" x2="10" y2="8" stroke="#64748b" stroke-width="1"/>
+              <line x1="4" y1="11" x2="9" y2="11" stroke="#64748b" stroke-width="1"/>
+            </svg>
+          </div>
+
+          <!-- 2-3. 가짜 드래그 서류 -->
+          <div id="drag-paper-fake" class="pixel-item draggable-item" style="top:60%; left:68%; z-index:45;" title="일반 서류 (드래그)">
+            <svg width="30" height="30" viewBox="0 0 15 15" class="pixel-render">
+              <rect x="2" y="2" width="10" height="12" fill="#e2e8f0" stroke="#475569" stroke-width="1"/>
+              <line x1="4" y1="5" x2="9" y2="5" stroke="#94a3b8" stroke-width="1"/>
+            </svg>
+          </div>
+
+          <!-- 3. 전화기 -->
+          <div id="elem-p1" class="pixel-item" style="top:42%; left:76%;" title="업무 전화기">
+            <svg width="30" height="26" viewBox="0 0 15 13" class="pixel-render">
+              <rect x="2" y="4" width="11" height="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1"/>
+              <rect x="3" y="1" width="9" height="3" fill="#3b82f6"/>
+              <circle cx="5" cy="7" r="0.8" fill="#fff"/><circle cx="8" cy="7" r="0.8" fill="#fff"/><circle cx="11" cy="7" r="0.8" fill="#fff"/>
+            </svg>
+          </div>
+        `;
+
+        document.getElementById('fake-mon1').addEventListener('click', () => {
+          setDialogue("신입사원: 서브 모니터에는 '김주헌 파트장님의 오늘 점심 메뉴: 제육볶음' 메모만 나와있다.");
+        });
+
+        makeElementDraggable(document.getElementById('drag-paper-fake'), () => {
+          setDialogue("신입사원: 일반 서류를 치워봤지만 밑에 아무것도 없다.");
+        });
+
+        document.getElementById('elem-m1').addEventListener('click', () => {
+          if (roomSolved[1].q1) setDialogue("신입사원: 모니터 메일 미션은 완료했습니다!");
+          else openQuiz('r1_q1');
+        });
+
+        document.getElementById('elem-secret-memo').addEventListener('click', () => {
+          if (roomSolved[1].q2) setDialogue("신입사원: 서류 밑 비밀 메모 미션은 완료했습니다!");
+          else openQuiz('r1_q2');
+        });
+
+        makeElementDraggable(document.getElementById('drag-paper-real'), () => {
+          setDialogue("신입사원: 보안 서류를 치우니 밑에 진짜 숨겨져 있던 시크릿 메모지가 나왔다!");
+        });
+
+        document.getElementById('elem-p1').addEventListener('click', () => {
+          if (roomSolved[1].q3) setDialogue("신입사원: 긴급 전화 응대 미션은 완료했습니다!");
+          else openQuiz('r1_q3');
+        });
+
+      } else if (roomNum === 2) { // 2관: EFA2
+        layer.innerHTML = `
+          <div id="elem-m2" class="pixel-item" style="top:32%; left:20%;" title="개발 서버 랙">
+            <svg width="42" height="52" viewBox="0 0 21 26" class="pixel-render">
+              <rect x="2" y="2" width="17" height="22" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
+              <rect x="5" y="5" width="11" height="3" fill="#065f46"/>
+              <rect x="5" y="10" width="11" height="3" fill="#065f46"/>
+              <circle cx="6" cy="18" r="1" fill="#34d399"/><circle cx="10" cy="18" r="1" fill="#ef4444"/>
+            </svg>
+          </div>
+
+          <div id="elem-cable" class="pixel-item" style="top:60%; left:25%;" title="단선된 케이블">
+            <svg width="30" height="24" viewBox="0 0 15 12" class="pixel-render">
+              <path d="M 2,3 L 7,3 M 8,9 L 13,9" stroke="#ef4444" stroke-width="2"/>
+              <rect x="6" y="2" width="2" height="3" fill="#fff"/>
+              <rect x="7" y="8" width="2" height="3" fill="#fff"/>
+            </svg>
+          </div>
+
+          <div id="fake-coffee" class="pixel-item draggable-item" style="top:58%; left:65%;" title="커피 컵 (드래그)">
+            <svg width="22" height="24" viewBox="0 0 11 12" class="pixel-render">
+              <rect x="3" y="4" width="5" height="7" fill="#ffffff" stroke="#000" stroke-width="1"/>
+              <path d="M 4,2 Q 5,1 6,2" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+            </svg>
+          </div>
+
+          <div id="elem-p2" class="pixel-item" style="top:42%; left:76%;" title="업무 전화기">
+            <svg width="30" height="26" viewBox="0 0 15 13" class="pixel-render">
+              <rect x="2" y="4" width="11" height="8" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+              <rect x="3" y="1" width="9" height="3" fill="#34d399"/>
+            </svg>
+          </div>
+        `;
+
+        makeElementDraggable(document.getElementById('fake-coffee'), () => {
+          setDialogue("신입사원: 커피 컵을 치워보았지만 밑에 차가운 물자국만 남아있다.");
+        });
+
+        document.getElementById('elem-m2').addEventListener('click', () => {
+          if (roomSolved[2].q1) setDialogue("신입사원: 개발 서버 가이드 미션은 완료했습니다!");
+          else openQuiz('r2_q1');
+        });
+
+        document.getElementById('elem-cable').addEventListener('click', () => {
+          if (roomSolved[2].q2) setDialogue("신입사원: 케이블 복구 미션은 완료했습니다!");
+          else openWireMiniGame('r2_q2');
+        });
+
+        document.getElementById('elem-p2').addEventListener('click', () => {
+          if (roomSolved[2].q3) setDialogue("신입사원: 장애 전화 응대 미션은 완료했습니다!");
+          else openQuiz('r2_q3');
+        });
+
+      } else if (roomNum === 3) { // 3관: PFA/VSEM
+        layer.innerHTML = `
+          <div id="elem-m3" class="pixel-item" style="top:32%; left:20%;" title="VSEM 검사 기기">
+            <svg width="38" height="46" viewBox="0 0 19 23" class="pixel-render">
+              <rect x="3" y="15" width="13" height="6" fill="#312e81"/>
+              <rect x="8" y="5" width="3" height="10" fill="#a855f7"/>
+              <circle cx="9.5" cy="4" r="3" fill="#38bdf8"/>
+            </svg>
+          </div>
+
+          <div id="elem-stain-mon" class="pixel-item" style="top:58%; left:26%;" title="얼룩진 모니터">
+            <svg width="36" height="30" viewBox="0 0 18 15" class="pixel-render">
+              <rect x="2" y="2" width="14" height="10" fill="#4c1d95" stroke="#a855f7" stroke-width="1"/>
+              <circle cx="6" cy="6" r="2" fill="#d97706"/>
+            </svg>
+          </div>
+
+          <div id="fake-plant" class="pixel-item draggable-item" style="top:32%; left:68%;" title="화분 (드래그)">
+            <svg width="26" height="34" viewBox="0 0 13 17" class="pixel-render">
+              <rect x="3" y="10" width="7" height="6" fill="#b45309"/>
+              <circle cx="6.5" cy="7" r="4" fill="#22c55e"/>
+            </svg>
+          </div>
+
+          <div id="elem-p3" class="pixel-item" style="top:42%; left:76%;" title="업무 전화기">
+            <svg width="30" height="26" viewBox="0 0 15 13" class="pixel-render">
+              <rect x="2" y="4" width="11" height="8" fill="#312e81" stroke="#a855f7" stroke-width="1"/>
+            </svg>
+          </div>
+        `;
+
+        makeElementDraggable(document.getElementById('fake-plant'), () => {
+          setDialogue("신입사원: 화분을 치워보았지만 싱그러운 흙냄새밖에 나지 않는다.");
+        });
+
+        document.getElementById('elem-m3').addEventListener('click', () => {
+          if (roomSolved[3].q1) setDialogue("신입사원: UX 검증 미션은 완료했습니다!");
+          else openQuiz('r3_q1');
+        });
+
+        document.getElementById('elem-stain-mon').addEventListener('click', () => {
+          if (roomSolved[3].q2) setDialogue("신입사원: 모니터 얼룩 닦기 미션은 완료했습니다!");
+          else openStainMiniGame('r3_q2');
+        });
+
+        document.getElementById('elem-p3').addEventListener('click', () => {
+          if (roomSolved[3].q3) setDialogue("신입사원: 타 부서 협조 전화 미션은 완료했습니다!");
+          else openQuiz('r3_q3');
+        });
+
+      } else if (roomNum === 4) { // 4관: PL실
+        layer.innerHTML = `
+          <div id="elem-m4" class="pixel-item" style="top:30%; left:20%;" title="트로피 진열장">
+            <svg width="38" height="46" viewBox="0 0 19 23" class="pixel-render">
+              <rect x="2" y="2" width="15" height="19" fill="#1e1b4b" stroke="#fbbf24" stroke-width="1"/>
+              <polygon points="9.5,5 12,11 7,11" fill="#facc15"/>
+            </svg>
+          </div>
+
+          <div id="elem-secret-safe" class="pixel-item" style="top:18%; left:25%; z-index:42;" title="비밀 금고">
+            <svg width="30" height="30" viewBox="0 0 15 15" class="pixel-render">
+              <rect x="1" y="1" width="13" height="13" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
+              <circle cx="8" cy="8" r="2.5" fill="#facc15"/>
+            </svg>
+          </div>
+
+          <div id="drag-frame-real" class="pixel-item draggable-item" style="top:15%; left:23%; z-index:45;" title="삼성 로드맵 액자 (드래그)">
+            <svg width="38" height="34" viewBox="0 0 19 17" class="pixel-render">
+              <rect x="1" y="1" width="17" height="15" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+              <rect x="3" y="3" width="13" height="4" fill="#1d4ed8"/>
+            </svg>
+          </div>
+
+          <div id="drag-calendar-fake" class="pixel-item draggable-item" style="top:15%; left:68%; z-index:45;" title="2026 달력 (드래그)">
+            <svg width="34" height="34" viewBox="0 0 17 17" class="pixel-render">
+              <rect x="2" y="2" width="13" height="13" fill="#ffffff" stroke="#000" stroke-width="1"/>
+              <rect x="2" y="2" width="13" height="4" fill="#ef4444"/>
+            </svg>
+          </div>
+
+          <div id="elem-p4" class="pixel-item" style="top:42%; left:76%;" title="업무 전화기">
+            <svg width="30" height="26" viewBox="0 0 15 13" class="pixel-render">
+              <rect x="2" y="4" width="11" height="8" fill="#1e1b4b" stroke="#fbbf24" stroke-width="1"/>
+            </svg>
+          </div>
+        `;
+
+        makeElementDraggable(document.getElementById('drag-calendar-fake'), () => {
+          setDialogue("신입사원: 달력을 치우니 뒤에 '칼퇴 기원'이라고 적힌 부적 스티커만 붙어있다.");
+        });
+
+        document.getElementById('elem-m4').addEventListener('click', () => {
+          if (roomSolved[4].q1) setDialogue("신입사원: 최종 출하 리스크 미션은 완료했습니다!");
+          else openQuiz('r4_q1');
+        });
+
+        document.getElementById('elem-secret-safe').addEventListener('click', () => {
+          if (roomSolved[4].q2) setDialogue("신입사원: 액자 뒤 비밀 금고 미션은 완료했습니다!");
+          else openQuiz('r4_q2');
+        });
+
+        makeElementDraggable(document.getElementById('drag-frame-real'), () => {
+          setDialogue("신입사원: 로드맵 액자를 아래로 치우니 진짜 매립되어 있던 비밀 금고가 나왔다!");
+        });
+
+        document.getElementById('elem-p4').addEventListener('click', () => {
+          if (roomSolved[4].q3) setDialogue("신입사원: 최종 퇴근 보안 미션은 완료했습니다!");
+          else openQuiz('r4_q3');
+        });
+      }
+
+      updateDoorStatusUI();
+    }
+
+    /* 드래그 및 터치 이벤트 처리 */
+    function makeElementDraggable(elem, onMovedCallback) {
+      if (!elem) return;
+      let isDragging = false;
+      let startX, startY, initialLeft, initialTop;
+
+      const onMouseDown = (e) => {
+        isDragging = true;
+        const event = e.touches ? e.touches[0] : e;
+        startX = event.clientX;
+        startY = event.clientY;
+        initialLeft = elem.offsetLeft;
+        initialTop = elem.offsetTop;
+      };
+
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const event = e.touches ? e.touches[0] : e;
+        const dx = event.clientX - startX;
+        const dy = event.clientY - startY;
+
+        elem.style.left = (initialLeft + dx) + 'px';
+        elem.style.top = (initialTop + dy) + 'px';
+
+        if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+          if (onMovedCallback) {
+            onMovedCallback();
+            onMovedCallback = null;
+          }
+        }
+      };
+
+      const onMouseUp = () => { isDragging = false; };
+
+      elem.addEventListener('mousedown', onMouseDown);
+      elem.addEventListener('touchstart', onMouseDown);
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('touchmove', onMouseMove);
+
+      window.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('touchend', onMouseUp);
+    }
+
+    function updateDoorStatusUI() {
+      const door = document.getElementById('door-obj');
+      const doorLabel = document.getElementById('door-label');
+      const currentSolved = roomSolved[currentRoom];
+
+      if (currentSolved.q1 && currentSolved.q2 && currentSolved.q3) {
+        door.style.opacity = '1';
+        doorLabel.innerText = currentRoom === 4 ? "🚪 최종 탈출!" : `🚪 ${currentRoom + 1}관 이동!`;
+        doorLabel.style.background = '#22c55e';
+      } else {
+        door.style.opacity = '0.5';
+        doorLabel.innerText = "🔒 다음 방";
+        doorLabel.style.background = 'transparent';
+      }
+    }
+
+    /* 미니게임 (케이블 연결) */
+    function openWireMiniGame(qKey) {
+      wireSelectedPort = null;
+      wireConnectedCount = 0;
+      
+      const mgTitle = document.getElementById('mg-title');
+      const mgBody = document.getElementById('mg-body');
+      mgTitle.innerText = "🔌 2관 미션: 서버 전용 케이블 선 연결하기";
+
+      mgBody.innerHTML = `
+        <p style="font-size:12px; color:#cbd5e1; margin-bottom:12px;">
+          서버를 복구할 동일한 색상의 케이블 단자를 순서대로 연결하세요!<br>
+          <span style="color:#facc15;">(경고: 서버와 무관한 일반 LAN선 함정이 있습니다)</span>
+        </p>
+        <div style="display:flex; justify-content:space-around; align-items:center; background:#020617; padding:15px; border:2px solid #38bdf8; border-radius:8px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div class="wire-port wire-red" data-color="red" data-id="left-red"></div>
+            <div class="wire-port wire-yellow" data-color="yellow" data-id="left-yellow"></div>
+            <div class="wire-port wire-blue" data-color="blue" data-id="left-blue"></div>
+          </div>
+          <div id="wire-status-text" style="font-size:12px; font-weight:bold; color:#facc15;">케이블 선택 대기...</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div class="wire-port wire-blue" data-color="blue" data-id="right-blue"></div>
+            <div class="wire-port wire-red" data-color="red" data-id="right-red"></div>
+            <div class="wire-port wire-yellow" data-color="yellow" data-id="right-yellow"></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('minigame-modal').style.display = 'flex';
+
+      const ports = mgBody.querySelectorAll('.wire-port');
+      ports.forEach(port => {
+        port.addEventListener('click', () => {
+          const color = port.getAttribute('data-color');
+          const id = port.getAttribute('data-id');
+
+          if (color === 'yellow') {
+            alert("⚠️ 노란색 케이블은 서버 복구와 상관없는 일반 LAN선입니다!");
+            if (wireSelectedPort) wireSelectedPort.elem.style.transform = "scale(1)";
+            wireSelectedPort = null;
+            document.getElementById('wire-status-text').innerText = "케이블 선택 대기...";
+            return;
+          }
+
+          if (!wireSelectedPort) {
+            wireSelectedPort = { color, id, elem: port };
+            port.style.transform = "scale(1.2)";
+            document.getElementById('wire-status-text').innerText = `${color === 'red' ? '빨간색' : '파란색'} 연결 대기 중...`;
+          } else {
+            if (wireSelectedPort.id === id) return;
+
+            if (wireSelectedPort.color === color) {
+              port.style.opacity = "0.3";
+              wireSelectedPort.elem.style.opacity = "0.3";
+              wireConnectedCount++;
+              wireSelectedPort = null;
+              document.getElementById('wire-status-text').innerText = "⚡ 서버 케이블 연결 성공!";
+
+              if (wireConnectedCount >= 2) {
+                setTimeout(() => {
+                  closeMiniGameModal();
+                  openQuiz(qKey);
+                }, 400);
+              }
+            } else {
+              alert("❌ 서로 다른 케이블입니다! 같은 색상끼리 연결하세요.");
+              wireSelectedPort.elem.style.transform = "scale(1)";
+              wireSelectedPort = null;
+              document.getElementById('wire-status-text').innerText = "케이블 선택 대기...";
+            }
+          }
+        });
+      });
+    }
+
+    /* 미니게임 (얼룩 닦기) */
+    function openStainMiniGame(qKey) {
+      stainCleanedCount = 0;
+      const mgTitle = document.getElementById('mg-title');
+      const mgBody = document.getElementById('mg-body');
+      mgTitle.innerText = "🔍 3관 미션: 모니터 얼룩 닦아내기";
+
+      mgBody.innerHTML = `
+        <p style="font-size:12px; color:#cbd5e1; margin-bottom:12px;">
+          화면을 가리고 있는 얼룩들을 클릭해 깨끗이 닦아내세요!
+        </p>
+        <div style="position:relative; width:100%; height:160px; background:#1e1b4b; border:2px solid #38bdf8; border-radius:8px; display:flex; justify-content:center; align-items:center;">
+          <div style="font-size:13px; font-weight:bold; color:#38bdf8; text-align:center;">
+            [ VSEM 정밀 측정 결과 ]<br>
+            <span style="font-size:10px; color:#fde047;">(진짜 얼룩 뒤에 단위 단서가 숨어 있습니다)</span>
+          </div>
+          <div class="stain-spot" data-real="true" style="top:20px; left:40px;">🧹</div>
+          <div class="stain-spot" data-real="true" style="top:90px; left:200px;">🧹</div>
+          <div class="stain-spot" data-real="false" style="top:35px; left:350px; background:rgba(225, 29, 72, 0.85);">🐈</div>
+        </div>
+      `;
+
+      document.getElementById('minigame-modal').style.display = 'flex';
+
+      const spots = mgBody.querySelectorAll('.stain-spot');
+      spots.forEach(spot => {
+        spot.addEventListener('click', () => {
+          const isReal = spot.getAttribute('data-real') === 'true';
+          spot.style.display = 'none';
+
+          if (!isReal) {
+            alert("🐈 이것은 윤지혜 파트장님이 붙여둔 귀여운 고양이 스티커였습니다!");
+          } else {
+            stainCleanedCount++;
+            if (stainCleanedCount >= 2) {
+              setTimeout(() => {
+                closeMiniGameModal();
+                openQuiz(qKey);
+              }, 300);
+            }
+          }
+        });
+      });
+    }
+
+    function closeMiniGameModal() {
+      document.getElementById('minigame-modal').style.display = 'none';
+    }
+
+    /* 퀴즈 창 및 판정 */
+    function openQuiz(quizKey) {
+      activeQuizKey = quizKey;
+      quizStartTime = Date.now();
+
+      const qData = quizzes[quizKey];
+      document.getElementById('qz-title').innerText = qData.title;
+      document.getElementById('qz-question').innerText = qData.question;
+      
+      const hintElem = document.getElementById('qz-hint');
+      const choicesContainer = document.getElementById('qz-choices-container');
+      const inputContainer = document.getElementById('qz-input-container');
+
+      choicesContainer.innerHTML = '';
+      document.getElementById('qz-input').value = '';
+
+      if (qData.type === 'subjective') {
+        hintElem.style.display = 'inline-block';
+        hintElem.innerText = qData.hint;
+        choicesContainer.style.display = 'none';
+        inputContainer.style.display = 'flex';
+        
+        setTimeout(() => document.getElementById('qz-input').focus(), 100);
+      } else {
+        hintElem.style.display = 'none';
+        inputContainer.style.display = 'none';
+        choicesContainer.style.display = 'flex';
+
+        qData.choices.forEach((choiceText, idx) => {
+          const btn = document.createElement('div');
+          btn.className = 'quiz-choice-item';
+          btn.innerText = choiceText;
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            checkObjectiveAnswer(idx);
+          });
+          choicesContainer.appendChild(btn);
+        });
+      }
+
+      document.getElementById('quiz-modal').style.display = 'flex';
+    }
+
+    function closeQuizModal() {
+      document.getElementById('quiz-modal').style.display = 'none';
+      activeQuizKey = null;
+    }
+
+    function checkSubjectiveAnswer() {
+      if (!activeQuizKey) return;
+      const qData = quizzes[activeQuizKey];
+      const input = document.getElementById('qz-input');
+      const userAns = input.value.trim().toLowerCase().replace(/\s+/g, '');
+
+      if (!userAns) {
+        alert("정답을 입력해 주세요!");
+        return;
+      }
+
+      const isCorrect = qData.answers.some(ans => ans.toLowerCase().replace(/\s+/g, '') === userAns);
+
+      if (isCorrect) handleQuizSuccess(qData);
+      else { handleQuizFailure(); input.value = ''; input.focus(); }
+    }
+
+    function checkObjectiveAnswer(chosenIdx) {
+      if (!activeQuizKey) return;
+      const qData = quizzes[activeQuizKey];
+      if (chosenIdx === qData.answerIdx) handleQuizSuccess(qData);
+      else handleQuizFailure();
+    }
+
+    function handleQuizSuccess(qData) {
+      const timeTakenMs = Date.now() - quizStartTime;
+      const earnedScore = calculateQuizScore(timeTakenMs);
+      totalScore += earnedScore;
+      updateScoreUI();
+
+      if (activeQuizKey.endsWith('q1')) roomSolved[currentRoom].q1 = true;
+      if (activeQuizKey.endsWith('q2')) roomSolved[currentRoom].q2 = true;
+      if (activeQuizKey.endsWith('q3')) roomSolved[currentRoom].q3 = true;
+
+      setDialogue(`${qData.successMsg}\n(+${earnedScore.toLocaleString()}점 획득! 현재 총점: ${totalScore.toLocaleString()}점)`);
+      
+      saveGameState();
+      updateDoorStatusUI();
+      closeQuizModal();
+    }
+
+    function handleQuizFailure() {
+      const penalty = 2000;
+      totalScore = Math.max(0, totalScore - penalty);
+      updateScoreUI();
+      saveGameState();
+      alert(`❌ 오답입니다! 2,000점이 감점되었습니다.\n(현재 점수: ${totalScore.toLocaleString()}점) 신중하게 맞춰보세요!`);
+    }
+
+    function nextRoom() {
+      const currentSolved = roomSolved[currentRoom];
+      if (!currentSolved.q1 || !currentSolved.q2 || !currentSolved.q3) {
+        alert("현재 관의 3개 미션을 모두 해결해야 다음 방으로 넘어갈 수 있습니다!");
+        return;
+      }
+
+      if (currentRoom < 4) triggerRoomChange(currentRoom + 1);
+      else showEnding();
+    }
+
+    function prevRoom() {
+      if (currentRoom > 1) triggerRoomChange(currentRoom - 1);
+    }
+
+    function triggerRoomChange(toRoom) {
+      currentRoom = toRoom;
+      document.getElementById('room-title').innerText = roomData[toRoom].title;
+      renderRoomBackground(toRoom);
+      renderInteractiveElements(toRoom);
+      setDialogue(roomData[toRoom].welcomeMsg);
+      saveGameState();
+    }
+
+    function showEnding() {
+      const totalTimeSec = Math.round((Date.now() - gameStartTime) / 1000);
+      const minutes = Math.floor(totalTimeSec / 60);
+      const seconds = totalTimeSec % 60;
+      const timeStr = `${minutes}분 ${seconds}초`;
+
+      document.getElementById('final-summary').innerHTML = `
+        참여자: <b>${playerNickname}</b><br>
+        최종 점수: <span style="color:#facc15; font-size:16px;">${totalScore.toLocaleString()}점</span><br>
+        총 소요시간: <b>${timeStr}</b>
+      `;
+
+      saveScoreRecord(playerNickname, totalScore, timeStr);
+      renderLeaderboard();
+      document.getElementById('ending-modal').style.display = 'flex';
+    }
+
+    function saveScoreRecord(name, score, timeStr) {
+      let records = JSON.parse(localStorage.getItem('s1fa_leaderboard') || '[]');
+      records.push({ name, score, timeStr, timestamp: Date.now() });
+      records.sort((a, b) => b.score - a.score);
+      localStorage.setItem('s1fa_leaderboard', JSON.stringify(records));
+    }
+
+    function renderLeaderboard() {
+      let records = JSON.parse(localStorage.getItem('s1fa_leaderboard') || '[]');
+      const tbody = document.getElementById('leaderboard-body');
+      tbody.innerHTML = '';
+
+      records.forEach((rec, idx) => {
+        const tr = document.createElement('tr');
+        if (rec.name === playerNickname && rec.score === totalScore) {
+          tr.style.background = '#1e3a8a';
+        }
+        tr.innerHTML = `
+          <td><b>${idx + 1}위</b></td>
+          <td>${rec.name}</td>
+          <td><b style="color:#facc15;">${rec.score.toLocaleString()}</b></td>
+          <td>${rec.timeStr}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* 초기화 및 바인딩 */
+    document.addEventListener('DOMContentLoaded', async () => {
+      await fetchUserIp();
+
+      const startBtn = document.getElementById('start-btn');
+      const nicknameInput = document.getElementById('nickname-input');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      const restartBtn = document.getElementById('restart-btn');
+      const qzSubmitBtn = document.getElementById('qz-submit-btn');
+      const qzInput = document.getElementById('qz-input');
+      const quizCloseBtn = document.getElementById('quiz-close-btn');
+      const minigameCloseBtn = document.getElementById('minigame-close-btn');
+
+      if (startBtn) startBtn.addEventListener('click', startGame);
+      if (nicknameInput) {
+        nicknameInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') startGame();
+        });
+      }
+      if (prevBtn) prevBtn.addEventListener('click', prevRoom);
+      if (nextBtn) nextBtn.addEventListener('click', nextRoom);
+      if (resetBtn) resetBtn.addEventListener('click', resetGameProgress);
+      if (restartBtn) {
+        restartBtn.addEventListener('click', () => {
+          localStorage.removeItem('s1fa_state_' + userIp);
+          localStorage.removeItem('s1fa_latest_session');
+          location.reload();
+        });
+      }
+      if (qzSubmitBtn) qzSubmitBtn.addEventListener('click', checkSubjectiveAnswer);
+      if (qzInput) {
+        qzInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') checkSubjectiveAnswer();
+        });
+      }
+      if (quizCloseBtn) quizCloseBtn.addEventListener('click', closeQuizModal);
+      if (minigameCloseBtn) minigameCloseBtn.addEventListener('click', closeMiniGameModal);
+
+      document.getElementById('quiz-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'quiz-modal') closeQuizModal();
+      });
+      document.getElementById('minigame-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'minigame-modal') closeMiniGameModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeQuizModal();
+          closeMiniGameModal();
+        }
+      });
+
+      document.getElementById('boss-npc').addEventListener('click', () => {
+        setDialogue(roomData[currentRoom].welcomeMsg);
+      });
+
+      document.getElementById('door-obj').addEventListener('click', () => {
+        nextRoom();
+      });
+
+      const savedState = loadGameState();
+      if (savedState && savedState.playerNickname) {
+        restoreGame(savedState);
+      }
+    });
+  </script>
+</body>
+</html>
 
