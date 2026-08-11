@@ -117,7 +117,7 @@
   <div id="game-container">
     <div id="start-modal" class="modal-overlay">
       <div class="modal-card">
-        <h2 style="font-size: 18px; color:#38bdf8; text-align:center; margin-bottom:12px;">🔬 분석기술팀 신입사원의 칼퇴기</h2>
+        <h2 style="font-size: 18px; color:#38bdf8; text-align:center; margin-bottom:12px;">🔬 S1FA PJT : 문제를 풀고 퇴근하세요! </h2>
         <p style="font-size: 12px; line-height: 1.6; color:#cbd5e1; text-align:center;">
           구조물을 치우고 단서를 탐색하여 모든 방을 탈출하세요!<br>
           (현재 진행 상황은 브라우저에 자동 저장됩니다.)
@@ -137,9 +137,9 @@
         </div>
         <div style="font-size: 12px; color: #facc15; background: #1e293b; padding: 10px; border-radius: 8px; margin-bottom: 15px; line-height: 1.5;">
           🎁 <b>이벤트 안내사항</b><br>
-          최종 득점 및 반응도에 따라 푸짐한 상품이 기다립니다!<br>
-          (1등 상품: 약 14만원 상당의 프리미엄 선물! ※비타민/영양제 아님❌)<br>
-          (5등 상품: 달콤한 밤잼 🌰 등 다양한 상품 대기 중!)
+          최종 득점 및 기록에 따라 푸짐한 상품이 기다립니다!<br>
+          (1등~5등 팀 상품: 팀원들과 함께 행복한 ~~)<br>
+          (6등 상품: 최단 시간 기록자에게 커피쿠폰 등 다양한 상품 대기 중!)
         </div>
         <button id="show-leaderboard-btn" class="start-btn" style="background:#8b5cf6;">📊 전체 참가자 데이터 보기</button>
       </div>
@@ -294,10 +294,10 @@
 
     const roomBgImages = { 1: "./24618_2.webp", 2: "./24645.webp", 3: "./24646.jpg", 4: "./24647.png" };
     const roomData = {
-      1: { title: "S1FA PJT : 1관 분석기술팀 EFA1 파트", bossName: "김주헌 파트장님", welcomeMsg: "방 안의 구조물을 치워가며 숨겨진 단서를 찾게." },
-      2: { title: "S1FA PJT : 2관 분석기술팀 EFA2 파트", bossName: "김진석 파트장님", welcomeMsg: "책상 위 장애물들을 치우고 케이블과 단서를 확인하세요." },
-      3: { title: "S1FA PJT : 3관 분석기술팀 PFA/VSEM 파트", bossName: "윤지혜 파트장님", welcomeMsg: "실험대 위 장비들을 탐색하고 미션을 해결하세요." },
-      4: { title: "S1FA PJT : 4관 분석기술팀 캔틴룸", bossName: "손승준 PL님", welcomeMsg: "캔틴룸 주변 물건을 치워 비밀 금고를 찾아내세요!" }
+      1: { title: "S1FA PJT : 1관 EFA1 파트", bossName: "김주헌 파트장님", welcomeMsg: "방 안의 구조물을 치워가며 숨겨진 단서를 찾아보세요." },
+      2: { title: "S1FA PJT : 2관 EFA2 파트", bossName: "김진석 파트장님", welcomeMsg: "책상 위 장애물들을 치우고 케이블과 단서를 확인하세요." },
+      3: { title: "S1FA PJT : 3관 PFA/VSEM 파트", bossName: "윤지혜 파트장님", welcomeMsg: "실험대 위 장비들을 탐색하고 미션을 해결하세요." },
+      4: { title: "S1FA PJT : 4관 캔틴룸", bossName: "손승준 PL님", welcomeMsg: "캔틴룸 주변 물건을 치워 비밀 금고를 찾아내세요!" }
     };
 
     // 배열 셔플 함수
@@ -406,7 +406,7 @@
           </div>
           <div id="elem-p1" class="interactive-zone" style="bottom: 45%; left: 68%; width: 70px; height: 50px;" title="단서 3"></div>
         `;
-        makeElementDraggable(document.getElementById('drag-box-real'), () => setDialogue("신입사원: 수납함을 치우니 메모지가 나타났다!"));
+        makeElementDraggable(document.getElementById('drag-box-real'), () => setDialogue("나 : 수납함을 치우니 메모지가 나타났다!"));
         document.getElementById('elem-m1').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[1].q1, 'q1'));
         document.getElementById('elem-secret-memo').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[1].q2, 'q2'));
         document.getElementById('elem-p1').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[1].q3, 'q3'));
@@ -420,7 +420,7 @@
           </div>
           <div id="elem-p2" class="interactive-zone" style="bottom: 45%; left: 25%; width: 80px; height: 60px;" title="단서 3"></div>
         `;
-        makeElementDraggable(document.getElementById('drag-cup-fake'), () => setDialogue("신입사원: 텀블러 밑에는 아무것도 없었다."));
+        makeElementDraggable(document.getElementById('drag-cup-fake'), () => setDialogue("나 : 텀블러 밑에는 아무것도 없었다."));
         document.getElementById('elem-m2').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[2].q1, 'q1'));
         document.getElementById('elem-cable').addEventListener('click', () => openWireMiniGame('q2'));
         document.getElementById('elem-p2').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[2].q3, 'q3'));
@@ -435,7 +435,7 @@
           </div>
           <div id="elem-p3" class="interactive-zone" style="bottom: 45%; left: 20%; width: 70px; height: 50px;" title="단서 3"></div>
         `;
-        makeElementDraggable(document.getElementById('drag-note'), () => setDialogue("신입사원: 연구 노트를 치우니 장비 수치가 나타났다!"));
+        makeElementDraggable(document.getElementById('drag-note'), () => setDialogue("나 : 연구 노트를 치우니 장비 수치가 나타났다!"));
         document.getElementById('elem-stain-mon').addEventListener('click', () => openStainMiniGame('q1'));
         document.getElementById('elem-m3').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[3].q2, 'q2'));
         document.getElementById('elem-p3').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[3].q3, 'q3'));
@@ -449,7 +449,7 @@
           </div>
           <div id="elem-p4" class="interactive-zone" style="bottom: 45%; left: 65%; width: 80px; height: 60px;" title="단서 3"></div>
         `;
-        makeElementDraggable(document.getElementById('drag-water-real'), () => setDialogue("신입사원: 생수통 뒤에 비밀 금고가 있었다!"));
+        makeElementDraggable(document.getElementById('drag-water-real'), () => setDialogue("나 : 생수통 뒤에 비밀 금고가 있었다!"));
         document.getElementById('elem-m4').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[4].q1, 'q1'));
         document.getElementById('elem-secret-safe').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[4].q2, 'q2'));
         document.getElementById('elem-p4').addEventListener('click', () => openQuizObj(gameState.assignedQuizzes[4].q3, 'q3'));
