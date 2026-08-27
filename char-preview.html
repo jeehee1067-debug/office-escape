@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐릭터 확인 — S1FA 방탈출</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Galmuri11','DungGeunMo',system-ui,sans-serif;background:#e9e4d6;color:#1d2029;padding:18px}
+  h1{font-size:20px;margin-bottom:6px}
+  p.desc{font-size:12px;line-height:1.9;color:#4a505c;margin-bottom:14px}
+  code{background:#fff;border:1px solid #c3bfae;border-radius:4px;padding:1px 5px;font-size:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .cell{background:#fbfbf7;border:3px solid #1d2029;border-radius:10px;padding:8px;text-align:center;
+        box-shadow:0 4px 0 rgba(0,0,0,.35)}
+  .cell .stage{background:repeating-conic-gradient(#e8e4d6 0% 25%,#f4f1e6 0% 50%) 0/16px 16px;
+        border:2px solid #c3bfae;border-radius:6px;padding:6px;display:flex;align-items:flex-end;
+        justify-content:center;height:150px;margin-bottom:6px}
+  .cell canvas{image-rendering:pixelated;display:block}
+  .name{font-size:13px;font-weight:700}
+  .slot{font-size:11px;color:#3d6ea8;margin-top:2px}
+  .stat{font-size:11px;margin-top:4px;border-radius:4px;padding:2px 6px;display:inline-block}
+  .ok{background:#cdf0d6;color:#1c5c34}
+  .no{background:#f4e2c8;color:#8a5a12}
+  .size{font-size:10px;color:#6b7180;margin-top:3px}
+</style>
+</head>
+<body>
+<h1>🎨 캐릭터 확인</h1>
+<p class="desc">
+  <b>assets/img/char/</b> 폴더에 아래 <b>슬롯 이름</b>.png 를 넣으면 그 캐릭터가 그림으로 바뀝니다.
+  파일이 없으면 기본 도트로 그려집니다.<br>
+  · 배경이 <b>투명한 PNG</b>여야 합니다 &nbsp;·&nbsp; 세로로 서 있는 정면 모습 권장 &nbsp;·&nbsp; 발바닥이 그림 맨 아래에 닿게<br>
+  · 크기는 자유입니다. 화면에서는 <code>CONFIG.SPRITE_HEIGHT</code> 값(기본 60)에 맞춰 자동 조절됩니다.<br>
+  · 이 페이지를 새로고침하면 바뀐 그림이 바로 보입니다.
+</p>
+<div class="grid" id="grid"></div>
+
+<script src="assets/js/sprites.js"></script>
+<script src="assets/js/pixel.js"></script>
+<script src="assets/js/data.js"></script>
+<script>
+(async () => {
+  const { CONFIG, AVATARS, BOSSES } = window.DATA;
+  const list = AVATARS.map(a => ({ o: a, label: a.name, kind: '참가자' }))
+    .concat(Object.values(BOSSES).map(b => ({ o: b, label: b.name, kind: 'NPC' })));
+  const ext = CONFIG.SPRITE_EXT || '.png';
+
+  await Promise.all(list.map(it =>
+    it.o.sprite ? PX.setCharImage(it.o.sprite, CONFIG.SPRITE_DIR + it.o.sprite + ext) : null
+  ));
+
+  const grid = document.getElementById('grid');
+  list.forEach(it => {
+    const has = it.o.sprite && PX.hasCharImage(it.o.sprite);
+    const cv = PX.characterCanvas(it.o, has ? 1 : 4, 0);
+    const uh = +cv.dataset.uh, uw = +cv.dataset.uw;
+    // 게임 안에서 보이는 비율 그대로: 씬 높이 160 기준 화면 높이 130px
+    const shown = 130 * uh / 160;
+    cv.style.height = shown + 'px';
+    cv.style.width = (shown * uw / uh) + 'px';
+
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML =
+      '<div class="stage"></div>' +
+      '<div class="name">' + it.label + '</div>' +
+      '<div class="slot">' + it.kind + ' · ' + (it.o.sprite || '-') + ext + '</div>' +
+      '<div class="stat ' + (has ? 'ok' : 'no') + '">' + (has ? '✅ PNG 사용 중' : '⚠️ 기본 도트') + '</div>' +
+      '<div class="size">' + (has ? '원본 ' + cv.width + '×' + cv.height : '38×60 도트') + '</div>';
+    cell.querySelector('.stage').appendChild(cv);
+    grid.appendChild(cell);
+  });
+})();
+</script>
+</body>
+</html>
