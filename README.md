@@ -214,7 +214,33 @@ char-preview.html          넣은 PNG 가 제대로 보이는지 확인하는 �
 tools/extract-sprite.py    스크린샷에서 캐릭터를 뽑아내는 도구
 ```
 
-## 8. 알아두면 좋은 점
+## 8. 잘 안 될 때
+
+### 버튼을 눌러도 아무 반응이 없다
+거의 대부분 **Firebase 데이터베이스 접근이 거부된 경우**입니다.
+새로 만든 Realtime Database 는 기본값이 "모든 접근 차단" 이라, 규칙을 게시하기 전에는
+읽기·쓰기가 전부 막혀 있습니다.
+
+1. 브라우저에서 **F12 → Console** 을 엽니다.
+2. `PERMISSION_DENIED` 또는 `[S1FA] Firebase 접근 실패` 가 보이면 규칙 문제입니다.
+3. Firebase 콘솔 → Realtime Database → **규칙** 탭에 `database.rules.json` 의
+   `rules` 부분을 붙여넣고 **게시**하세요.
+
+급하게 확인만 하고 싶다면 아래 규칙으로 먼저 열어두고 테스트한 뒤,
+행사 전에 반드시 `database.rules.json` 으로 바꾸세요.
+```json
+{ "rules": { ".read": true, ".write": true } }
+```
+
+### 그 밖의 확인 사항
+- `assets/js/net.js` 의 `firebaseConfig` 가 **내 프로젝트 값**인지
+- `databaseURL` 의 지역(`asia-southeast1` 등)이 실제 DB 와 같은지
+- 콘솔에 `404 assets/img/char/*.png` 가 뜨는 건 **정상**입니다 (아직 안 넣은 캐릭터 그림)
+
+서버에 못 붙어도 게임 화면은 열리지만, **점수·시간이 저장되지 않고 다른 참가자와
+동기화되지 않습니다.** 이 경우 화면에 경고 창이 뜹니다.
+
+## 9. 알아두면 좋은 점
 
 - 배경음악은 `assets/img/battle.mp3` 입니다. 우측 상단 🔊 버튼으로 켜고 끕니다.
   (브라우저 정책상 화면을 한 번 탭해야 소리가 납니다.)
