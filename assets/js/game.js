@@ -15,20 +15,17 @@
   const S = {
     me: null, global: null, run: null, players: {}, teams: null,
     room: 0, phase: 'boot', quizzes: {}, seed: 1,
-    gate: {}, timer: null, held: null, ended: false, lastRoomRendered: null
+    gate: {}, clueApi: {}, timer: null, ended: false, lastRoomRendered: null
   };
 
-  /* ---------- 좌표 변환 ---------- */
+  /* ---------- 좌표 (배경 그림 기준 백분율) ---------- */
   const pctX = v => (v / PX.W * 100) + '%';
   const pctY = v => (v / PX.H * 100) + '%';
 
-  function placeRect(node, r) {
-    node.style.left = pctX(r[0]); node.style.top = pctY(r[1]);
-    node.style.width = pctX(r[2]); node.style.height = pctY(r[3]);
-  }
-  function placeProp(node, at, size) {
-    node.style.left = pctX(at[0]); node.style.top = pctY(at[1]);
-    node.style.width = pctX(size); node.style.height = pctY(size);
+  /** rect = [왼쪽%, 위%, 너비%, 높이%] */
+  function placePct(node, r) {
+    node.style.left = r[0] + '%'; node.style.top = r[1] + '%';
+    node.style.width = r[2] + '%'; node.style.height = r[3] + '%';
   }
 
   /* ---------- 문제 배정 (팀 시드 기반, 재현 가능) ---------- */
@@ -123,9 +120,16 @@
     ['#prop-layer', '#actor-layer', '#fx-layer'].forEach(sel => {
       const l = $(sel);
       $$('.actor', l).forEach(a => clearInterval(a._anim));
-      $$('.prop', l).forEach(p => p._cleanup && p._cleanup());
+      $$('.ov', l).forEach(p => p._cleanup && p._cleanup());
       l.innerHTML = '';
     });
+  }
+  /** 사진 배경을 끄고 기본 도트 배경으로 되돌린다 (대기실 · 결과 화면용) */
+  function usePixelScene(name) {
+    const layer = $('#bg-image'); if (layer) layer.classList.add('hidden');
+    const cv = $('#bg-canvas'); if (cv) cv.classList.remove('hidden');
+    const st = $('#stage'); if (st) st.style.aspectRatio = '3 / 2';
+    PX.renderScene(cv, name);
   }
   function showTitle(txt) {
     const t = $('#scene-title');
@@ -150,29 +154,30 @@
     $('#actor-layer').appendChild(a);
     return a;
   }
-  function addProp(name, at, size, opts) {
-    opts = opts || {};
-    const d = el('div', 'prop');
-    d.appendChild(PX.propCanvas(name, 4));
-    placeProp(d, at, size || 22);
-    if (opts.z) d.style.zIndex = opts.z;
+  /** 배경 그림 위에 얹는 오버레이 소품 (포스트잇 · 서류 · 포스터) */
+  function addOverlay(kind, rect, label) {
+    const d = el('div', 'ov ov-' + kind);
+    placePct(d, rect);
+    if (label) d.appendChild(el('span', 'ov-label', esc(label)));
     $('#prop-layer').appendChild(d);
     return d;
   }
-  function addHotspot(rect, onClick, title) {
-    const h = el('div', 'hotspot');
-    placeRect(h, rect);
-    if (title) h.title = title;
+  function addHotspot(rect, onClick, title, cls) {
+    const h = el('div', 'hotspot ' + (cls || ''));
+    placePct(h, rect);
+    if (title) { h.title = title; h.dataset.label = title; }
     h.addEventListener('click', e => { e.stopPropagation(); onClick(h); });
     $('#prop-layer').appendChild(h);
     return h;
   }
-  function addSparkle(rect) {
-    const s = el('div', 'sparkle', '✨');
-    s.style.left = pctX(rect[0] + rect[2] / 2);
-    s.style.top = pctY(rect[1] - 2);
-    $('#fx-layer').appendChild(s);
-    return s;
+  /** 아직 못 푼 단서 위치를 알려주는 표식 */
+  function addMarker(rect, label) {
+    const m = el('div', 'marker');
+    m.style.left = (rect[0] + rect[2] / 2) + '%';
+    m.style.top = (rect[1] + rect[3] / 2) + '%';
+    m.innerHTML = '<i>?</i>' + (label ? '<b>' + esc(label) + '</b>' : '');
+    $('#fx-layer').appendChild(m);
+    return m;
   }
 
   /* ============================================================
@@ -180,7 +185,7 @@
      ============================================================ */
   function renderLobby(msg) {
     S.phase = 'lobby'; S.room = 0; S.ended = false;
-    clearLayers(); renderScene('lobby'); showTitle('대기실');
+    clearLayers(); usePixelScene('lobby'); showTitle('대기실');
     updateHUD();
     say(msg || '대기실이다. 관리자가 게임을 시작할 때까지 기다리자!\n다른 참가자들도 속속 도착하고 있다.');
     drawLobbyCrowd();
@@ -211,272 +216,280 @@
   }
 
   /* ============================================================
+     방 배경 (사진 이미지 · 없으면 기본 도트 배경)
+     ============================================================ */
+  const BG_EXT = ['.png', '.jpg', '.jpeg', '.webp'];
+  const bgCache = {};
+
+  function findRoomImage(name) {
+    if (bgCache[name] !== undefined) return Promise.resolve(bgCache[name]);
+    const dir = CONFIG.ROOM_BG_DIR;
+    return new Promise(resolve => {
+      let i = 0;
+      const tryNext = () => {
+        if (i >= BG_EXT.length) { bgCache[name] = null; return resolve(null); }
+        const url = dir + name + BG_EXT[i++];
+        const im = new Image();
+        im.onload = () => { bgCache[name] = im; resolve(im); };
+        im.onerror = tryNext;
+        im.src = url;
+      };
+      tryNext();
+    });
+  }
+
+  function setRoomBackground(R) {
+    const stage = $('#stage'), cv = $('#bg-canvas'), layer = $('#bg-image');
+    const useFallback = () => {
+      layer.classList.add('hidden');
+      cv.classList.remove('hidden');
+      stage.style.aspectRatio = '3 / 2';
+      PX.renderScene(cv, R && R.fallback ? R.fallback : 'lobby');
+    };
+    if (!R || !R.bg) { useFallback(); return; }
+    useFallback();                            // 그림이 늦게 와도 빈 화면이 안 보이게
+    findRoomImage(R.bg).then(im => {
+      if (!im || S.room !== R.__n) return;
+      layer.style.backgroundImage = 'url("' + im.src + '")';
+      layer.classList.remove('hidden');
+      cv.classList.add('hidden');
+      stage.style.aspectRatio = im.naturalWidth + ' / ' + im.naturalHeight;
+    });
+  }
+
+  /* ============================================================
      방 입장
      ============================================================ */
   function enterRoom(n) {
     const R = ROOMS[n]; if (!R) return;
-    S.room = n; S.phase = 'playing'; S.ended = false; S.held = null;
+    R.__n = n;
+    S.room = n; S.phase = 'playing'; S.ended = false;
     S.gate = {};
+    S.clueApi = {};
     g.UI.closeAll();
     clearLayers();
-    renderScene(R.scene);
+    setRoomBackground(R);
     showTitle(R.banner);
     updateHUD();
     say(R.welcome, R.full);
     SFX.door();
 
-    /* NPC */
-    const boss = BOSSES[R.boss];
-    const bossActor = addActor(boss, R.bossAt[0], R.bossAt[1], boss.name, 'boss', 3);
-    addActor(AVATARS[S.me.avatar] || AVATARS[0], R.playerAt[0], R.playerAt[1], S.me.name, 'me', 3);
-
-    /* 고정 소품 */
-    (R.decor || []).forEach(d => addProp(d.prop, d.at, d.size || 20, { z: 6 }));
-
-    /* 힌트 지점 (화이트보드 등) */
-    (R.hints || []).forEach(h => addHotspot(h.at, () => { SFX.select(); say(h.msg, '📋 메모'); }, '살펴보기'));
+    /* 살펴보기 지점 */
+    (R.hints || []).forEach(h => addHotspot(h.at, () => { SFX.select(); say(h.msg, '👀 살펴보기'); }, h.label || '살펴보기', 'look'));
 
     /* 함정(낚시) */
     (R.traps || []).forEach(t => {
-      const p = addProp(t.prop, t.at, t.size || 20);
-      const fire = () => {
+      addHotspot(t.at, () => {
         SFX.trap();
         say(t.msg, '🎣 …');
-        if (t.cost) {
-          NET.addTrap(S.room);
-          toast('함정! -' + CONFIG.TRAP_PENALTY + '점', 'bad');
-        }
-      };
-      if (t.drag) PUZZLE.makeDraggable(p, $('#stage'), { onMoved: () => { p.classList.add('gone'); fire(); }, onTap: fire });
-      else p.addEventListener('click', fire);
+        if (t.cost) { NET.addTrap(S.room); toast('함정! -' + CONFIG.TRAP_PENALTY + '점', 'bad'); }
+      }, t.label || '???', 'look');
     });
 
     /* 단서 3개 */
     R.clues.forEach((c, idx) => buildClue(R, c, idx));
 
-    /* 문 */
-    buildDoor(R);
+    /* 나가는 문 */
+    buildExit(R);
     startTicker();
-
-    /* 이미 시간이 지난 상태로 들어왔다면 즉시 종료 처리 */
     if (roomRemain() <= 0) finishRoom('timeout');
   }
 
-  /* ---------- 문 ---------- */
-  function buildDoor(R) {
-    const d = addHotspot(R.doorAt, () => {
+  /* ---------- 나가는 문 (사진 배경 위 고정 버튼) ---------- */
+  function buildExit() {
+    const btn = el('button', 'exit-btn', '🔒 다음 방');
+    btn.id = 'exit-btn';
+    btn.addEventListener('click', () => {
       if (!allSolved(S.room)) {
         SFX.no();
-        say('문이 잠겨 있다. 이 방의 단서 ' + CONFIG.CLUES_PER_ROOM + '개를 모두 풀어야 열린다!\n(현재 ' + solvedCount(S.room) + '/' + CONFIG.CLUES_PER_ROOM + ')');
+        say('아직 잠겨 있다. 이 방의 단서 ' + CONFIG.CLUES_PER_ROOM + '개를 모두 풀어야 열린다!\n(현재 ' + solvedCount(S.room) + '/' + CONFIG.CLUES_PER_ROOM + ')');
         return;
       }
       finishRoom('cleared');
-    }, '다음 방으로');
-    d.id = 'door-hot';
-    refreshDoor();
+    });
+    $('#fx-layer').appendChild(btn);
+    refreshExit();
   }
-  function refreshDoor() {
-    const d = $('#door-hot'); if (!d) return;
+  function refreshExit() {
+    const btn = $('#exit-btn'); if (!btn) return;
     const open = allSolved(S.room);
-    let tag = $('#door-tag');
-    if (!tag) {
-      tag = el('div', 'actor-tag', '');
-      tag.id = 'door-tag';
-      tag.style.cssText += 'position:absolute;z-index:30';
-      $('#fx-layer').appendChild(tag);
-    }
-    const R = ROOMS[S.room]; if (!R) return;
-    tag.style.left = pctX(R.doorAt[0] - 4);
-    tag.style.top = pctY(R.doorAt[1] + R.doorAt[3] / 2 - 5);
-    tag.textContent = open ? (S.room === CONFIG.ROOM_COUNT ? '🎉 최종 탈출!' : '🚪 ' + (S.room + 1) + '관으로') : '🔒 잠김';
-    tag.style.background = open ? '#2e8b4f' : '#fbfbf7';
-    tag.style.color = open ? '#fff' : '#1d2029';
-    if (open && !$('#door-spark')) { const s = addSparkle(R.doorAt); s.id = 'door-spark'; }
+    btn.classList.toggle('is-open', open);
+    btn.textContent = open
+      ? (S.room === CONFIG.ROOM_COUNT ? '🎉 최종 탈출!' : '🚪 ' + (S.room + 1) + '관으로')
+      : '🔒 다음 방 (' + solvedCount(S.room) + '/' + CONFIG.CLUES_PER_ROOM + ')';
   }
 
   /* ============================================================
-     단서 · 기믹 구성
+     단서 · 기믹
+     ------------------------------------------------------------
+     · 기믹을 통과하면 기믹용 요소를 모두 제거해 클릭을 가로채지 않게 한다
+     · 문제를 안 풀고 닫아도 단서 자리를 다시 눌러 재도전할 수 있다
+     · 이미 맞힌 단서는 어떤 경로로도 다시 풀 수 없다
      ============================================================ */
   function buildClue(R, clue, idx) {
     const slot = clue.slot;
-    const quiz = S.quizzes[S.room][idx];
-    const done = isSolved(S.room, slot);
     const gate = clue.gate;
-    let opened = done;      // 기믹 통과 여부
+    const boss = BOSSES[R.boss] ? BOSSES[R.boss].name : '';
+    let opened = isSolved(S.room, slot);   // 기믹 통과 여부
+    let gateEls = [];                      // 기믹이 만든 요소 (통과 후 제거)
+    let marker = null;
 
-    const openQuiz = () => {
-      if (isSolved(S.room, slot)) { SFX.select(); say('이미 해결한 단서다. 다른 곳을 찾아보자!'); return; }
-      askQuiz(quiz, slot, idx);
-    };
+    const quizOf = () => S.quizzes[S.room] && S.quizzes[S.room][idx];
 
-    /* 단서 자리(hotspot) */
-    let hot = null;
-    if (clue.hotspot) {
-      hot = addHotspot(clue.hotspot, () => {
-        if (isSolved(S.room, slot)) { SFX.select(); say('✅ 이미 해결한 단서다.'); return; }
-        if (!opened) { runGate(); return; }
-        openQuiz();
-      }, clue.label);
-      if (done) hot.classList.add('solved');
+    /* --- 단서 자리 : 항상 존재하며 재도전을 담당 --- */
+    const hot = addHotspot(clue.at, () => onClueClick(), clue.label, 'clue');
+
+    function onClueClick() {
+      if (isSolved(S.room, slot)) { SFX.select(); say('✅ 이미 해결한 단서다. 다른 곳을 찾아보자!'); return; }
+      if (!opened) { runGate(); return; }
+      openQuiz();
     }
 
-    const markOpen = (msg) => {
+    function openQuiz() {
+      if (isSolved(S.room, slot)) { SFX.select(); say('✅ 이미 해결한 단서다.'); return; }
+      const q = quizOf(); if (!q) return;
+      askQuiz(q, slot, idx, boss);
+    }
+
+    /** 기믹 통과 */
+    function markOpen(msg) {
+      if (opened) return;
       opened = true;
-      if (msg) say(msg, '🔎 단서 발견');
+      clearGateEls();
+      hot.classList.add('is-open');
       SFX.great();
-      if (clue.hotspot && !isSolved(S.room, slot)) addSparkle(clue.hotspot);
-      if (clue.prop) addProp(clue.prop, [clue.hotspot[0] + 2, clue.hotspot[1]], 16, { z: 15 });
-      setTimeout(openQuiz, 500);
+      if (msg) say(msg, '🔎 단서 발견');
+      setTimeout(openQuiz, 550);
+    }
+    function clearGateEls() { gateEls.forEach(n => n.remove()); gateEls = []; }
+
+    /** 이미 푼 단서로 표시 */
+    function markSolved() {
+      clearGateEls();
+      hot.classList.add('solved');
+      if (marker) { marker.remove(); marker = null; }
+    }
+
+    /* 외부(문제 정답 시 등)에서 상태를 갱신할 수 있게 등록 */
+    S.clueApi[slot] = {
+      refresh() {
+        if (isSolved(S.room, slot)) { opened = true; markSolved(); }
+      }
     };
 
-    /* ----- 기믹 종류별 구성 ----- */
+    if (isSolved(S.room, slot)) { markSolved(); return; }
+
+    marker = addMarker(clue.at, clue.label);
+
+    /* ---------------- 기믹 실행 ---------------- */
     function runGate() {
       switch (gate.type) {
-        case 'wire':
-          say(gate.before); PUZZLE.wire(gate.pairs || 3, () => markOpen(gate.after)); break;
+        case 'direct':
+          say(gate.before);
+          setTimeout(() => markOpen(gate.after), 400);
+          break;
+
+        case 'talk':
+          say(gate.before, boss);
+          setTimeout(() => markOpen(gate.after), 500);
+          break;
+
+        case 'power': {
+          say(gate.press || gate.before);
+          const glow = addOverlay('power', clue.at);
+          gateEls.push(glow);
+          setTimeout(() => markOpen(gate.after), 900);
+          break;
+        }
+
+        case 'shake': {
+          S.gate['shake' + slot] = (S.gate['shake' + slot] || 0) + 1;
+          const n = S.gate['shake' + slot], need = gate.times || 5;
+          SFX.move();
+          if (n >= need) markOpen(gate.after);
+          else say((gate.step || '흔들었다...') + ' (' + n + '/' + need + ')');
+          break;
+        }
+
         case 'wipe':
-          say(gate.before); PUZZLE.wipe(gate.code, () => markOpen(gate.after)); break;
-        case 'dial':
-          say(gate.before); PUZZLE.dial(gate.target, gate.tol, gate.hint, () => markOpen(gate.after)); break;
+          say(gate.before);
+          PUZZLE.wipe(gate.codeFromTeam ? String(teamCode()) : (gate.code || '0000'),
+            () => markOpen(gate.after + (gate.codeFromTeam ? '\n적혀 있던 숫자: ' + teamCode() : '')));
+          break;
+
         case 'keypad': {
-          if (gate.needFirst && !isSolved(S.room, gate.needFirst) && !S.gate['note' + gate.needFirst]) {
+          if (gate.needFirst && !isSolved(S.room, gate.needFirst) && !S.gate['code' + gate.needFirst]) {
             SFX.no(); say(gate.needFirstMsg); return;
           }
-          say(gate.before); PUZZLE.keypad(teamCode(), () => markOpen(gate.after)); break;
+          say(gate.before);
+          PUZZLE.keypad(teamCode(), () => markOpen(gate.after));
+          break;
         }
-        case 'talk': case 'drag': case 'sequence': case 'pickOne': case 'twoStep':
-        case 'collect': case 'clearAll':
-          say(gate.before); break;
-        default: openQuiz();
+
+        default:
+          say(gate.before);
       }
     }
 
-    if (done) { /* 이미 푼 단서는 기믹 재구성 불필요 */ }
-
-    if (gate.type === 'drag' && !done) {
-      const p = addProp(gate.prop, gate.at, gate.size || 22, { z: 18 });
-      say0(gate.before);
-      PUZZLE.makeDraggable(p, $('#stage'), {
-        onMoved: () => { p.classList.add('gone'); markOpen(gate.after); },
-        onTap: () => { SFX.move(); say('꽤 무겁다. 끌어서 치워보자! (드래그)'); }
+    /* ---------------- 기믹용 요소 배치 ---------------- */
+    if (gate.type === 'drag') {
+      const ov = addOverlay(gate.prop, gate.at, gate.label);
+      gateEls.push(ov);
+      let told = false;
+      PUZZLE.makeDraggable(ov, $('#stage'), {
+        onDragStart: () => { if (!told) { told = true; say(gate.before); } },
+        onMoved: () => { ov.classList.add('gone'); markOpen(gate.after); },
+        onTap: () => { SFX.select(); say(gate.before); }
       });
     }
 
-    if (gate.type === 'sequence' && !done) {
-      const spots = SEQ_SPOTS[S.room] || {};
+    if (gate.type === 'sequence') {
       let step = 0;
-      gate.targets.forEach((name, i) => {
-        const rect = spots[name]; if (!rect) return;
-        addHotspot(rect, (node) => {
+      (gate.spots || []).forEach((rect, i) => {
+        const sp = addHotspot(rect, (node) => {
           if (opened) return;
           if (gate.order[step] === i) {
             step++; SFX.ok();
-            node.style.background = 'rgba(255,255,255,.35)';
-            if (step >= gate.order.length) { markOpen(gate.after); }
-            else say('찰칵! (' + step + '/' + gate.order.length + ') 다음 순서를 눌러보자.');
+            node.classList.add('is-lit');
+            if (step >= gate.order.length) markOpen(gate.after);
+            else say('켜졌다! (' + step + '/' + gate.order.length + ') 다음 순서를 눌러보자.');
           } else {
             step = 0; SFX.no();
-            $$('.hotspot').forEach(n => n.style.background = '');
+            gateEls.forEach(n => n.classList.remove('is-lit'));
             say('삐— 순서가 틀렸다! 처음부터 다시.\n' + (gate.hint || ''));
           }
-        }, '눌러보기');
+        }, gate.spotLabel || '눌러보기', 'clue gate-sub');
+        gateEls.push(sp);
       });
     }
 
-    if (gate.type === 'pickOne' && !done) {
-      const base = clue.hotspot;
-      const w = base[2] / gate.options;
-      for (let i = 0; i < gate.options; i++) {
-        addHotspot([base[0] + i * w, base[1], w - 1, base[3]], () => {
+    if (gate.type === 'pickOne') {
+      const base = clue.at, n = gate.options || 3, vertical = gate.layout === 'v';
+      for (let i = 0; i < n; i++) {
+        const rect = vertical
+          ? [base[0], base[1] + (base[3] / n) * i, base[2], base[3] / n - 0.6]
+          : [base[0] + (base[2] / n) * i, base[1], base[2] / n - 0.6, base[3]];
+        const sp = addHotspot(rect, () => {
           if (opened) return;
-          if (i === gate.correct - 1) markOpen(gate.after);
+          if (i === (gate.correct || 1) - 1) markOpen(gate.after);
           else { SFX.trap(); say(gate.wrong, '🎣 …'); }
-        }, (i + 1) + '번째 서랍');
+        }, (i + 1) + '번째 칸', 'clue gate-sub');
+        gateEls.push(sp);
       }
     }
+  }
 
-    if (gate.type === 'twoStep' && !done) {
-      const s1 = gate.step1;
-      const cup = addProp(s1.prop, s1.at, s1.size || 14, { z: 20 });
-      let hasCup = false;
-      const pick = () => { hasCup = true; cup.classList.add('gone'); SFX.select(); say(s1.msg); };
-      PUZZLE.makeDraggable(cup, $('#stage'), { onTap: pick, onMoved: pick });
-      if (hot) {
-        hot.title = '커피머신';
-        hot.addEventListener('click', () => {
-          if (opened || isSolved(S.room, slot)) return;
-          if (!hasCup) { SFX.no(); say('컵이 없다! 먼저 종이컵을 찾아 집어오자.'); }
-          else markOpen(gate.step2Msg);
-        });
-      }
-    }
-
-    if (gate.type === 'collect' && !done) {
-      let n = 0;
-      const target = gate.target;
-      addProp('tray', [target[0], target[1]], 26, { z: 8 });
-      gate.props.forEach((pn, i) => {
-        const p = addProp(pn, gate.at[i], 16, { z: 20 });
-        PUZZLE.makeDraggable(p, $('#stage'), {
-          onDrop: (dist, node) => {
-            const st = $('#stage').getBoundingClientRect();
-            const r = node.getBoundingClientRect();
-            const cx = (r.left + r.width / 2 - st.left) / st.width * PX.W;
-            const cy = (r.top + r.height / 2 - st.top) / st.height * PX.H;
-            const inTray = cx > target[0] - 6 && cx < target[0] + target[2] + 6 && cy > target[1] - 10 && cy < target[1] + target[3] + 12;
-            if (inTray) {
-              node.classList.add('gone'); n++; SFX.ok();
-              if (n >= gate.props.length) markOpen(gate.after);
-              else say('시편을 트레이에 담았다. (' + n + '/' + gate.props.length + ')');
-            } else if (dist > 20) { SFX.move(); say('트레이 위에 정확히 올려놓아야 한다!'); }
-            else { SFX.select(); say('정밀 시편이다. 트레이로 옮기자. (드래그)'); }
-          }
-        });
-      });
-    }
-
-    if (gate.type === 'clearAll' && !done) {
-      let n = 0;
-      gate.props.forEach((pn, i) => {
-        const p = addProp(pn, gate.at[i], 14, { z: 20 - i });
-        PUZZLE.makeDraggable(p, $('#stage'), {
-          onMoved: (node) => {
-            node.classList.add('gone'); n++; SFX.move();
-            if (n >= gate.props.length) {
-              S.gate['note' + slot] = true;
-              markOpen(gate.after + '\n쪽지에 적힌 번호: ' + teamCode());
-            } else say('컵을 치웠다. (' + n + '/' + gate.props.length + ')');
-          },
-          onTap: () => { SFX.select(); say('종이컵이다. 끌어서 치워보자! (드래그)'); }
-        });
-      });
-    }
-
-    if (gate.type === 'talk' && !done) {
-      const bossActor = $$('.actor', $('#actor-layer')).find(a => a.querySelector('.actor-tag.boss'));
-      if (bossActor) {
-        bossActor.style.pointerEvents = 'auto';
-        bossActor.style.cursor = 'pointer';
-        bossActor.addEventListener('click', () => {
-          if (isSolved(S.room, slot)) { say('파트장님: 잘 하고 있어요! 계속 진행하세요.', BOSSES[R.boss].name); return; }
-          g.UI.bubble(bossActor, '!');
-          markOpen('파트장님이 문제를 내주셨다!');
-        });
-      }
-      const rect = [R.bossAt[0] - 14, R.bossAt[1] - 36, 28, 36];
-      addHotspot(rect, () => {
-        if (isSolved(S.room, slot)) { say('파트장님: 계속 진행하세요!', BOSSES[R.boss].name); return; }
-        markOpen('파트장님이 문제를 내주셨다!');
-      }, '말 걸기');
-    }
-
-    function say0(t) { if (idx === 0) setTimeout(() => say(R.welcome + '\n\n' + t), 900); }
+  /** 서버 기록이 늦게 도착했을 때 단서 상태를 다시 맞춘다 */
+  function refreshClueStates() {
+    if (S.phase !== 'playing' || !S.clueApi) return;
+    Object.keys(S.clueApi).forEach(k => S.clueApi[k].refresh());
+    refreshExit();
   }
 
   /* ============================================================
      퀴즈
      ============================================================ */
-  function askQuiz(q, slot, idx) {
+  function askQuiz(q, slot, idx, boss) {
     if (!q) return;
     const wrap = el('div');
     const meta = '<div class="quiz-meta"><span>단서 <b>' + (idx + 1) + '/' + CONFIG.CLUES_PER_ROOM + '</b></span>' +
@@ -493,17 +506,18 @@
     wrap.innerHTML = inner;
 
     const m = modal({
-      title: '📋 단서 ' + slot + ' — ' + (ROOMS[S.room] ? ROOMS[S.room].title : ''),
+      title: '📋 단서 ' + slot + ' · ' + (ROOMS[S.room] ? ROOMS[S.room].title : ''),
       html: wrap, closable: true,
       onMount: (body) => {
         const submit = (val, node) => {
           const ok = q.type === 'short'
             ? q.ans.some(a => norm(a) === norm(val))
             : (+val === q.ans);
+          if (isSolved(S.room, slot)) { m.close(); toast('이미 해결한 단서입니다.', 'info'); return; }
           if (ok) {
             if (node) node.classList.add('ok');
             SFX.great();
-            onCorrect(q, slot);
+            onCorrect(q, slot, boss);
             setTimeout(() => m.close(), 420);
           } else {
             if (node) { node.classList.add('no'); setTimeout(() => node.classList.remove('no'), 600); }
@@ -525,11 +539,21 @@
   }
   function norm(s) { return String(s).trim().toLowerCase().replace(/\s+/g, ''); }
 
-  async function onCorrect(q, slot) {
+  async function onCorrect(q, slot, boss) {
     const rem = roomRemain();
-    await NET.recordSolve(S.room, slot, { qid: q.id, points: q.score, room: S.room, left: Math.round(rem) });
-    toast('✅ 정답! +' + q.score.toLocaleString() + '점', 'good');
-    say((q.ok || '정답!') + '\n(+' + q.score.toLocaleString() + '점)', BOSSES[ROOMS[S.room].boss].name);
+    const fresh = await NET.recordSolve(S.room, slot, {
+      qid: q.id, points: q.score, room: S.room, left: Math.round(rem)
+    });
+    const who = boss || (BOSSES[ROOMS[S.room].boss] || {}).name || '';
+    if (fresh) {
+      toast('✅ 정답! +' + q.score.toLocaleString() + '점', 'good');
+      say((q.ok || '정답!') + '\n(+' + q.score.toLocaleString() + '점)', who);
+    } else {
+      // 이미 서버에 기록된 단서 — 점수는 다시 오르지 않는다
+      toast('이미 해결한 단서입니다. 점수는 추가되지 않습니다.', 'info', 3000);
+      say('이미 해결한 단서다. 다른 곳을 찾아보자!', who);
+    }
+    if (S.clueApi && S.clueApi[slot]) S.clueApi[slot].refresh();
   }
 
   /* ============================================================
@@ -567,7 +591,7 @@
       '<p style="text-align:center;margin-top:10px;font-size:12px;color:#3f4453">' +
       (last ? '모든 방을 마쳤습니다. 관리자의 결과 발표를 기다려주세요!' : '관리자가 다음 방을 열어줄 때까지 대기실에서 기다려주세요...') + '</p>';
 
-    clearLayers(); renderScene('lobby'); showTitle(last ? '최종 대기실' : '대기실');
+    clearLayers(); usePixelScene('lobby'); showTitle(last ? '최종 대기실' : '대기실');
     drawLobbyCrowd();
     say(last ? '모든 관을 통과했다! 결과 발표를 기다리자.' : S.room + '관을 마쳤다. 다음 방이 열릴 때까지 잠시 대기하자.');
 
@@ -613,7 +637,7 @@
     S.phase = 'results';
     clearInterval(S.timer);
     g.UI.closeAll();
-    clearLayers(); renderScene('hall'); showTitle('결과 발표');
+    clearLayers(); usePixelScene('hall'); showTitle('결과 발표');
     const rows = computeBoard();
     const me = rows.findIndex(r => r.uid === NET.uid);
     const sc = NET.scoreOf(S.run);
@@ -707,10 +731,13 @@
     updateHUD();
 
     NET.onMyRun(run => {
+      const before = S.run ? JSON.stringify(S.run.rooms || {}) : '';
       S.run = run;
-      updateHUD(); refreshDoor();
-      if (S.phase === 'playing' && allSolved(S.room)) {
-        say('단서를 모두 찾았다! 이제 문으로 가자 🚪');
+      updateHUD();
+      refreshClueStates();      // 서버 기록이 늦게 와도 푼 단서를 잠근다
+      const after = run ? JSON.stringify(run.rooms || {}) : '';
+      if (S.phase === 'playing' && allSolved(S.room) && before !== after) {
+        say('단서를 모두 찾았다! 이제 나가는 문으로 가자 🚪');
       }
     });
     NET.onRuns(all => { S.allRuns = all; });
@@ -724,9 +751,9 @@
       assignQuizzes(seed);
     });
     assignQuizzes(hashSeed(NET.uid));
-    NET.onGlobal(applyGlobal);
+    renderLobby();              // 기본 화면을 먼저 그리고
     startTicker();
-    renderLobby();
+    NET.onGlobal(applyGlobal);  // 그 다음 서버 상태를 반영한다 (순서 중요)
   }
 
   function hashSeed(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return (h % 99991) + 1; }

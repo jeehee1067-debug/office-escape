@@ -41,6 +41,21 @@
   let uid = localStorage.getItem('s1fa.uid');
   if (!uid) { uid = uuid(); localStorage.setItem('s1fa.uid', uid); }
 
+  /* ---------- 실시간 구독 오류 (권한 문제를 눈에 보이게) ---------- */
+  const subErrCbs = [];
+  function onSubError(path, err) {
+    console.error('[S1FA] 실시간 구독 실패 (' + path + '):', err && err.message ? err.message : err);
+    subErrCbs.forEach(f => { try { f(path, err); } catch (e) { } });
+  }
+
+  /* ---------- 타임아웃 (응답 없는 요청으로 화면이 멈추지 않게) ---------- */
+  function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout:' + (label || ''))), ms || 8000))
+    ]);
+  }
+
   /* ---------- 관리자 키 (비밀번호 해시) ---------- */
   let adminKey = null;
   async function makeAdminKey(pw) {
@@ -62,32 +77,62 @@
      ============================================================ */
   const NET = {
     uid, joined: false, isAdmin: false,
-    now, TS, ref, db,
+    now, TS, ref, db, withTimeout,
+    onSubscribeError(cb) { subErrCbs.push(cb); },
     get connected() { return connected; },
     onConnection(cb) { connCbs.push(cb); cb(connected); },
 
+    /**
+     * 관리자 로그인 검증.
+     * 반환값: 'ok' | 'wrong' (비밀번호 불일치) | 'nodb' (서버에 접근 불가)
+     */
     async initAdmin(pw) {
       adminKey = await makeAdminKey(pw);
+
       // 규칙(database.rules.json) 적용 시 최초 1회만 기록되고, 이후에는 검증용으로 쓰인다.
-      try { await ref('config/adminKey').transaction(cur => (cur === null ? adminKey : undefined)); } catch (e) { }
-      let stored = null;
-      try { const s = await ref('config/adminKey').get(); if (s.exists()) stored = s.val(); } catch (e) { }
-      if (stored !== null) {
-        if (stored !== adminKey) return false;          // 비밀번호 불일치
-      } else {
-        // 읽기가 규칙으로 막힌 경우 → 쓰기 성공 여부로 검증
-        try { await ref('config/verify').set({ _k: adminKey, at: TS }); }
-        catch (e) { return false; }
+      try { await withTimeout(ref('config/adminKey').transaction(cur => (cur === null ? adminKey : undefined)), 8000); } catch (e) { }
+
+      let stored = null, readOk = false;
+      try {
+        const s = await withTimeout(ref('config/adminKey').get(), 8000);
+        readOk = true;
+        if (s.exists()) stored = s.val();
+      } catch (e) { /* 규칙으로 읽기가 막혔거나 서버에 못 붙은 경우 */ }
+
+      if (readOk && stored !== null) {
+        if (stored !== adminKey) return 'wrong';
+        this.isAdmin = true;
+        return 'ok';
       }
-      this.isAdmin = true;
-      return true;
+
+      // 읽기가 막힌 경우 → 쓰기 성공 여부로 검증 (규칙이 비밀번호를 대신 확인해 준다)
+      try {
+        await withTimeout(ref('config/verify').set({ _k: adminKey, at: TS }), 8000);
+        this.isAdmin = true;
+        return 'ok';
+      } catch (e) {
+        // 쓰기까지 막혔다면 비밀번호 문제인지 DB 문제인지 구분한다
+        const st = await this.probe();
+        return st.ok ? 'wrong' : 'nodb';
+      }
+    },
+
+    /** 데이터베이스에 실제로 붙을 수 있는지 확인 */
+    async probe() {
+      try {
+        await withTimeout(ref('global').get(), 8000, 'global');
+        return { ok: true };
+      } catch (e) {
+        const msg = String((e && e.message) || e);
+        return { ok: false, code: msg.indexOf('timeout') === 0 ? 'timeout' : 'denied', message: msg };
+      }
     },
     useAdminKey(k) { adminKey = k; this.isAdmin = true; },
     get adminKey() { return adminKey; },
 
     /* ----- 글로벌 진행 상태 ----- */
-    onGlobal(cb) { ref('global').on('value', s => cb(s.val() || null)); },
-    async getGlobal() { const s = await ref('global').get(); return s.val() || null; },
+    onGlobal(cb) { ref('global').on('value', s => cb(s.val() || null), e => onSubError('global', e)); },
+    async getGlobal() { const s = await withTimeout(ref('global').get(), 8000, 'global'); return s.val() || null; },
     setGlobal(patch) {
       const p = Object.assign({}, patch, { _k: adminKey, updatedAt: TS });
       return ref('global').update(p);
@@ -97,22 +142,22 @@
     },
 
     /* ----- 참가자 ----- */
-    onPlayers(cb) { ref('players').on('value', s => cb(s.val() || {})); },
-    async listPlayers() { const s = await ref('players').get(); return s.val() || {}; },
+    onPlayers(cb) { ref('players').on('value', s => cb(s.val() || {}), e => onSubError('players', e)); },
+    async listPlayers() { const s = await withTimeout(ref('players').get(), 8000, 'players'); return s.val() || {}; },
     async joinPlayer(info) {
       this.joined = true;
-      await ref('players/' + uid).update({
+      await withTimeout(ref('players/' + uid).update({
         uid, name: info.name, loc: info.loc, avatar: info.avatar,
         isAdmin: !!info.isAdmin, online: true, joinedAt: TS, lastSeen: TS
-      });
+      }), 8000, 'join');
       armPresence();
     },
     updatePlayer(patch) { return ref('players/' + uid).update(patch); },
     removePlayer() { return ref('players/' + uid).remove(); },
 
     /* ----- 기록(덮어쓰기 불가) ----- */
-    onRuns(cb) { ref('runs').on('value', s => cb(s.val() || {})); },
-    onMyRun(cb) { ref('runs/' + uid).on('value', s => cb(s.val() || null)); },
+    onRuns(cb) { ref('runs').on('value', s => cb(s.val() || {}), e => onSubError('runs', e)); },
+    onMyRun(cb) { ref('runs/' + uid).on('value', s => cb(s.val() || null), e => onSubError('runs/me', e)); },
     async getRun(u) { const s = await ref('runs/' + (u || uid)).get(); return s.val() || null; },
     /** 문제 정답 기록 — 이미 있으면 서버가 거부(규칙) 하거나 무시한다 */
     async recordSolve(room, slot, payload) {
@@ -142,7 +187,7 @@
     setRunMeta(patch) { return ref('runs/' + uid + '/meta').update(patch).catch(() => { }); },
 
     /* ----- 팀 ----- */
-    onTeams(cb) { ref('teams').on('value', s => cb(s.val() || null)); },
+    onTeams(cb) { ref('teams').on('value', s => cb(s.val() || null), e => onSubError('teams', e)); },
     setTeams(t) { return ref('teams').set({ _k: adminKey, list: t, at: TS }); },
 
     /* ----- 초기화 ----- */
