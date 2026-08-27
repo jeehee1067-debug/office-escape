@@ -14,7 +14,12 @@
     const keys = list.map(a => a.sprite).filter(Boolean)
       .filter((v, i, arr) => arr.indexOf(v) === i);
     if (!keys.length) return;
-    await Promise.all(keys.map(k => PX.setCharImage(k, CONFIG.SPRITE_DIR + k + '.png')));
+    const ext = CONFIG.SPRITE_EXT || '.png';
+    const found = await Promise.all(
+      keys.map(k => PX.setCharImage(k, CONFIG.SPRITE_DIR + k + ext).then(im => (im ? k : null)))
+    );
+    const ok = found.filter(Boolean);
+    if (ok.length) console.info('[S1FA] PNG 캐릭터 사용: ' + ok.join(', '));
   }
 
   /* ---------- 캐릭터 선택 ---------- */

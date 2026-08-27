@@ -52,7 +52,7 @@
   /* ============================================================
      캐릭터 — 32 x 48 도트 스프라이트 (sprites.js 의 문자 그리드를 색칠)
      ============================================================ */
-  const CH_W = 32, CH_H = 48;
+  const CH_W = 38, CH_H = 60;
 
   /** 색 밝기 조절 (-1 어둡게 ~ +1 밝게) */
   function tint(hex, f) {
@@ -72,7 +72,7 @@
     const cap = o.cap || '#c0392b';
     return {
       O: '#20242e',
-      S: skin, d: tint(skin, -0.11), n: tint(skin, -0.24),
+      S: skin, d: tint(skin, -0.10), n: tint(skin, -0.22), F: tint(skin, 0.15),
       b: '#f4a2ab', m: '#b3695f',
       e: '#23283a', i: tint(eye, -0.38), I: eye, w: '#ffffff',
       h: hair, H: tint(hair, 0.34), k: tint(hair, -0.38),
@@ -89,7 +89,7 @@
 
   function paintGrid(x, rows, pal, bob) {
     for (let y = 0; y < rows.length; y++) {
-      const line = rows[y], dy = (bob && y < 45) ? 1 : 0;
+      const line = rows[y], dy = (bob && y < rows.length - 3) ? 1 : 0;
       for (let i = 0; i < line.length; i++) {
         const ch = line[i];
         if (ch === '.' || ch === ' ') continue;
@@ -150,9 +150,11 @@
       } else {
         x.drawImage(img, 0, 0, c.width, c.height);
       }
-      // 화면 크기: 높이를 CH_H 에 맞추고 가로는 비율 유지
-      c.dataset.uh = CH_H;
-      c.dataset.uw = Math.round(CH_H * img.naturalWidth / img.naturalHeight);
+      // 화면 크기: 높이를 기준으로 맞추고 가로는 원본 비율 유지
+      const cfg = (global.DATA && global.DATA.CONFIG) || {};
+      const uh = (opts && opts.spriteH) || cfg.SPRITE_HEIGHT || CH_H;
+      c.dataset.uh = uh;
+      c.dataset.uw = Math.round(uh * img.naturalWidth / img.naturalHeight);
       return c;
     }
     const c = make(CH_W * scale, CH_H * scale);

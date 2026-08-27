@@ -199,8 +199,8 @@
     list.forEach(p => {
       if (p.uid === NET.uid) return;
       const col = i % 6, row = Math.floor(i / 6);
-      const x = 74 + col * 26 + (row % 2) * 12;
-      const y = 116 + row * 15;
+      const x = 78 + col * 26 + (row % 2) * 13;
+      const y = 122 + row * 13;
       addActor(AVATARS[p.avatar] || AVATARS[0], x, Math.min(y, 156), p.name, '', 2);
       i++;
     });

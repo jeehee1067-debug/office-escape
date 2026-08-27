@@ -16,27 +16,32 @@
     TRAP_PENALTY: 500,         // 함정(낚시)에 걸렸을 때 감점
     TIME_BONUS_MAX: 3000,      // 방을 빨리 깰수록 받는 최대 보너스
     DB_ROOT: 'v2',             // Firebase 데이터 루트
-    SPRITE_DIR: 'assets/img/char/'   // PNG 캐릭터를 둘 폴더 (AVATARS 에 sprite:'파일명' 지정)
+    SPRITE_DIR: 'assets/img/char/',  // PNG 캐릭터를 넣는 폴더
+    SPRITE_HEIGHT: 60,         // 화면에 표시될 캐릭터 키 (씬 기준. 크게 하려면 숫자를 올리세요)
+    SPRITE_EXT: '.png'
   };
 
-  /* ---------------- 플레이어 캐릭터 8종 ---------------- */
+  /* ---------------- 플레이어 캐릭터 8종 ----------------
+     sprite : assets/img/char/<이름>.png 가 있으면 그 그림을 쓰고,
+              없으면 아래 style/색상값으로 도트를 그립니다.
+     ----------------------------------------------------- */
   const AVATARS = [
-    { id: 0, name: '지훈', style: 'short',    hair: '#2e2118', top: '#4f7fd4', pants: '#2f3a52', eye: '#4d6b96' },
-    { id: 1, name: '진아', style: 'bob',      hair: '#5c3a22', top: '#f6f6f2', pants: '#2b3350', skirt: true, eye: '#7d6a52' },
-    { id: 2, name: '민수', style: 'short',    hair: '#1f1a14', top: '#2e8b4f', pants: '#3a4152', glasses: true, eye: '#4a5f7d' },
-    { id: 3, name: '수빈', style: 'ponytail', hair: '#8a5a2b', top: '#f2a7c4', pants: '#46506a', skirt: true, eye: '#8a6a4a' },
-    { id: 4, name: '도윤', style: 'spiky',    hair: '#22304f', top: '#e8b83b', pants: '#2f3a52', eye: '#4d6b96' },
-    { id: 5, name: '하늘', style: 'long',     hair: '#3a2418', top: '#7b5ea7', pants: '#2b2f3a', skirt: true, eye: '#6b5f8c' },
-    { id: 6, name: '태오', style: 'cap',      hair: '#241a12', cap: '#c0392b', top: '#e2e8ee', pants: '#3d6ea8', eye: '#4a5f7d' },
-    { id: 7, name: '유나', style: 'bun',      hair: '#4a2f1e', top: '#3d6ea8', pants: '#7d8792', skirt: true, eye: '#7f6a58' }
+    { id: 0, name: '지훈', sprite: 'p1', style: 'short',    hair: '#2e2118', top: '#4f7fd4', pants: '#2f3a52', eye: '#4d6b96' },
+    { id: 1, name: '진아', sprite: 'p2', style: 'bob',      hair: '#5c3a22', top: '#f6f6f2', pants: '#2b3350', skirt: true, eye: '#7d6a52' },
+    { id: 2, name: '민수', sprite: 'p3', style: 'short',    hair: '#1f1a14', top: '#2e8b4f', pants: '#3a4152', glasses: true, eye: '#4a5f7d' },
+    { id: 3, name: '수빈', sprite: 'p4', style: 'ponytail', hair: '#8a5a2b', top: '#f2a7c4', pants: '#46506a', skirt: true, eye: '#8a6a4a' },
+    { id: 4, name: '도윤', sprite: 'p5', style: 'spiky',    hair: '#22304f', top: '#e8b83b', pants: '#2f3a52', eye: '#4d6b96' },
+    { id: 5, name: '하늘', sprite: 'p6', style: 'long',     hair: '#3a2418', top: '#7b5ea7', pants: '#2b2f3a', skirt: true, eye: '#6b5f8c' },
+    { id: 6, name: '태오', sprite: 'p7', style: 'cap',      hair: '#241a12', cap: '#c0392b', top: '#e2e8ee', pants: '#3d6ea8', eye: '#4a5f7d' },
+    { id: 7, name: '유나', sprite: 'p8', style: 'bun',      hair: '#4a2f1e', top: '#3d6ea8', pants: '#7d8792', skirt: true, eye: '#7f6a58' }
   ];
 
   /* ---------------- 각 방의 파트장님(NPC) ---------------- */
   const BOSSES = {
-    1: { name: '김주헌 파트장님', style: 'short', hair: '#1b1610', top: '#3d6ea8', pants: '#2b2f3a', tie: '#c0392b', badge: '#3d6ea8', eye: '#3f5a7d' },
-    2: { name: '김진석 파트장님', style: 'short', hair: '#20242e', top: '#2e8b4f', pants: '#2f3a52', glasses: true, badge: '#2e8b4f', eye: '#4a5f7d' },
-    3: { name: '윤지혜 파트장님', style: 'long',  hair: '#3a2418', top: '#e8e8e4', pants: '#4a5568', coat: true, badge: '#7b5ea7', eye: '#7d6a52' },
-    4: { name: '손승준 PL님',     style: 'short', hair: '#141821', top: '#262b38', pants: '#20242e', tie: '#e8b83b', badge: '#e8b83b', eye: '#3f5a7d' }
+    1: { name: '김주헌 파트장님', sprite: 'boss1', style: 'short', hair: '#1b1610', top: '#3d6ea8', pants: '#2b2f3a', tie: '#c0392b', badge: '#3d6ea8', eye: '#3f5a7d' },
+    2: { name: '김진석 파트장님', sprite: 'boss2', style: 'short', hair: '#20242e', top: '#2e8b4f', pants: '#2f3a52', glasses: true, badge: '#2e8b4f', eye: '#4a5f7d' },
+    3: { name: '윤지혜 파트장님', sprite: 'boss3', style: 'long',  hair: '#3a2418', top: '#e8e8e4', pants: '#4a5568', coat: true, badge: '#7b5ea7', eye: '#7d6a52' },
+    4: { name: '손승준 PL님',     sprite: 'boss4', style: 'short', hair: '#141821', top: '#262b38', pants: '#20242e', tie: '#e8b83b', badge: '#e8b83b', eye: '#3f5a7d' }
   };
 
   /* ============================================================
