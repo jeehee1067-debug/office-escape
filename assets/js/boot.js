@@ -29,7 +29,7 @@
     AVATARS.forEach(a => {
       const cell = el('div', 'avatar-cell' + (a.id === chosen.avatar ? ' is-on' : ''));
       cell.appendChild(PX.characterCanvas(a, 3, 0));
-      cell.appendChild(el('span', '', esc(a.name)));
+      cell.appendChild(el('span', '', esc(a.label || ('캐릭터 ' + (a.id + 1)))));
       cell.onclick = () => {
         chosen.avatar = a.id; SFX.select();
         $$('.avatar-cell', box).forEach((c, i) => c.classList.toggle('is-on', i === a.id));
