@@ -157,6 +157,10 @@ python3 -m http.server 8000
 | `p2.png` | 남자 캐릭터 2 |
 | `p3.png` | 여자 캐릭터 1 |
 | `p4.png` | 여자 캐릭터 2 |
+| `boss1.png` | 1관 김주헌 파트장님 |
+| `boss2.png` | 2관 김진석 파트장님 |
+| `boss3.png` | 3관 윤지혜 파트장님 |
+| `boss4.png` | 4관 손승준 PL님 |
 
 캐릭터 위에 표시되는 이름은 **참가자가 입력한 아이디**를 그대로 씁니다.
 
@@ -229,11 +233,20 @@ assets/js/
   admin.js                 관리자 통제 패널
   boot.js                  로그인 · 세션 복구 · HUD
 assets/img/                배경 사진(참고용) 및 BGM
-assets/img/char/           ★ PNG 캐릭터를 넣는 곳 (p1~p4)
+assets/img/char/           ★ PNG 캐릭터를 넣는 곳 (p1~p4, boss1~boss4)
 assets/img/rooms/          ★ 방 배경 그림을 넣는 곳 (room1~room4)
 char-preview.html          넣은 PNG 가 제대로 보이는지 확인하는 페이지
 tools/extract-sprite.py    스크린샷에서 캐릭터를 뽑아내는 도구
 ```
+
+### 방 담당자(파트장님) 위치 조정
+방마다 담당자가 한 명씩 서 있고, 누르면 **아직 남은 단서를 알려줍니다.**
+서 있는 위치는 `assets/js/data.js` 의 `bossAt: [왼쪽%, 아래여백%, 키%]` 로 조정합니다.
+- `왼쪽%` 은 캐릭터의 **가운데** 기준입니다
+- `아래여백%` 이 0 이면 화면 맨 아래에 발이 닿습니다
+- `키%` 는 화면 높이 대비 캐릭터 키입니다 (기본 29~37)
+
+`boss1.png` ~ `boss4.png` 를 `assets/img/char/` 에 넣으면 그 그림으로 바뀝니다.
 
 ## 8. 잘 안 될 때
 

@@ -25,7 +25,8 @@
     }
     return '<div class="admin-state">' +
       '상태 : <b>' + (PHASE_LABEL[s.phase] || '미시작') + (s.pausedAt ? ' (일시정지)' : '') + '</b><br>' +
-      '현재 방 : <b>' + (s.phase === 'playing' ? s.room + '관' : '-') + '</b>　남은 시간 : <b>' + remain + '</b><br>' +
+      '현재 방 : <b>' + (s.room || 1) + '관</b>' + (s.phase === 'playing' ? '' : ' (대기 중)') +
+      '　남은 시간 : <b>' + remain + '</b><br>' +
       '참가자 : <b>' + players.length + '명</b> (접속 중 ' + online + '명)　팀 : <b>' +
       ((g.GAME.S.teams && g.GAME.S.teams.list) ? g.GAME.S.teams.list.length + '팀' : '미구성') + '</b>' +
       '</div>';
@@ -67,20 +68,33 @@
     const s = gs();
     const playing = s.phase === 'playing';
     const paused = !!s.pausedAt;
-    const last = playing && s.room >= CONFIG.ROOM_COUNT;
+    const cur = s.room || 1;
+    const isLast = cur >= CONFIG.ROOM_COUNT;
+    const dim = ' disabled style="opacity:.4"';
+
+    /* 진행 버튼 : 대기실 상태에서도 방을 열 수 있어야 한다 */
+    const nextLabel = isLast ? '🏁 결과 발표로' : '➡ ' + (cur + 1) + '관 열기';
+    const startRoomBtn = playing
+      ? '<button class="pk-btn pk-btn-gold" data-act="pause">' + (paused ? '▶ 재개' : '⏸ 일시정지') + '</button>'
+      : '<button class="pk-btn pk-btn-green" data-act="resume">▶ ' + cur + '관 시작 (타이머 처음부터)</button>';
+
     return stateHTML() +
       '<div class="admin-grid">' +
-      '<button class="pk-btn pk-btn-green" data-act="start">🚀 ' + (playing ? '1관부터 다시 시작' : '게임 시작 (1관)') + '</button>' +
-      '<button class="pk-btn pk-btn-main" data-act="next"' + (playing ? '' : ' disabled style="opacity:.4"') + '>➡ ' + (last ? '결과 발표로' : '다음 방 열기') + '</button>' +
-      '<button class="pk-btn pk-btn-gold" data-act="pause"' + (playing ? '' : ' disabled style="opacity:.4"') + '>' + (paused ? '▶ 재개' : '⏸ 일시정지') + '</button>' +
-      '<button class="pk-btn pk-btn-ghost" data-act="prev"' + (playing && s.room > 1 ? '' : ' disabled style="opacity:.4"') + '>⬅ 이전 방</button>' +
-      '<button class="pk-btn pk-btn-ghost" data-act="lobby">🏠 전원 대기실로</button>' +
-      '<button class="pk-btn pk-btn-ghost" data-act="resetroom"' + (playing ? '' : ' disabled style="opacity:.4"') + '>🧹 현재 방 리셋</button>' +
+      startRoomBtn +
+      '<button class="pk-btn pk-btn-main" data-act="next">' + nextLabel + '</button>' +
+      '<button class="pk-btn pk-btn-ghost" data-act="prev"' + (cur > 1 ? '' : dim) + '>⬅ ' + Math.max(1, cur - 1) + '관으로</button>' +
+      '<button class="pk-btn pk-btn-ghost" data-act="lobby"' + (playing ? '' : dim) + '>🏠 전원 대기실로</button>' +
+      '<button class="pk-btn pk-btn-ghost" data-act="resetroom">🧹 ' + cur + '관 리셋 후 재시작</button>' +
+      '<button class="pk-btn pk-btn-green" data-act="start">🚀 1관부터 새로 시작</button>' +
       '<button class="pk-btn pk-btn-purple" data-act="teams">🎲 랜덤 팀 구성</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="csv">💾 결과 CSV</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="results">🏁 결과 발표</button>' +
       '<button class="pk-btn pk-btn-red" data-act="wipe">🔄 전체 데이터 초기화</button>' +
       '</div>' +
+      (playing ? '' : '<p style="font-size:11px;color:#8a5a12;background:#fff7d6;border:2px solid var(--gold);' +
+        'border-radius:6px;padding:6px 8px;margin-top:8px;line-height:1.7">' +
+        '지금은 <b>대기실</b> 상태입니다. 위의 <b>' + cur + '관 시작</b> 또는 <b>' + (isLast ? '결과 발표' : (cur + 1) + '관 열기') +
+        '</b> 를 눌러 진행하세요.</p>') +
       '<div class="admin-sec"><h4>👥 참가자 실시간 현황</h4>' + playersHTML() + '</div>' +
       '<div class="admin-sec"><button class="pk-btn pk-btn-ghost pk-btn-sm" data-act="logout">🚪 관리자 로그아웃</button></div>';
   }
@@ -93,15 +107,25 @@
         toast('게임을 시작했습니다!', 'good');
       }, '시작하기');
     },
+    /** 현재 방을 (다시) 시작 — 전원 대기실로 부른 뒤 이어가기 */
+    async resume() {
+      const s = gs();
+      const room = s.room || 1;
+      await NET.setGlobal({ phase: 'playing', room, startAt: NET.TS, pauseTotal: 0, pausedAt: null });
+      toast(room + '관을 시작했습니다.', 'good');
+    },
     async next() {
       const s = gs();
-      if (s.room >= CONFIG.ROOM_COUNT) return ACT.results();
-      await NET.setGlobal({ phase: 'playing', room: (s.room || 1) + 1, startAt: NET.TS, pauseTotal: 0, pausedAt: null });
-      toast(((s.room || 1) + 1) + '관을 열었습니다.', 'good');
+      const cur = s.room || 1;
+      if (cur >= CONFIG.ROOM_COUNT) return ACT.results();
+      await NET.setGlobal({ phase: 'playing', room: cur + 1, startAt: NET.TS, pauseTotal: 0, pausedAt: null });
+      toast((cur + 1) + '관을 열었습니다.', 'good');
     },
     async prev() {
       const s = gs();
-      await NET.setGlobal({ phase: 'playing', room: Math.max(1, (s.room || 1) - 1), startAt: NET.TS, pauseTotal: 0, pausedAt: null });
+      const room = Math.max(1, (s.room || 1) - 1);
+      await NET.setGlobal({ phase: 'playing', room, startAt: NET.TS, pauseTotal: 0, pausedAt: null });
+      toast(room + '관으로 되돌렸습니다.', 'info');
     },
     async pause() {
       const s = gs();
@@ -119,11 +143,11 @@
       toast('전원을 대기실로 이동시켰습니다.', 'info');
     },
     async resetroom() {
-      const s = gs();
-      confirmBox('현재 방 리셋', s.room + '관의 모든 참가자 진행 기록을 지우고 타이머를 다시 시작합니다.', async () => {
-        await NET.resetRoomProgress(s.room);
-        await NET.setGlobal({ phase: 'playing', room: s.room, startAt: NET.TS, pauseTotal: 0, pausedAt: null });
-        toast(s.room + '관을 리셋했습니다.', 'info');
+      const room = gs().room || 1;
+      confirmBox('방 리셋', room + '관의 모든 참가자 진행 기록을 지우고 타이머를 다시 시작합니다.', async () => {
+        await NET.resetRoomProgress(room);
+        await NET.setGlobal({ phase: 'playing', room, startAt: NET.TS, pauseTotal: 0, pausedAt: null });
+        toast(room + '관을 리셋했습니다.', 'info');
       }, '리셋');
     },
     async results() {
@@ -223,7 +247,8 @@
       title: '👑 관리자 통제 패널', wide: true, closable: true,
       html: bodyHTML(),
       onClose: () => { clearInterval(refreshTimer); panel = null; },
-      onMount: (body) => {
+      onMount: (body, back) => {
+        back.dataset.keep = '1';    // 방이 바뀌어도 패널이 닫히지 않게
         bind(body);
         clearInterval(refreshTimer);
         refreshTimer = setInterval(() => {

@@ -15,7 +15,7 @@
   const S = {
     me: null, global: null, run: null, players: {}, teams: null,
     room: 0, phase: 'boot', quizzes: {}, seed: 1,
-    gate: {}, clueApi: {}, timer: null, ended: false, lastRoomRendered: null
+    gate: {}, clueApi: {}, bossEl: null, timer: null, ended: false, lastRoomRendered: null
   };
 
   /* ---------- 좌표 (배경 그림 기준 백분율) ---------- */
@@ -81,16 +81,21 @@
   function tick() {
     const rt = $('#hud-room-time'), tt = $('#hud-total-time');
     if (!rt) return;
-    if (S.phase !== 'playing' || !S.global || !S.global.startAt) {
+    const gs = S.global;
+    const live = !!(gs && gs.phase === 'playing' && gs.startAt);
+    if (!live) {
       rt.textContent = mmss(CONFIG.ROOM_SECONDS);
       rt.classList.remove('is-warn');
     } else {
       const rem = roomRemain();
       rt.textContent = mmss(rem);
       rt.classList.toggle('is-warn', rem <= 30);
-      if (rem <= 30 && rem > 29.5) SFX.warn();
-      if (rem <= 0 && !S.ended) finishRoom('timeout');
+      if (S.phase === 'playing') {
+        if (rem <= 30 && rem > 29.5) SFX.warn();
+        if (rem <= 0 && !S.ended) finishRoom('timeout');
+      }
     }
+    updateWaitPanel(live);
     tt.textContent = mmss(totalRemain());
     // 일시정지 오버레이
     const paused = !!(S.global && S.global.pausedAt);
@@ -101,6 +106,39 @@
     } else if (!paused && ov.classList.contains('hidden') === false && !ov.dataset.keep) {
       ov.classList.add('hidden');
     }
+  }
+
+  /** 현재 진행 중인 방의 인원 현황 */
+  function roomProgressCounts() {
+    const gs = S.global;
+    if (!gs || gs.phase !== 'playing') return { playing: 0, done: 0 };
+    const room = gs.room || 1, runs = S.allRuns || {};
+    let playing = 0, done = 0;
+    Object.values(S.players || {}).forEach(pl => {
+      if (!pl || !pl.uid || pl.isAdmin) return;
+      const rec = ((runs[pl.uid] || {}).rooms || {})[room] || {};
+      if (rec.done) done++; else playing++;
+    });
+    return { playing, done };
+  }
+
+  /** 대기 화면에 "진행 중인 방의 남은 시간" 을 갱신 */
+  function updateWaitPanel(live) {
+    const box = document.getElementById('im-live');
+    if (!box) return;
+    const gs = S.global;
+    if (!live) {
+      box.innerHTML = '<div class="wait-line">관리자가 다음 방을 열어줄 때까지 기다려주세요.</div>';
+      return;
+    }
+    const rem = roomRemain();
+    const c = roomProgressCounts();
+    const warn = rem <= 30 ? ' is-warn' : '';
+    box.innerHTML =
+      '<div class="wait-timer' + warn + '"><span>' + (gs.room || 1) + '관 남은 시간</span><b>' + mmss(rem) + '</b></div>' +
+      '<div class="wait-line">🏃 아직 진행 중 <b>' + c.playing + '명</b>' +
+      '　✅ 방 통과 <b>' + c.done + '명</b></div>' +
+      (rem <= 0 ? '<div class="wait-line">⏰ 시간이 끝났습니다. 곧 다음 방이 열립니다!</div>' : '');
   }
 
   /* ---------- HUD ---------- */
@@ -120,6 +158,7 @@
     ['#prop-layer', '#actor-layer', '#fx-layer'].forEach(sel => {
       const l = $(sel);
       $$('.actor', l).forEach(a => clearInterval(a._anim));
+      $$('.npc', l).forEach(a => clearInterval(a._anim));
       $$('.ov', l).forEach(p => p._cleanup && p._cleanup());
       l.innerHTML = '';
     });
@@ -170,6 +209,47 @@
     $('#prop-layer').appendChild(h);
     return h;
   }
+  /** 방 담당자(NPC)를 세운다. at = [왼쪽%, 아래여백%, 키%] */
+  function addBoss(R) {
+    const boss = BOSSES[R.boss]; if (!boss) return null;
+    const at = R.bossAt || [70, 4, 32];
+    const wrap = el('div', 'npc');
+    wrap.style.left = at[0] + '%';
+    wrap.style.bottom = at[1] + '%';
+    wrap.style.height = at[2] + '%';
+
+    const c0 = PX.characterCanvas(boss, 4, 0);
+    const c1 = PX.characterCanvas(boss, 4, 1);
+    [c0, c1].forEach(c => { c.className = 'npc-img'; });
+    c1.style.display = 'none';
+    wrap.appendChild(c0); wrap.appendChild(c1);
+    let f = 0;
+    wrap._anim = setInterval(() => {
+      f ^= 1; c0.style.display = f ? 'none' : 'block'; c1.style.display = f ? 'block' : 'none';
+    }, 560);
+
+    wrap.appendChild(el('div', 'npc-tag', esc(boss.name)));
+    wrap.addEventListener('click', () => { SFX.select(); bossHint(R, wrap); });
+    $('#actor-layer').appendChild(wrap);
+    return wrap;
+  }
+
+  /** NPC 를 누르면 남은 단서를 알려준다 */
+  function bossHint(R, wrap) {
+    const boss = BOSSES[R.boss];
+    const left = R.clues.filter(c => !isSolved(S.room, c.slot));
+    let msg;
+    if (!left.length) {
+      msg = '단서를 다 찾았군요! 이제 나가는 문으로 가세요. 🚪';
+      g.UI.bubble(wrap, '!');
+    } else {
+      const names = left.map(c => '「' + c.label + '」').join(', ');
+      msg = '아직 ' + left.length + '군데가 남았어요.\n' + names + ' 쪽을 살펴보세요!';
+      g.UI.bubble(wrap, '?');
+    }
+    say(msg, boss.name);
+  }
+
   /** 아직 못 푼 단서 위치를 알려주는 표식 */
   function addMarker(rect, label) {
     const m = el('div', 'marker');
@@ -187,6 +267,7 @@
     S.phase = 'lobby'; S.room = 0; S.ended = false;
     clearLayers(); usePixelScene('lobby'); showTitle('대기실');
     updateHUD();
+    g.UI.bgmDown();        // 대기실 → 배경음악 서서히 줄이기
     say(msg || '대기실이다. 관리자가 게임을 시작할 때까지 기다리자!\n다른 참가자들도 속속 도착하고 있다.');
     drawLobbyCrowd();
   }
@@ -265,7 +346,7 @@
     R.__n = n;
     S.room = n; S.phase = 'playing'; S.ended = false;
     S.gate = {};
-    S.clueApi = {};
+    S.clueApi = {}; S.bossEl = null;
     g.UI.closeAll();
     clearLayers();
     setRoomBackground(R);
@@ -273,6 +354,10 @@
     updateHUD();
     say(R.welcome, R.full);
     SFX.door();
+    g.UI.bgmUp();          // 방 시작 → 배경음악 다시 올리기
+
+    /* 방 담당자 */
+    S.bossEl = addBoss(R);
 
     /* 살펴보기 지점 */
     (R.hints || []).forEach(h => addHotspot(h.at, () => { SFX.select(); say(h.msg, '👀 살펴보기'); }, h.label || '살펴보기', 'look'));
@@ -313,6 +398,7 @@
   function refreshExit() {
     const btn = $('#exit-btn'); if (!btn) return;
     const open = allSolved(S.room);
+    if (S.bossEl) S.bossEl.classList.toggle('is-done', open);
     btn.classList.toggle('is-open', open);
     btn.textContent = open
       ? (S.room === CONFIG.ROOM_COUNT ? '🎉 최종 탈출!' : '🚪 ' + (S.room + 1) + '관으로')
@@ -587,18 +673,20 @@
       '<div class="result-cell"><span>푼 단서</span><b>' + solvedCount(S.room) + ' / ' + CONFIG.CLUES_PER_ROOM + '</b></div>' +
       '<div class="result-cell"><span>사용 시간</span><b>' + mmss(Math.round(roomElapsed())) + '</b></div>' +
       '</div>' +
+      '<div id="im-live" class="wait-live"></div>' +
       '<div id="im-board"></div>' +
       '<p style="text-align:center;margin-top:10px;font-size:12px;color:#3f4453">' +
-      (last ? '모든 방을 마쳤습니다. 관리자의 결과 발표를 기다려주세요!' : '관리자가 다음 방을 열어줄 때까지 대기실에서 기다려주세요...') + '</p>';
+      (last ? '모든 방을 마쳤습니다. 관리자의 결과 발표를 기다려주세요!' : '다른 참가자들이 끝나면 다음 방이 열립니다.') + '</p>';
 
     clearLayers(); usePixelScene('lobby'); showTitle(last ? '최종 대기실' : '대기실');
+    g.UI.bgmDown();        // 방을 마치고 대기실 → 배경음악 줄이기
     drawLobbyCrowd();
     say(last ? '모든 관을 통과했다! 결과 발표를 기다리자.' : S.room + '관을 마쳤다. 다음 방이 열릴 때까지 잠시 대기하자.');
 
     modal({
       title: last ? '🎉 전 구간 완료' : '⏳ ' + S.room + '관 완료 — 대기 중',
       html, closable: !!S.me.isAdmin, wide: true,
-      onMount: (body) => { renderBoardInto(body.querySelector('#im-board')); },
+      onMount: (body) => { renderBoardInto(body.querySelector('#im-board')); updateWaitPanel(!!(S.global && S.global.phase === 'playing' && S.global.startAt)); },
       buttons: S.me.isAdmin ? [{ label: '👑 관리자 패널 열기', cls: 'pk-btn-gold', onClick: () => g.ADMIN.open() }] : []
     });
   }
@@ -638,6 +726,7 @@
     clearInterval(S.timer);
     g.UI.closeAll();
     clearLayers(); usePixelScene('hall'); showTitle('결과 발표');
+    g.UI.bgmDown(2500);
     const rows = computeBoard();
     const me = rows.findIndex(r => r.uid === NET.uid);
     const sc = NET.scoreOf(S.run);

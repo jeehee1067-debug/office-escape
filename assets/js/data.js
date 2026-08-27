@@ -34,12 +34,15 @@
     { id: 3, label: '여 2', sprite: 'p4', style: 'ponytail', hair: '#8a5a2b', top: '#f2a7c4', pants: '#46506a', skirt: true, eye: '#8a6a4a' }
   ];
 
-  /* ---------------- 각 방의 담당자(대사에만 등장) ---------------- */
+  /* ---------------- 각 방의 담당자(NPC) ----------------
+     sprite : assets/img/char/<이름>.png 가 있으면 그 그림을 쓰고,
+              없으면 style/색상값으로 도트를 그립니다.
+     ------------------------------------------------------ */
   const BOSSES = {
-    1: { name: '김주헌 파트장님' },
-    2: { name: '김진석 파트장님' },
-    3: { name: '윤지혜 파트장님' },
-    4: { name: '손승준 PL님' }
+    1: { name: '김주헌 파트장님', sprite: 'boss1', style: 'short', hair: '#1b1610', top: '#3d6ea8', pants: '#2b2f3a', tie: '#c0392b', badge: '#3d6ea8', eye: '#3f5a7d' },
+    2: { name: '김진석 파트장님', sprite: 'boss2', style: 'short', hair: '#20242e', top: '#2e8b4f', pants: '#2f3a52', glasses: true, badge: '#2e8b4f', eye: '#4a5f7d' },
+    3: { name: '윤지혜 파트장님', sprite: 'boss3', style: 'long',  hair: '#3a2418', top: '#e8e8e4', pants: '#4a5568', coat: true, badge: '#7b5ea7', eye: '#7d6a52' },
+    4: { name: '손승준 PL님',     sprite: 'boss4', style: 'short', hair: '#141821', top: '#262b38', pants: '#20242e', tie: '#e8b83b', badge: '#e8b83b', eye: '#3f5a7d' }
   };
 
   /* ============================================================
@@ -129,7 +132,7 @@
       title: '1관 · EFA1',
       banner: 'EFA1 파트',
       full: '1관 · 분석기술팀 EFA1 파트',
-      boss: 1,
+      boss: 1, bossAt: [60, 6, 34],
       welcome: '분석기술팀 사무실이다.\n꺼져 있는 TV, 책장, 모니터를 하나씩 살펴보자!',
       clues: [
         { slot: 'A', label: '벽걸이 TV', at: [23.5, 24.5, 21, 17.5],
@@ -162,7 +165,7 @@
       title: '2관 · EFA2',
       banner: 'EFA2 파트',
       full: '2관 · 분석기술팀 회의실',
-      boss: 2,
+      boss: 2, bossAt: [9, 3, 37],
       welcome: '회의실이다.\n화이트보드를 지워보고, 책상 위 서류와 계산기를 확인하자!',
       clues: [
         { slot: 'A', label: '화이트보드', at: [47.5, 34.5, 17, 17.5],
@@ -194,7 +197,7 @@
       title: '3관 · 정밀분석실',
       banner: '정밀 분석실',
       full: '3관 · 분석기술팀 정밀 분석실',
-      boss: 3,
+      boss: 3, bossAt: [55, 3, 33],
       welcome: '정밀 분석실이다.\n장비 전원을 넣고, 실험 노트를 확인하고, 연구원에게 말을 걸어보자!',
       clues: [
         { slot: 'A', label: '분석 장비', at: [32, 19, 22, 41],
@@ -225,7 +228,7 @@
       title: '4관 · 야간 자리',
       banner: '야간 분석 자리',
       full: '4관 · 분석기술팀 야간 분석 자리 (최종관)',
-      boss: 4,
+      boss: 4, bossAt: [77, 1, 29],
       welcome: '마지막 관, 늦은 밤 분석 자리다!\n모니터 3대를 순서대로 켜고, 스노우볼과 포스터를 살펴보자!',
       clues: [
         { slot: 'A', label: '모니터 3대', at: [38.5, 26, 21.5, 32],

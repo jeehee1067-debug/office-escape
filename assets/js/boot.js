@@ -170,16 +170,20 @@
         }, '로그아웃');
     };
     const bgm = $('#bgm');
+    /** 지금 화면이 방 진행 중인지에 따라 목표 볼륨이 달라진다 */
+    const wantLoud = () => g.GAME && g.GAME.S && g.GAME.S.phase === 'playing';
     const applySound = () => {
       const on = g.UI.soundOn;
       $('#btn-sound').textContent = on ? '🔊' : '🔇';
-      if (on) { bgm.volume = .18; bgm.play().catch(() => { }); } else bgm.pause();
+      if (!on) { g.UI.bgmFade(0, 400); return; }
+      if (wantLoud()) g.UI.bgmUp(600); else g.UI.bgmFade(0.05, 600);
     };
     $('#btn-sound').onclick = () => {
       g.UI.setSound(!g.UI.soundOn); SFX.select(); applySound();
     };
+    // 브라우저 정책상 첫 조작 이후에야 소리가 난다
     document.addEventListener('pointerdown', function once() {
-      if (g.UI.soundOn) { bgm.volume = .18; bgm.play().catch(() => { }); }
+      if (g.UI.soundOn) { bgm.volume = 0; bgm.play().catch(() => { }); applySound(); }
       document.removeEventListener('pointerdown', once);
     });
     $('#btn-sound').textContent = g.UI.soundOn ? '🔊' : '🔇';

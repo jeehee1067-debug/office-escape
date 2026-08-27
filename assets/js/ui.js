@@ -96,7 +96,14 @@
     return { back, body, close: () => close(back) };
   }
   function close(back) { if (!back) return; back.remove(); const i = stack.indexOf(back); if (i >= 0) stack.splice(i, 1); }
-  function closeAll() { while (stack.length) close(stack[stack.length - 1]); }
+  /** 열린 창을 모두 닫는다. dataset.keep 이 붙은 창(관리자 패널)은 남긴다 */
+  function closeAll(force) {
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const back = stack[i];
+      if (!force && back.dataset.keep) continue;
+      close(back);
+    }
+  }
   function confirmBox(title, msg, onYes, yesLabel) {
     modal({
       title, html: '<p style="line-height:1.8">' + esc(msg) + '</p>', closable: true,
@@ -164,9 +171,41 @@
     return h + '</tbody></table></div>';
   }
 
+  /* ---------------- 배경음악 (부드럽게 켜고 끄기) ---------------- */
+  const BGM_VOL = 0.18;          // 방 진행 중 볼륨
+  let fadeTimer = null;
+  function bgmEl() { return document.getElementById('bgm'); }
+
+  /** 목표 볼륨까지 서서히 변화. to = 0 이면 다 줄어든 뒤 일시정지 */
+  function bgmFade(to, ms) {
+    const a = bgmEl(); if (!a) return;
+    clearInterval(fadeTimer);
+    if (!soundOn) { a.pause(); a.volume = 0; return; }
+    to = Math.max(0, Math.min(1, to));
+    ms = ms || 1500;
+    if (to > 0 && a.paused) { a.volume = 0; a.play().catch(() => { }); }
+    const from = a.volume, steps = Math.max(1, Math.round(ms / 60));
+    let i = 0;
+    fadeTimer = setInterval(() => {
+      i++;
+      const t = i / steps;
+      a.volume = Math.max(0, Math.min(1, from + (to - from) * t));
+      if (i >= steps) {
+        clearInterval(fadeTimer);
+        a.volume = to;
+        if (to === 0) a.pause();
+      }
+    }, 60);
+  }
+  /** 방 진행 중 — 소리를 원래대로 */
+  function bgmUp(ms) { bgmFade(BGM_VOL, ms || 1200); }
+  /** 대기실 — 조용히 사라지게 */
+  function bgmDown(ms) { bgmFade(0, ms || 2000); }
+
   g.UI = {
     $, $$, el, esc, modal, close, closeAll, closeTop, confirmBox, prompt, toast, say, mmss,
     SFX, actorEl, bubble, leaderboardHTML,
+    bgmFade, bgmUp, bgmDown, BGM_VOL,
     get soundOn() { return soundOn; },
     setSound(v) { soundOn = v; localStorage.setItem('s1fa.sound', v ? 'on' : 'off'); }
   };
