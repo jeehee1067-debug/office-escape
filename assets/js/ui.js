@@ -88,6 +88,7 @@
       m.appendChild(row);
     }
     back.appendChild(m);
+    if (opts.low) back.dataset.low = '1';      // 관리자 패널보다 아래에 깔리는 창
     if (opts.backdropClose) back.addEventListener('click', e => { if (e.target === back) { close(back); if (opts.onClose) opts.onClose(); } });
     $('#modal-root').appendChild(back);
     stack.push(back);

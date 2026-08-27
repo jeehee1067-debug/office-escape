@@ -15,7 +15,7 @@
   const S = {
     me: null, global: null, run: null, players: {}, teams: null,
     room: 0, phase: 'boot', quizzes: {}, seed: 1,
-    gate: {}, clueApi: {}, bossEl: null, timer: null, ended: false, lastRoomRendered: null
+    gate: {}, clueApi: {}, bossEl: null, waitModal: null, timer: null, ended: false, lastRoomRendered: null
   };
 
   /* ---------- 좌표 (배경 그림 기준 백분율) ---------- */
@@ -234,6 +234,18 @@
     return wrap;
   }
 
+  /** PNG 스프라이트가 나중에 도착하면 NPC 를 다시 그린다 */
+  document.addEventListener('s1fa:sprite', () => {
+    if (S.phase !== 'playing' || !S.bossEl) return;
+    const R = ROOMS[S.room]; if (!R) return;
+    const boss = BOSSES[R.boss];
+    if (!boss || !boss.sprite || !PX.hasCharImage(boss.sprite)) return;
+    clearInterval(S.bossEl._anim);
+    S.bossEl.remove();
+    S.bossEl = addBoss(R);
+    refreshExit();
+  });
+
   /** NPC 를 누르면 남은 단서를 알려준다 */
   function bossHint(R, wrap) {
     const boss = BOSSES[R.boss];
@@ -250,12 +262,12 @@
     say(msg, boss.name);
   }
 
-  /** 아직 못 푼 단서 위치를 알려주는 표식 */
-  function addMarker(rect, label) {
-    const m = el('div', 'marker');
+  /** 해결한 단서 자리에 체크 표시 */
+  function addCheck(rect, label) {
+    const m = el('div', 'check');
     m.style.left = (rect[0] + rect[2] / 2) + '%';
     m.style.top = (rect[1] + rect[3] / 2) + '%';
-    m.innerHTML = '<i>?</i>' + (label ? '<b>' + esc(label) + '</b>' : '');
+    m.innerHTML = '<i>✓</i>' + (label ? '<b>' + esc(label) + '</b>' : '');
     $('#fx-layer').appendChild(m);
     return m;
   }
@@ -265,6 +277,8 @@
      ============================================================ */
   function renderLobby(msg) {
     S.phase = 'lobby'; S.room = 0; S.ended = false;
+    g.UI.closeAll();            // 이전 정산 창 등 정리 (관리자 패널은 유지됨)
+    S.waitModal = null;
     clearLayers(); usePixelScene('lobby'); showTitle('대기실');
     updateHUD();
     g.UI.bgmDown();        // 대기실 → 배경음악 서서히 줄이기
@@ -328,14 +342,26 @@
       PX.renderScene(cv, R && R.fallback ? R.fallback : 'lobby');
     };
     if (!R || !R.bg) { useFallback(); return; }
-    useFallback();                            // 그림이 늦게 와도 빈 화면이 안 보이게
+
+    const cached = bgCache[R.bg];
+    if (cached) { applyImage(cached); return; }        // 이미 받아둔 그림은 곧바로
+    if (cached === null) { useFallback(); return; }    // 그림이 없는 것이 확인된 경우
+
+    // 아직 모르는 상태 — 도트 배경을 깜빡 보여주지 않고 빈 화면으로 기다린다
+    cv.classList.add('hidden');
+    layer.classList.remove('hidden');
+    layer.style.backgroundImage = '';
     findRoomImage(R.bg).then(im => {
-      if (!im || S.room !== R.__n) return;
+      if (S.room !== R.__n) return;
+      if (im) applyImage(im); else useFallback();
+    });
+
+    function applyImage(im) {
       layer.style.backgroundImage = 'url("' + im.src + '")';
       layer.classList.remove('hidden');
       cv.classList.add('hidden');
       stage.style.aspectRatio = im.naturalWidth + ' / ' + im.naturalHeight;
-    });
+    }
   }
 
   /* ============================================================
@@ -348,6 +374,7 @@
     S.gate = {};
     S.clueApi = {}; S.bossEl = null;
     g.UI.closeAll();
+    S.waitModal = null;
     clearLayers();
     setRoomBackground(R);
     showTitle(R.banner);
@@ -418,7 +445,7 @@
     const boss = BOSSES[R.boss] ? BOSSES[R.boss].name : '';
     let opened = isSolved(S.room, slot);   // 기믹 통과 여부
     let gateEls = [];                      // 기믹이 만든 요소 (통과 후 제거)
-    let marker = null;
+    let checkEl = null;                    // 해결 후 표시되는 체크
 
     const quizOf = () => S.quizzes[S.room] && S.quizzes[S.room][idx];
 
@@ -449,11 +476,11 @@
     }
     function clearGateEls() { gateEls.forEach(n => n.remove()); gateEls = []; }
 
-    /** 이미 푼 단서로 표시 */
+    /** 해결한 단서로 표시 (체크 표시를 남긴다) */
     function markSolved() {
       clearGateEls();
       hot.classList.add('solved');
-      if (marker) { marker.remove(); marker = null; }
+      if (!checkEl) checkEl = addCheck(clue.at, clue.label);
     }
 
     /* 외부(문제 정답 시 등)에서 상태를 갱신할 수 있게 등록 */
@@ -464,8 +491,6 @@
     };
 
     if (isSolved(S.room, slot)) { markSolved(); return; }
-
-    marker = addMarker(clue.at, clue.label);
 
     /* ---------------- 기믹 실행 ---------------- */
     function runGate() {
@@ -659,6 +684,8 @@
   }
 
   function showIntermission(reason) {
+    // 같은 창이 두 번 열려 관리자 패널을 덮는 것을 막는다
+    if (S.waitModal && document.body.contains(S.waitModal.back)) return;
     const last = S.room >= CONFIG.ROOM_COUNT;
     const sc = NET.scoreOf(S.run);
     const rs = sc.rooms[S.room] || 0;
@@ -683,9 +710,10 @@
     drawLobbyCrowd();
     say(last ? '모든 관을 통과했다! 결과 발표를 기다리자.' : S.room + '관을 마쳤다. 다음 방이 열릴 때까지 잠시 대기하자.');
 
-    modal({
+    S.waitModal = modal({
       title: last ? '🎉 전 구간 완료' : '⏳ ' + S.room + '관 완료 — 대기 중',
-      html, closable: !!S.me.isAdmin, wide: true,
+      html, closable: !!S.me.isAdmin, wide: true, low: true,
+      onClose: () => { S.waitModal = null; },
       onMount: (body) => { renderBoardInto(body.querySelector('#im-board')); updateWaitPanel(!!(S.global && S.global.phase === 'playing' && S.global.startAt)); },
       buttons: S.me.isAdmin ? [{ label: '👑 관리자 패널 열기', cls: 'pk-btn-gold', onClick: () => g.ADMIN.open() }] : []
     });
