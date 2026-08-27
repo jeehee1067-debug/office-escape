@@ -151,6 +151,7 @@ button,input,select{font-family:inherit}
 #fx-layer{pointer-events:none}
 #fx-layer .exit-btn{pointer-events:auto}
 #actor-layer{pointer-events:none}
+#actor-layer .npc{pointer-events:auto}
 
 .scene-title{
   position:absolute;top:6%;left:0;right:0;text-align:center;
@@ -204,6 +205,32 @@ button,input,select{font-family:inherit}
 .hotspot.solved{pointer-events:none}
 .hotspot.solved::after{border-color:rgba(46,139,79,.9);background:rgba(46,139,79,.18)}
 .hotspot.is-lit::after{border-color:#8ef08e;background:rgba(142,240,142,.22)}
+
+/* 방 담당자(NPC) */
+.npc{
+  position:absolute;transform:translateX(-50%);z-index:18;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+  filter:drop-shadow(0 6px 5px rgba(0,0,0,.45));
+  transition:transform .12s;
+}
+.npc:hover{transform:translateX(-50%) translateY(-3px)}
+.npc-img{height:100%;width:auto;image-rendering:pixelated;display:block}
+.npc::after{                      /* 바닥 그림자 */
+  content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+  width:70%;height:8px;border-radius:50%;background:rgba(0,0,0,.32);z-index:-1;
+}
+.npc-tag{
+  position:absolute;bottom:-19px;left:50%;transform:translateX(-50%);
+  font-size:10px;background:var(--blue);color:#fff;border:2px solid var(--ink);
+  border-radius:6px;padding:1px 7px;white-space:nowrap;
+}
+.npc.is-done::before{
+  content:'!';position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  width:20px;height:20px;border-radius:50%;background:var(--gold);
+  border:2px solid var(--ink);color:var(--ink);font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  animation:markerFloat 1.4s ease-in-out infinite;
+}
 
 /* 아직 못 푼 단서 위치 표식 */
 .marker{
@@ -421,6 +448,18 @@ button,input,select{font-family:inherit}
 .toast.bad{background:#f6d3ce}
 .toast.info{background:#dcecff}
 @keyframes toastin{from{transform:translateY(-14px);opacity:0}}
+
+/* ---------- 대기 화면 실시간 현황 ---------- */
+.wait-live{
+  background:#20242e;border:3px solid var(--ink);border-radius:10px;
+  padding:10px 12px;margin:10px 0;text-align:center;color:#dfe6ec;
+}
+.wait-timer{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px}
+.wait-timer span{font-size:11px;color:#9fb4d4}
+.wait-timer b{font-size:26px;color:#8ef08e;letter-spacing:1px}
+.wait-timer.is-warn b{color:#ff8a80;animation:blink .6s steps(2,end) infinite}
+.wait-line{font-size:11px;line-height:1.9;color:#cbd5e1}
+.wait-line b{color:var(--gold)}
 
 /* ---------- 결과 ---------- */
 .podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin:10px 0 16px}
