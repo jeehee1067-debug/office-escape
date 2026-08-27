@@ -140,10 +140,12 @@
 
   function addActor(avatarOpts, x, yFeet, tag, cls, scale) {
     const a = g.UI.actorEl(avatarOpts, tag, cls, scale || 3);
-    a.style.left = pctX(x - PX.CH_W / 2);
-    a.style.top = pctY(yFeet - PX.CH_H);
-    a.style.width = pctX(PX.CH_W);
     const c = a.querySelectorAll('canvas');
+    const uw = (c[0] && +c[0].dataset.uw) || PX.CH_W;
+    const uh = (c[0] && +c[0].dataset.uh) || PX.CH_H;
+    a.style.left = pctX(x - uw / 2);
+    a.style.top = pctY(yFeet - uh);
+    a.style.width = pctX(uw);
     c.forEach(cc => { cc.style.width = '100%'; cc.style.height = 'auto'; });
     $('#actor-layer').appendChild(a);
     return a;

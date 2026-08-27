@@ -15,7 +15,8 @@
     WRONG_PENALTY: 1500,       // 오답 감점
     TRAP_PENALTY: 500,         // 함정(낚시)에 걸렸을 때 감점
     TIME_BONUS_MAX: 3000,      // 방을 빨리 깰수록 받는 최대 보너스
-    DB_ROOT: 'v2'              // Firebase 데이터 루트
+    DB_ROOT: 'v2',             // Firebase 데이터 루트
+    SPRITE_DIR: 'assets/img/char/'   // PNG 캐릭터를 둘 폴더 (AVATARS 에 sprite:'파일명' 지정)
   };
 
   /* ---------------- 플레이어 캐릭터 8종 ---------------- */

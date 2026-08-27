@@ -8,6 +8,15 @@
 
   let chosen = { avatar: 0, loc: 'SR3' };
 
+  /* ---------- PNG 캐릭터 미리 불러오기 ---------- */
+  async function preloadSprites() {
+    const list = AVATARS.concat(Object.values(g.DATA.BOSSES));
+    const keys = list.map(a => a.sprite).filter(Boolean)
+      .filter((v, i, arr) => arr.indexOf(v) === i);
+    if (!keys.length) return;
+    await Promise.all(keys.map(k => PX.setCharImage(k, CONFIG.SPRITE_DIR + k + '.png')));
+  }
+
   /* ---------- 캐릭터 선택 ---------- */
   function renderAvatars() {
     const box = $('#avatar-picker');
@@ -125,6 +134,7 @@
 
   /* ---------- 시작 ---------- */
   document.addEventListener('DOMContentLoaded', async () => {
+    await preloadSprites();
     renderAvatars();
     bindLoc();
     bindHUD();

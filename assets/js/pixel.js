@@ -114,24 +114,53 @@
     x.restore();
   }
 
-  /* 직접 그린 PNG 스프라이트로 교체하고 싶을 때 사용 (README 참고) */
+  /* ---- PNG 스프라이트 지원 ----
+     직접 그렸거나 준비한 이미지를 캐릭터로 쓰고 싶을 때 사용한다.
+     PX.setCharImage('girl', 'assets/img/char/girl.png')  →  AVATARS 에 sprite:'girl' 추가
+     이미지 크기는 자유(도트 원본 크기 그대로 권장). 화면에서는 키 48 기준으로 맞춰진다. */
   const charImages = {};
   function setCharImage(key, url) {
-    const im = new Image();
-    im.onload = () => { charImages[key] = im; document.dispatchEvent(new CustomEvent('s1fa:sprite', { detail: key })); };
-    im.src = url;
+    return new Promise((res) => {
+      const im = new Image();
+      im.onload = () => {
+        charImages[key] = im;
+        document.dispatchEvent(new CustomEvent('s1fa:sprite', { detail: key }));
+        res(im);
+      };
+      im.onerror = () => res(null);
+      im.src = url;
+    });
   }
+  function hasCharImage(key) { return !!charImages[key]; }
 
-  /** 캐릭터 캔버스 생성 (scale = 내부 해상도 배율) */
+  /** 캐릭터 캔버스 생성. canvas.dataset.uw/uh 에 씬 좌표 기준 크기가 담긴다. */
   function characterCanvas(opts, scale, frame) {
     scale = scale || 4;
+    const img = opts && opts.sprite && charImages[opts.sprite];
+    if (img) {
+      const c = make(img.naturalWidth * scale, img.naturalHeight * scale);
+      const x = ctxOf(c);
+      x.imageSmoothingEnabled = false;
+      // 숨쉬기 프레임: 아랫부분(발)은 고정하고 윗부분만 1px 내림
+      const cut = Math.round(img.naturalHeight * 0.93);
+      if (frame) {
+        x.drawImage(img, 0, 0, img.naturalWidth, cut, 0, scale, c.width, cut * scale);
+        x.drawImage(img, 0, cut, img.naturalWidth, img.naturalHeight - cut,
+          0, cut * scale, c.width, (img.naturalHeight - cut) * scale);
+      } else {
+        x.drawImage(img, 0, 0, c.width, c.height);
+      }
+      // 화면 크기: 높이를 CH_H 에 맞추고 가로는 비율 유지
+      c.dataset.uh = CH_H;
+      c.dataset.uw = Math.round(CH_H * img.naturalWidth / img.naturalHeight);
+      return c;
+    }
     const c = make(CH_W * scale, CH_H * scale);
     const x = ctxOf(c);
-    const img = opts && opts.sprite && charImages[opts.sprite];
-    if (img) { x.drawImage(img, 0, 0, c.width, c.height); return c; }
     x.save(); x.scale(scale, scale);
     drawChibi(x, 0, 0, opts || {}, frame || 0);
     x.restore();
+    c.dataset.uw = CH_W; c.dataset.uh = CH_H;
     return c;
   }
 
@@ -591,7 +620,7 @@
 
   global.PX = {
     W, H, OUT, make, ctxOf, box, text, textW, rnd,
-    drawChibi, characterCanvas, CH_W, CH_H, tint, setCharImage,
+    drawChibi, characterCanvas, CH_W, CH_H, tint, setCharImage, hasCharImage,
     renderScene, scenes, props, propCanvas,
     prims: { floorTiles, wall, ceiling, plantSmallBig, windowPane, whiteboard, deskLong, monitor, keyboard, tower, shelfUnit, serverRack, plant, doorway, poster, cooler, coffeeMachine, vending, sofa, roundTable, noticeBoard, semMachine, gasCylinder, fumeHood, fridge, microwave, trashBins, drawers, ceilingLights }
   };
