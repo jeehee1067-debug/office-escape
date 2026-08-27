@@ -232,21 +232,26 @@ button,input,select{font-family:inherit}
   animation:markerFloat 1.4s ease-in-out infinite;
 }
 
-/* 아직 못 푼 단서 위치 표식 */
-.marker{
+/* 해결한 단서 자리에 남는 체크 표시 */
+.check{
   position:absolute;transform:translate(-50%,-50%);z-index:24;pointer-events:none;
   display:flex;flex-direction:column;align-items:center;gap:3px;
-  animation:markerFloat 1.8s ease-in-out infinite;
+  animation:checkPop .45s cubic-bezier(.2,1.5,.4,1);
 }
-.marker i{
-  width:26px;height:26px;border-radius:50%;background:var(--gold);
-  border:3px solid var(--ink);color:var(--ink);font-style:normal;font-weight:700;
-  font-size:14px;display:flex;align-items:center;justify-content:center;
+.check i{
+  width:26px;height:26px;border-radius:50%;background:var(--green);
+  border:3px solid var(--ink);color:#fff;font-style:normal;font-weight:700;
+  font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;
   box-shadow:0 3px 0 rgba(0,0,0,.45);
 }
-.marker b{
-  font-size:9px;font-weight:400;background:rgba(29,32,41,.88);color:#fff;
+.check b{
+  font-size:9px;font-weight:400;background:rgba(46,139,79,.92);color:#fff;
   padding:1px 6px;border-radius:5px;white-space:nowrap;
+}
+@keyframes checkPop{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}
+  60%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
 }
 @keyframes markerFloat{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-62%)}}
 
@@ -346,6 +351,8 @@ button,input,select{font-family:inherit}
   animation:fadein .16s;
 }
 @keyframes fadein{from{opacity:0}}
+/* 대기(정산) 창은 관리자 패널보다 아래에 깔린다 */
+.modal-back[data-low]{z-index:860}
 .modal{
   width:100%;max-width:480px;max-height:92dvh;overflow-y:auto;
   background:var(--paper);border:4px solid var(--ink);border-radius:12px;
