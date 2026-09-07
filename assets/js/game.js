@@ -718,6 +718,18 @@
     // 같은 창이 두 번 열려 관리자 패널을 덮는 것을 막는다
     if (S.waitModal && document.body.contains(S.waitModal.back)) return;
     const last = S.room >= CONFIG.ROOM_COUNT;
+
+    /* 관리자는 통제 패널에서 모든 현황을 보므로 점수 창을 띄우지 않는다 */
+    if (S.me.isAdmin) {
+      clearLayers(); usePixelScene('lobby'); showTitle(last ? '최종 대기실' : '대기실');
+      g.UI.bgmDown();
+      drawLobbyCrowd();
+      say(last ? '모든 관이 끝났습니다. 관리자 패널에서 결과를 발표하세요.'
+               : S.room + '관이 끝났습니다. 관리자 패널에서 다음 방을 열어주세요.');
+      toast(S.room + '관 완료 — 관리자 패널에서 진행하세요.', 'info', 2500);
+      return;
+    }
+
     const sc = NET.scoreOf(S.run);
     const rs = sc.rooms[S.room] || 0;
     const head = reason === 'timeout'
