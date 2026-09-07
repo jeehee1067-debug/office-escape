@@ -143,15 +143,18 @@
 
   /* ---------- HUD ---------- */
   function updateHUD() {
+    const admin = !!S.me.isAdmin;
     const sc = NET.scoreOf(S.run);
     $('#hud-score').textContent = sc.score.toLocaleString() + ' P';
-    $('#hud-player').textContent = (S.me.isAdmin ? '👑 ' : '') + S.me.name +
+    $('#hud-player').textContent = (admin ? '👑 ' : '') + S.me.name +
       (S.me.loc ? ' · ' + S.me.loc : '') + (S.myTeam != null ? ' · ' + S.myTeam + '팀' : '');
     const dots = [];
     for (let i = 0; i < CONFIG.CLUES_PER_ROOM; i++) dots.push(i < solvedCount(S.room) ? '●' : '○');
     $('#hud-clues').textContent = S.room ? dots.join('') : '- - -';
     $('#hud-room').textContent = S.room ? (ROOMS[S.room] ? ROOMS[S.room].full : '') : '대기실';
-    $('#btn-admin').classList.toggle('hidden', !S.me.isAdmin);
+    $('#btn-admin').classList.toggle('hidden', !admin);
+    // 관리자는 점수를 얻지 않으므로 개인 점수 표시를 숨긴다
+    $('#hud-score').classList.toggle('hidden', admin);
   }
 
   /* ---------- 씬 렌더 ---------- */
