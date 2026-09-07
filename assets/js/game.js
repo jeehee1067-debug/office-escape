@@ -181,11 +181,13 @@
     S.lastRoomRendered = name;
   }
 
-  function addActor(avatarOpts, x, yFeet, tag, cls, scale) {
+  /** dispH 를 주면 그 높이(씬 단위)로 맞춰 그린다 */
+  function addActor(avatarOpts, x, yFeet, tag, cls, scale, dispH) {
     const a = g.UI.actorEl(avatarOpts, tag, cls, scale || 3);
     const c = a.querySelectorAll('canvas');
-    const uw = (c[0] && +c[0].dataset.uw) || PX.CH_W;
-    const uh = (c[0] && +c[0].dataset.uh) || PX.CH_H;
+    let uw = (c[0] && +c[0].dataset.uw) || PX.CH_W;
+    let uh = (c[0] && +c[0].dataset.uh) || PX.CH_H;
+    if (dispH) { uw = uw * (dispH / uh); uh = dispH; }
     a.style.left = pctX(x - uw / 2);
     a.style.top = pctY(yFeet - uh);
     a.style.width = pctX(uw);
@@ -287,27 +289,53 @@
   }
   function drawLobbyCrowd() {
     if (S.phase !== 'lobby' && S.phase !== 'intermission') return;
-    const layer = $('#actor-layer');
+    const layer = $('#actor-layer'), fx = $('#fx-layer');
     $$('.actor', layer).forEach(a => clearInterval(a._anim));
     layer.innerHTML = '';
-    const list = Object.values(S.players || {})
-      .filter(p => p && p.uid && p.online && !p.isAdmin)
-      .slice(0, 18);
-    // 나
-    addActor(AVATARS[S.me.avatar] || AVATARS[0], 40, 152, S.me.name + ' (나)', 'me', 3);
-    let i = 0;
-    list.forEach(p => {
-      if (p.uid === NET.uid) return;
-      const col = i % 6, row = Math.floor(i / 6);
-      const x = 78 + col * 26 + (row % 2) * 13;
-      const y = 122 + row * 13;
-      addActor(AVATARS[p.avatar] || AVATARS[0], x, Math.min(y, 156), p.name, '', 2);
-      i++;
+    $$('.crowd-name', fx).forEach(n => n.remove());
+    $$('.crowd-badge', fx).forEach(n => n.remove());
+
+    /* 접속한 사람 전원 (관리자 제외). 들어온 순서로 정렬해 자리가 흔들리지 않게 */
+    const all = Object.values(S.players || {}).filter(p => p && p.uid && !p.isAdmin);
+    const online = all.filter(p => p.online)
+      .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.uid).localeCompare(String(b.uid)));
+    if (!online.length) return;
+
+    /* 인원이 많아질수록 촘촘하게 — 몇 명이든 모두 그린다 */
+    const n = online.length;
+    const perRow = n <= 6 ? 4 : n <= 14 ? 6 : n <= 28 ? 8 : n <= 48 ? 10 : 12;
+    const rows = Math.ceil(n / perRow);
+    const dispH = n <= 6 ? 44 : n <= 14 ? 36 : n <= 28 ? 28 : n <= 48 ? 24 : 20;
+    const stepX = (PX.W - 20) / perRow;
+    const botY = 150;                       // 맨 아랫줄 발 위치 (이름표 잘림 방지)
+    const topY = Math.max(86, botY - 15 * (rows - 1));
+    const stepY = rows > 1 ? (botY - topY) / (rows - 1) : 0;
+
+    online.forEach((p, i) => {
+      const row = Math.floor(i / perRow), col = i % perRow;
+      const inRow = Math.min(perRow, n - row * perRow);
+      const x = (PX.W - stepX * inRow) / 2 + stepX * (col + 0.5);
+      const y = topY + stepY * row;
+      const me = p.uid === NET.uid;
+
+      const a = addActor(AVATARS[p.avatar] || AVATARS[0], x, y, null, me ? 'me' : '', 3, dispH);
+      a.style.zIndex = String(20 + row * 2 + (me ? 60 : 0));
+
+      /* 이름표는 캐릭터보다 위 레이어에 따로 그린다 — 겹쳐도 이름은 다 보이게 */
+      const tag = el('div', 'crowd-name' + (me ? ' is-me' : ''), esc(p.name) + (me ? ' (나)' : ''));
+      tag.style.left = ((x / PX.W) * 100) + '%';
+      // 같은 줄에서 이웃끼리 겹치지 않도록 한 칸씩 높이를 어긋나게
+      const lift = dispH + 2 + (col % 2 ? 6 : 0);
+      tag.style.top = (((y - lift) / PX.H) * 100) + '%';
+      tag.style.zIndex = String(200 + row * 2 + (col % 2) + (me ? 60 : 0));
+      fx.appendChild(tag);
     });
-    const total = Object.values(S.players || {}).filter(p => p && p.uid && !p.isAdmin).length;
-    const badge = el('div', 'actor-tag', '👥 접속 ' + total + '명');
-    badge.style.cssText += 'position:absolute;left:4%;top:6%;font-size:10px';
-    layer.appendChild(badge);
+
+    /* 접속 현황 */
+    const offline = all.length - online.length;
+    const badge = el('div', 'crowd-badge',
+      '👥 대기실 ' + online.length + '명' + (offline > 0 ? ' (접속 끊김 ' + offline + '명)' : ''));
+    fx.appendChild(badge);
   }
 
   /* ============================================================
