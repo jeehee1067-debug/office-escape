@@ -471,6 +471,12 @@ button,input,select{font-family:inherit}
 .toast.info{background:#dcecff}
 @keyframes toastin{from{transform:translateY(-14px);opacity:0}}
 
+/* 팀 편집 드롭다운 */
+.team-sel{
+  font-family:inherit;font-size:11px;padding:2px 4px;
+  border:2px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink);
+}
+
 /* ---------- 대기 화면 실시간 현황 ---------- */
 .wait-live{
   background:#20242e;border:3px solid var(--ink);border-radius:10px;

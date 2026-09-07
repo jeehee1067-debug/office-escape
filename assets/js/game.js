@@ -15,7 +15,7 @@
   const S = {
     me: null, global: null, run: null, players: {}, teams: null,
     room: 0, phase: 'boot', quizzes: {}, seed: 1,
-    gate: {}, clueApi: {}, bossEl: null, waitModal: null, timer: null, ended: false, lastRoomRendered: null
+    gate: {}, clueApi: {}, bossEl: null, waitModal: null, myTeam: null, timer: null, ended: false, lastRoomRendered: null
   };
 
   /* ---------- 좌표 (배경 그림 기준 백분율) ---------- */
@@ -145,7 +145,8 @@
   function updateHUD() {
     const sc = NET.scoreOf(S.run);
     $('#hud-score').textContent = sc.score.toLocaleString() + ' P';
-    $('#hud-player').textContent = (S.me.isAdmin ? '👑 ' : '') + S.me.name + (S.me.loc ? ' · ' + S.me.loc : '');
+    $('#hud-player').textContent = (S.me.isAdmin ? '👑 ' : '') + S.me.name +
+      (S.me.loc ? ' · ' + S.me.loc : '') + (S.myTeam != null ? ' · ' + S.myTeam + '팀' : '');
     const dots = [];
     for (let i = 0; i < CONFIG.CLUES_PER_ROOM; i++) dots.push(i < solvedCount(S.room) ? '●' : '○');
     $('#hud-clues').textContent = S.room ? dots.join('') : '- - -';
@@ -890,30 +891,45 @@
       S.players = ps;
       if (S.phase === 'lobby' || S.phase === 'intermission') drawLobbyCrowd();
     });
+    /* 팀이 없을 때 쓸 기본 출제 — 반드시 팀 구독보다 먼저 (팀 배정을 덮어쓰지 않도록) */
+    assignQuizzes(hashSeed(NET.uid));
+
     NET.onTeams(t => {
       S.teams = t;
-      const seed = teamSeedFor(t);
-      assignQuizzes(seed);
+      const before = S.seed;
+      assignQuizzes(teamSeedFor(t));
+      S.myTeam = myTeamNo(t);
+      updateHUD();
+      // 관리자가 팀을 바꾸면 아직 못 푼 단서의 문제도 새 팀 기준으로 바뀐다
+      if (S.phase === 'playing' && before !== S.seed) {
+        toast('팀이 변경되어 출제 문제가 갱신되었습니다.', 'info', 3000);
+      }
     });
-    assignQuizzes(hashSeed(NET.uid));
+
     renderLobby();              // 기본 화면을 먼저 그리고
     startTicker();
     NET.onGlobal(applyGlobal);  // 그 다음 서버 상태를 반영한다 (순서 중요)
   }
 
   function hashSeed(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return (h % 99991) + 1; }
-  function teamSeedFor(t) {
-    if (t && t.list) {
-      const list = t.list;
-      for (let i = 0; i < list.length; i++) {
-        if ((list[i].members || []).some(m => m.uid === NET.uid)) return (list[i].id || (i + 1)) * 1013 + 7;
-      }
+  /** 내가 속한 팀 번호 (없으면 null) */
+  function myTeamNo(t) {
+    const list = (t && t.list) || [];
+    for (let i = 0; i < list.length; i++) {
+      if ((list[i].members || []).some(m => m.uid === NET.uid)) return list[i].id || (i + 1);
     }
+    return null;
+  }
+  /** 팀이 정해져 있으면 팀 번호로, 아니면 개인 고유값으로 출제 시드를 만든다.
+   *  같은 팀이면 어느 기기에서 접속하든 항상 같은 문제가 나온다. */
+  function teamSeedFor(t) {
+    const no = myTeamNo(t);
+    if (no != null) return no * 1013 + 7;
     return hashSeed(NET.uid);
   }
 
   g.GAME = {
     S, boot, enterRoom, renderLobby, showResults, openBoard, computeBoard,
-    applyGlobal, finishRoom, assignQuizzes, teamCode, updateHUD
+    applyGlobal, finishRoom, assignQuizzes, teamCode, updateHUD, myTeamNo, teamSeedFor
   };
 })(window);

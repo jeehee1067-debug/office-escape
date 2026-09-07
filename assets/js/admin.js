@@ -53,9 +53,12 @@
       .sort((a, b) => b.sc.score - a.sc.score);
 
     if (!rows.length) return '<p style="text-align:center;padding:14px;color:#8a8f9c">접속한 참가자가 없습니다.</p>';
-    let h = '<div class="scroll-y"><table class="pk-table"><thead><tr><th>접속</th><th>근무지</th><th>이름</th><th>현재</th><th>단서</th><th>점수</th><th>시간</th></tr></thead><tbody>';
+    const tl = teamList();
+    let h = '<div class="scroll-y"><table class="pk-table"><thead><tr><th>접속</th><th>팀</th><th>근무지</th><th>이름</th><th>현재</th><th>단서</th><th>점수</th><th>시간</th></tr></thead><tbody>';
     rows.forEach(r => {
+      const tno = teamOfUid(tl, r.p.uid);
       h += '<tr><td><span class="dot ' + (r.p.online ? 'on' : 'off') + '"></span></td>' +
+        '<td>' + (tno ? tno + '팀' : '-') + '</td>' +
         '<td>' + esc(r.p.loc || '-') + '</td><td>' + esc(r.p.name) + '</td>' +
         '<td>' + esc(r.cur) + '</td><td>' + r.prog + '</td>' +
         '<td><b>' + r.sc.score.toLocaleString() + '</b></td><td>' + mmss(r.sc.time) + '</td></tr>';
@@ -87,6 +90,7 @@
       '<button class="pk-btn pk-btn-ghost" data-act="resetroom">🧹 ' + cur + '관 리셋 후 재시작</button>' +
       '<button class="pk-btn pk-btn-green" data-act="start">🚀 1관부터 새로 시작</button>' +
       '<button class="pk-btn pk-btn-purple" data-act="teams">🎲 랜덤 팀 구성</button>' +
+      '<button class="pk-btn pk-btn-gold" data-act="editteams">✏️ 팀 편집 · 이동</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="csv">💾 결과 CSV</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="results">🏁 결과 발표</button>' +
       '<button class="pk-btn pk-btn-red" data-act="wipe">🔄 전체 데이터 초기화</button>' +
@@ -161,6 +165,7 @@
       }, '완전 초기화');
     },
     teams() { buildTeams(); },
+    editteams() { openTeamEditor(); },
     csv() { exportCSV(); },
     logout() {
       confirmBox('관리자 로그아웃', '관리자 세션을 종료하고 로그인 화면으로 돌아갑니다.', () => {
@@ -172,7 +177,7 @@
   };
 
   /* ---------- 팀 구성 ---------- */
-  function buildTeams() {
+  function buildTeams(quiet) {
     const players = Object.values(g.GAME.S.players || {}).filter(p => p && p.uid && !p.isAdmin);
     if (players.length < 2) return toast('참가자가 너무 적습니다.', 'bad');
     const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(v => v[1]);
@@ -190,7 +195,7 @@
       i++;
     }
     NET.setTeams(teams);
-    showTeams(teams);
+    if (!quiet) showTeams(teams);
   }
   function showTeams(teams) {
     let h = '<div class="scroll-y"><table class="pk-table"><thead><tr><th>팀</th><th>인원</th><th>팀원</th></tr></thead><tbody>';
@@ -212,6 +217,98 @@
     let s = '팀,근무지,이름\n';
     teams.forEach(t => t.members.forEach(m => { s += t.id + ',' + (m.loc || '') + ',' + m.name + '\n'; }));
     return s;
+  }
+
+  /* ---------- 팀 편집 (대기 중 · 진행 중 모두 가능) ---------- */
+  function teamList() {
+    const t = g.GAME.S.teams;
+    return (t && t.list) ? JSON.parse(JSON.stringify(t.list)) : [];
+  }
+  function teamOfUid(list, uid) {
+    for (const t of list) if ((t.members || []).some(m => m.uid === uid)) return t.id;
+    return null;
+  }
+  /** 참가자를 다른 팀으로 옮긴다. teamId 가 0 이면 미배정 */
+  function moveMember(list, player, teamId) {
+    list.forEach(t => { t.members = (t.members || []).filter(m => m.uid !== player.uid); });
+    if (teamId) {
+      let t = list.find(x => x.id === teamId);
+      if (!t) { t = { id: teamId, members: [] }; list.push(t); }
+      t.members.push({ uid: player.uid, name: player.name, loc: player.loc });
+    }
+    list.sort((a, b) => a.id - b.id);
+    return list;
+  }
+
+  function editTeamsHTML() {
+    const list = teamList();
+    const players = Object.values(g.GAME.S.players || {})
+      .filter(p => p && p.uid && !p.isAdmin)
+      .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    const maxId = list.reduce((m, t) => Math.max(m, t.id || 0), 0);
+    const slots = Math.max(maxId, 1);
+
+    let h = '<p style="font-size:11px;line-height:1.8;color:#3f4453;margin-bottom:8px">' +
+      '팀을 바꾸면 <b>그 참가자에게 출제되는 문제도 새 팀 기준으로 바뀝니다.</b><br>' +
+      '이미 맞힌 문제의 점수는 그대로 유지됩니다. 게임 진행 중에도 변경할 수 있습니다.</p>';
+
+    if (!players.length) return h + '<p style="text-align:center;padding:14px;color:#8a8f9c">참가자가 없습니다.</p>';
+
+    h += '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
+      '<th>접속</th><th>근무지</th><th>이름</th><th>팀</th></tr></thead><tbody>';
+    players.forEach(p => {
+      const cur = teamOfUid(list, p.uid) || 0;
+      let opt = '<option value="0"' + (cur === 0 ? ' selected' : '') + '>미배정</option>';
+      for (let i = 1; i <= slots + 1; i++) {
+        opt += '<option value="' + i + '"' + (cur === i ? ' selected' : '') + '>' + i + '팀</option>';
+      }
+      h += '<tr><td><span class="dot ' + (p.online ? 'on' : 'off') + '"></span></td>' +
+        '<td>' + esc(p.loc || '-') + '</td><td>' + esc(p.name) + '</td>' +
+        '<td><select class="team-sel" data-uid="' + esc(p.uid) + '">' + opt + '</select></td></tr>';
+    });
+    h += '</tbody></table></div>';
+
+    // 팀별 요약
+    h += '<div class="admin-sec"><h4>팀 구성 현황</h4>';
+    if (!list.length) h += '<p style="font-size:11px;color:#8a8f9c">아직 구성된 팀이 없습니다.</p>';
+    else h += '<table class="pk-table"><thead><tr><th>팀</th><th>인원</th><th>팀원</th></tr></thead><tbody>' +
+      list.map(t => '<tr><td><b>' + t.id + '팀</b></td><td>' + (t.members || []).length + '</td>' +
+        '<td style="text-align:left">' + (t.members || []).map(m => esc(m.name)).join(', ') + '</td></tr>').join('') +
+      '</tbody></table>';
+    h += '</div>';
+    return h;
+  }
+
+  function openTeamEditor() {
+    const m = modal({
+      title: '✏️ 팀 편집', wide: true, closable: true,
+      html: editTeamsHTML(),
+      buttons: [
+        { label: '🎲 랜덤으로 다시 구성', cls: 'pk-btn-purple', close: false, onClick: () => { buildTeams(true); rerender(); } },
+        { label: '💾 CSV 저장', cls: 'pk-btn-green', close: false, onClick: () => downloadCSV('teams.csv', teamsCSV(teamList())) }
+      ],
+      onMount: (body) => bindSel(body)
+    });
+    function rerender() { m.body.innerHTML = editTeamsHTML(); bindSel(m.body); }
+    function bindSel(body) {
+      body.querySelectorAll('.team-sel').forEach(sel => {
+        sel.onchange = async () => {
+          const uid = sel.dataset.uid;
+          const player = (g.GAME.S.players || {})[uid];
+          if (!player) return;
+          const list = moveMember(teamList(), player, +sel.value);
+          await NET.setTeams(list);
+          SFX.select();
+          toast(player.name + ' → ' + (+sel.value ? sel.value + '팀' : '미배정'), 'good', 1600);
+          setTimeout(rerender, 250);
+        };
+      });
+    }
+    // 다른 관리자가 바꿔도 따라 갱신
+    const iv = setInterval(() => {
+      if (!document.body.contains(m.body)) return clearInterval(iv);
+      if (!m.body.querySelector('select:focus')) rerender();
+    }, 4000);
   }
 
   /* ---------- CSV ---------- */
@@ -266,5 +363,5 @@
     });
   }
 
-  g.ADMIN = { open, buildTeams, exportCSV };
+  g.ADMIN = { open, buildTeams, exportCSV, openTeamEditor };
 })(window);
