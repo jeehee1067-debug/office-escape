@@ -158,6 +158,7 @@
   /* ---------- HUD 버튼 ---------- */
   function bindHUD() {
     $('#btn-board').onclick = () => { SFX.select(); g.GAME.openBoard(); };
+    $('#btn-chat').onclick = () => { SFX.select(); g.CHAT.toggle(); };
     $('#btn-admin').onclick = () => { SFX.select(); g.ADMIN.open(); };
     $('#btn-logout').onclick = () => {
       confirmBox('로그아웃', g.GAME.S.me && g.GAME.S.me.isAdmin

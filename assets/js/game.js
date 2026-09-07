@@ -15,7 +15,7 @@
   const S = {
     me: null, global: null, run: null, players: {}, teams: null,
     room: 0, phase: 'boot', quizzes: {}, seed: 1,
-    gate: {}, clueApi: {}, bossEl: null, waitModal: null, timer: null, ended: false, lastRoomRendered: null
+    gate: {}, clueApi: {}, bossEl: null, waitModal: null, myTeam: null, timer: null, ended: false, lastRoomRendered: null
   };
 
   /* ---------- 좌표 (배경 그림 기준 백분율) ---------- */
@@ -145,7 +145,8 @@
   function updateHUD() {
     const sc = NET.scoreOf(S.run);
     $('#hud-score').textContent = sc.score.toLocaleString() + ' P';
-    $('#hud-player').textContent = (S.me.isAdmin ? '👑 ' : '') + S.me.name + (S.me.loc ? ' · ' + S.me.loc : '');
+    $('#hud-player').textContent = (S.me.isAdmin ? '👑 ' : '') + S.me.name +
+      (S.me.loc ? ' · ' + S.me.loc : '') + (S.myTeam != null ? ' · ' + S.myTeam + '팀' : '');
     const dots = [];
     for (let i = 0; i < CONFIG.CLUES_PER_ROOM; i++) dots.push(i < solvedCount(S.room) ? '●' : '○');
     $('#hud-clues').textContent = S.room ? dots.join('') : '- - -';
@@ -181,11 +182,13 @@
     S.lastRoomRendered = name;
   }
 
-  function addActor(avatarOpts, x, yFeet, tag, cls, scale) {
+  /** dispH 를 주면 그 높이(씬 단위)로 맞춰 그린다 */
+  function addActor(avatarOpts, x, yFeet, tag, cls, scale, dispH) {
     const a = g.UI.actorEl(avatarOpts, tag, cls, scale || 3);
     const c = a.querySelectorAll('canvas');
-    const uw = (c[0] && +c[0].dataset.uw) || PX.CH_W;
-    const uh = (c[0] && +c[0].dataset.uh) || PX.CH_H;
+    let uw = (c[0] && +c[0].dataset.uw) || PX.CH_W;
+    let uh = (c[0] && +c[0].dataset.uh) || PX.CH_H;
+    if (dispH) { uw = uw * (dispH / uh); uh = dispH; }
     a.style.left = pctX(x - uw / 2);
     a.style.top = pctY(yFeet - uh);
     a.style.width = pctX(uw);
@@ -282,32 +285,59 @@
     clearLayers(); usePixelScene('lobby'); showTitle('대기실');
     updateHUD();
     g.UI.bgmDown();        // 대기실 → 배경음악 서서히 줄이기
+    if (g.CHAT) g.CHAT.refresh();   // 대기실에서는 팀 + 전체 채팅
     say(msg || '대기실이다. 관리자가 게임을 시작할 때까지 기다리자!\n다른 참가자들도 속속 도착하고 있다.');
     drawLobbyCrowd();
   }
   function drawLobbyCrowd() {
     if (S.phase !== 'lobby' && S.phase !== 'intermission') return;
-    const layer = $('#actor-layer');
+    const layer = $('#actor-layer'), fx = $('#fx-layer');
     $$('.actor', layer).forEach(a => clearInterval(a._anim));
     layer.innerHTML = '';
-    const list = Object.values(S.players || {})
-      .filter(p => p && p.uid && p.online && !p.isAdmin)
-      .slice(0, 18);
-    // 나
-    addActor(AVATARS[S.me.avatar] || AVATARS[0], 40, 152, S.me.name + ' (나)', 'me', 3);
-    let i = 0;
-    list.forEach(p => {
-      if (p.uid === NET.uid) return;
-      const col = i % 6, row = Math.floor(i / 6);
-      const x = 78 + col * 26 + (row % 2) * 13;
-      const y = 122 + row * 13;
-      addActor(AVATARS[p.avatar] || AVATARS[0], x, Math.min(y, 156), p.name, '', 2);
-      i++;
+    $$('.crowd-name', fx).forEach(n => n.remove());
+    $$('.crowd-badge', fx).forEach(n => n.remove());
+
+    /* 접속한 사람 전원 (관리자 제외). 들어온 순서로 정렬해 자리가 흔들리지 않게 */
+    const all = Object.values(S.players || {}).filter(p => p && p.uid && !p.isAdmin);
+    const online = all.filter(p => p.online)
+      .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.uid).localeCompare(String(b.uid)));
+    if (!online.length) return;
+
+    /* 인원이 많아질수록 촘촘하게 — 몇 명이든 모두 그린다 */
+    const n = online.length;
+    const perRow = n <= 6 ? 4 : n <= 14 ? 6 : n <= 28 ? 8 : n <= 48 ? 10 : 12;
+    const rows = Math.ceil(n / perRow);
+    const dispH = n <= 6 ? 44 : n <= 14 ? 36 : n <= 28 ? 28 : n <= 48 ? 24 : 20;
+    const stepX = (PX.W - 20) / perRow;
+    const botY = 150;                       // 맨 아랫줄 발 위치 (이름표 잘림 방지)
+    const topY = Math.max(86, botY - 15 * (rows - 1));
+    const stepY = rows > 1 ? (botY - topY) / (rows - 1) : 0;
+
+    online.forEach((p, i) => {
+      const row = Math.floor(i / perRow), col = i % perRow;
+      const inRow = Math.min(perRow, n - row * perRow);
+      const x = (PX.W - stepX * inRow) / 2 + stepX * (col + 0.5);
+      const y = topY + stepY * row;
+      const me = p.uid === NET.uid;
+
+      const a = addActor(AVATARS[p.avatar] || AVATARS[0], x, y, null, me ? 'me' : '', 3, dispH);
+      a.style.zIndex = String(20 + row * 2 + (me ? 60 : 0));
+
+      /* 이름표는 캐릭터보다 위 레이어에 따로 그린다 — 겹쳐도 이름은 다 보이게 */
+      const tag = el('div', 'crowd-name' + (me ? ' is-me' : ''), esc(p.name) + (me ? ' (나)' : ''));
+      tag.style.left = ((x / PX.W) * 100) + '%';
+      // 같은 줄에서 이웃끼리 겹치지 않도록 한 칸씩 높이를 어긋나게
+      const lift = dispH + 2 + (col % 2 ? 6 : 0);
+      tag.style.top = (((y - lift) / PX.H) * 100) + '%';
+      tag.style.zIndex = String(200 + row * 2 + (col % 2) + (me ? 60 : 0));
+      fx.appendChild(tag);
     });
-    const total = Object.values(S.players || {}).filter(p => p && p.uid && !p.isAdmin).length;
-    const badge = el('div', 'actor-tag', '👥 접속 ' + total + '명');
-    badge.style.cssText += 'position:absolute;left:4%;top:6%;font-size:10px';
-    layer.appendChild(badge);
+
+    /* 접속 현황 */
+    const offline = all.length - online.length;
+    const badge = el('div', 'crowd-badge',
+      '👥 대기실 ' + online.length + '명' + (offline > 0 ? ' (접속 끊김 ' + offline + '명)' : ''));
+    fx.appendChild(badge);
   }
 
   /* ============================================================
@@ -381,7 +411,8 @@
     updateHUD();
     say(R.welcome, R.full);
     SFX.door();
-    g.UI.bgmUp();          // 방 시작 → 배경음악 다시 올리기
+    g.UI.bgmUp();
+    if (g.CHAT) g.CHAT.refresh();   // 방 안에서는 팀 채팅만          // 방 시작 → 배경음악 다시 올리기
 
     /* 방 담당자 */
     S.bossEl = addBoss(R);
@@ -715,7 +746,10 @@
       html, closable: !!S.me.isAdmin, wide: true, low: true,
       onClose: () => { S.waitModal = null; },
       onMount: (body) => { renderBoardInto(body.querySelector('#im-board')); updateWaitPanel(!!(S.global && S.global.phase === 'playing' && S.global.startAt)); },
-      buttons: S.me.isAdmin ? [{ label: '👑 관리자 패널 열기', cls: 'pk-btn-gold', onClick: () => g.ADMIN.open() }] : []
+      buttons: (S.me.isAdmin
+        ? [{ label: '👑 관리자 패널 열기', cls: 'pk-btn-gold', close: false, onClick: () => g.ADMIN.open() }]
+        : []
+      ).concat([{ label: '💬 채팅 열기', cls: 'pk-btn-main', close: false, onClick: () => g.CHAT && g.CHAT.setOpen(true) }])
     });
   }
 
@@ -797,7 +831,10 @@
       title: '🏁 최종 결과', wide: true, closable: true,
       html: podium + mine + '<h4 style="font-size:12px;color:#274a75;margin:10px 0 2px">📖 내 방별 기록</h4>' + per +
         '<h4 style="font-size:12px;color:#274a75;margin:10px 0 2px">🏆 전체 순위</h4>' + g.UI.leaderboardHTML(rows, NET.uid),
-      buttons: S.me.isAdmin ? [{ label: '👑 관리자 패널', cls: 'pk-btn-gold', onClick: () => g.ADMIN.open() }] : []
+      buttons: (S.me.isAdmin
+        ? [{ label: '👑 관리자 패널', cls: 'pk-btn-gold', close: false, onClick: () => g.ADMIN.open() }]
+        : []
+      ).concat([{ label: '💬 채팅 열기', cls: 'pk-btn-main', close: false, onClick: () => g.CHAT && g.CHAT.setOpen(true) }])
     });
   }
 
@@ -862,30 +899,47 @@
       S.players = ps;
       if (S.phase === 'lobby' || S.phase === 'intermission') drawLobbyCrowd();
     });
+    /* 팀이 없을 때 쓸 기본 출제 — 반드시 팀 구독보다 먼저 (팀 배정을 덮어쓰지 않도록) */
+    assignQuizzes(hashSeed(NET.uid));
+
     NET.onTeams(t => {
       S.teams = t;
-      const seed = teamSeedFor(t);
-      assignQuizzes(seed);
+      const before = S.seed;
+      assignQuizzes(teamSeedFor(t));
+      S.myTeam = myTeamNo(t);
+      updateHUD();
+      if (g.CHAT) g.CHAT.refresh();
+      // 관리자가 팀을 바꾸면 아직 못 푼 단서의 문제도 새 팀 기준으로 바뀐다
+      if (S.phase === 'playing' && before !== S.seed) {
+        toast('팀이 변경되어 출제 문제가 갱신되었습니다.', 'info', 3000);
+      }
     });
-    assignQuizzes(hashSeed(NET.uid));
+
     renderLobby();              // 기본 화면을 먼저 그리고
     startTicker();
+    if (g.CHAT) g.CHAT.init();  // 채팅 준비
     NET.onGlobal(applyGlobal);  // 그 다음 서버 상태를 반영한다 (순서 중요)
   }
 
   function hashSeed(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return (h % 99991) + 1; }
-  function teamSeedFor(t) {
-    if (t && t.list) {
-      const list = t.list;
-      for (let i = 0; i < list.length; i++) {
-        if ((list[i].members || []).some(m => m.uid === NET.uid)) return (list[i].id || (i + 1)) * 1013 + 7;
-      }
+  /** 내가 속한 팀 번호 (없으면 null) */
+  function myTeamNo(t) {
+    const list = (t && t.list) || [];
+    for (let i = 0; i < list.length; i++) {
+      if ((list[i].members || []).some(m => m.uid === NET.uid)) return list[i].id || (i + 1);
     }
+    return null;
+  }
+  /** 팀이 정해져 있으면 팀 번호로, 아니면 개인 고유값으로 출제 시드를 만든다.
+   *  같은 팀이면 어느 기기에서 접속하든 항상 같은 문제가 나온다. */
+  function teamSeedFor(t) {
+    const no = myTeamNo(t);
+    if (no != null) return no * 1013 + 7;
     return hashSeed(NET.uid);
   }
 
   g.GAME = {
     S, boot, enterRoom, renderLobby, showResults, openBoard, computeBoard,
-    applyGlobal, finishRoom, assignQuizzes, teamCode, updateHUD
+    applyGlobal, finishRoom, assignQuizzes, teamCode, updateHUD, myTeamNo, teamSeedFor
   };
 })(window);

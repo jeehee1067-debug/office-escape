@@ -138,17 +138,25 @@
     scale = scale || 4;
     const img = opts && opts.sprite && charImages[opts.sprite];
     if (img) {
-      const c = make(img.naturalWidth * scale, img.naturalHeight * scale);
+      /* 큰 그림을 원본 크기 그대로 캔버스에 올리면 메모리가 폭증한다.
+         화면에서 필요한 높이(MAX_SPRITE_PX)까지만 줄여 그린다. */
+      const MAX_SPRITE_PX = 512;
+      const k = Math.min(1, MAX_SPRITE_PX / img.naturalHeight);
+      const cw = Math.max(1, Math.round(img.naturalWidth * k));
+      const ch = Math.max(1, Math.round(img.naturalHeight * k));
+      const c = make(cw, ch);
       const x = ctxOf(c);
-      x.imageSmoothingEnabled = false;
-      // 숨쉬기 프레임: 아랫부분(발)은 고정하고 윗부분만 1px 내림
+      x.imageSmoothingEnabled = (img.naturalHeight > MAX_SPRITE_PX);  // 축소할 때만 부드럽게
+      // 숨쉬기 프레임: 아랫부분(발)은 고정하고 윗부분만 살짝 내림
       const cut = Math.round(img.naturalHeight * 0.93);
+      const cutC = Math.round(ch * 0.93);
       if (frame) {
-        x.drawImage(img, 0, 0, img.naturalWidth, cut, 0, scale, c.width, cut * scale);
+        const d = Math.max(1, Math.round(ch / 60));
+        x.drawImage(img, 0, 0, img.naturalWidth, cut, 0, d, cw, cutC);
         x.drawImage(img, 0, cut, img.naturalWidth, img.naturalHeight - cut,
-          0, cut * scale, c.width, (img.naturalHeight - cut) * scale);
+          0, cutC + d, cw, ch - cutC - d);
       } else {
-        x.drawImage(img, 0, 0, c.width, c.height);
+        x.drawImage(img, 0, 0, cw, ch);
       }
       // 화면 크기: 높이를 기준으로 맞추고 가로는 원본 비율 유지
       const cfg = (global.DATA && global.DATA.CONFIG) || {};
