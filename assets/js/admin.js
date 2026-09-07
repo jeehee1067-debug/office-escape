@@ -176,46 +176,138 @@
     }
   };
 
-  /* ---------- 팀 구성 ---------- */
+  /* ---------- 팀 구성 ----------
+     규칙
+       · 한 팀은 최소 3명 (2명짜리 팀은 만들지 않는다)
+       · 되도록 3명으로 나누고, 어쩔 수 없을 때만 4명
+       · 3명 팀 = (SR3 2 + S1L 1) 또는 (SR3 1 + S1L 2)
+       · 4명 팀 = (SR3 2 + S1L 2)
+     → 즉 한 팀에 같은 근무지가 2명을 넘지 않는다.
+        한쪽 인원이 다른 쪽의 2배를 넘으면 규칙을 지킬 수 없다.
+     ------------------------------------------------------------ */
+
+  /**
+   * x = (SR3 2, S1L 1) 팀 수, y = (SR3 1, S1L 2) 팀 수, z = (SR3 2, S1L 2) 팀 수
+   * 4명 팀(z)이 가장 적은 조합을 찾는다.
+   */
+  function planTeams(a, b) {
+    if (a + b < 3) return null;
+    const yMax = Math.floor((2 * b - a) / 3);
+    for (let y = Math.max(yMax, 0); y >= 0; y--) {
+      const rem = 2 * b - a - 3 * y;
+      if (rem < 0 || rem % 2) continue;
+      const z = rem / 2;
+      const x = y + a - b;
+      if (x < 0) continue;
+      if (2 * x + y + 2 * z === a && x + 2 * y + 2 * z === b) return { x, y, z };
+    }
+    return null;
+  }
+
+  const shuffle = a => a.map(v => [Math.random(), v]).sort((p, q) => p[0] - q[0]).map(v => v[1]);
+  const asMember = p => ({ uid: p.uid, name: p.name, loc: p.loc });
+
   function buildTeams(quiet) {
     const players = Object.values(g.GAME.S.players || {}).filter(p => p && p.uid && !p.isAdmin);
-    if (players.length < 2) return toast('참가자가 너무 적습니다.', 'bad');
-    const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(v => v[1]);
+    if (players.length < 3) return toast('참가자가 3명 이상이어야 팀을 만들 수 있습니다.', 'bad', 3000);
+
     const sr3 = shuffle(players.filter(p => p.loc === 'SR3'));
     const s1l = shuffle(players.filter(p => p.loc !== 'SR3'));
-    const size = players.length <= 8 ? 2 : (players.length <= 24 ? 3 : 4);
-    const n = Math.max(1, Math.round(players.length / size));
-    const teams = Array.from({ length: n }, (_, i) => ({ id: i + 1, members: [] }));
-    let i = 0;
-    // 근무지가 골고루 섞이도록 번갈아 배분
-    while (sr3.length || s1l.length) {
-      const pick = (i % 2 === 0 ? (sr3.pop() || s1l.pop()) : (s1l.pop() || sr3.pop()));
-      if (!pick) break;
-      teams[i % n].members.push({ uid: pick.uid, name: pick.name, loc: pick.loc });
-      i++;
+    const plan = planTeams(sr3.length, s1l.length);
+    const teams = [];
+    let warn = '';
+    let id = 1;
+
+    if (plan) {
+      /* 규칙대로 정확히 배분 */
+      const order = shuffle(
+        Array(plan.x).fill('x').concat(Array(plan.y).fill('y'), Array(plan.z).fill('z'))
+      );
+      order.forEach(kind => {
+        const m = [];
+        if (kind === 'x') { m.push(sr3.pop(), sr3.pop(), s1l.pop()); }
+        else if (kind === 'y') { m.push(sr3.pop(), s1l.pop(), s1l.pop()); }
+        else { m.push(sr3.pop(), sr3.pop(), s1l.pop(), s1l.pop()); }
+        teams.push({ id: id++, members: m.filter(Boolean).map(asMember) });
+      });
+    } else {
+      /* 규칙을 지킬 수 없는 인원 구성 — 최소 3명 / 되도록 균등하게 나누고 알린다 */
+      const few = sr3.length <= s1l.length ? sr3 : s1l;
+      const many = sr3.length <= s1l.length ? s1l : sr3;
+      const n = players.length;
+      const T = Math.max(1, Math.min(Math.floor(n / 3), few.length || 1));
+      for (let i = 0; i < T; i++) teams.push({ id: id++, members: [] });
+      // 적은 쪽을 먼저 한 명씩 돌려 담아 모든 팀이 섞이게
+      few.forEach((p, i) => teams[i % T].members.push(asMember(p)));
+      // 많은 쪽은 인원이 적은 팀부터 채운다
+      many.forEach(p => {
+        teams.sort((A, B) => A.members.length - B.members.length || A.id - B.id);
+        teams[0].members.push(asMember(p));
+      });
+      teams.sort((A, B) => A.id - B.id);
+      const big = sr3.length >= s1l.length ? 'SR3' : 'S1L';
+      warn = 'SR3 ' + sr3.length + '명 : S1L ' + s1l.length + '명 — 한쪽이 다른 쪽의 2배를 넘어 ' +
+        '「같은 근무지 최대 2명」 규칙을 지킬 수 없습니다. ' + big + ' 인원이 3명 이상인 팀이 생깁니다.';
     }
+
     NET.setTeams(teams);
-    if (!quiet) showTeams(teams);
+    if (!quiet) showTeams(teams, warn);
+    return teams;
   }
-  function showTeams(teams) {
-    let h = '<div class="scroll-y"><table class="pk-table"><thead><tr><th>팀</th><th>인원</th><th>팀원</th></tr></thead><tbody>';
+
+  function teamStat(t) {
+    const m = t.members || [];
+    const a = m.filter(x => x.loc === 'SR3').length;
+    return { n: m.length, sr3: a, s1l: m.length - a };
+  }
+  /** 규칙을 지킨 팀인지 */
+  function teamOk(t) {
+    const s = teamStat(t);
+    if (s.n < 3 || s.n > 4) return false;
+    if (s.sr3 > 2 || s.s1l > 2) return false;
+    return s.sr3 >= 1 && s.s1l >= 1;
+  }
+
+  function showTeams(teams, warn) {
+    const bad = teams.filter(t => !teamOk(t)).length;
+    let h = '';
+    if (warn) h += '<p style="font-size:11px;line-height:1.8;color:#8a5a12;background:#fff7d6;' +
+      'border:2px solid var(--gold);border-radius:6px;padding:7px 9px;margin-bottom:8px">⚠️ ' + esc(warn) + '</p>';
+    else h += '<p style="font-size:11px;line-height:1.8;color:#1c5c34;background:#cdf0d6;' +
+      'border:2px solid var(--green);border-radius:6px;padding:7px 9px;margin-bottom:8px">' +
+      '✅ 모든 팀이 3~4명이고 같은 근무지가 2명을 넘지 않습니다.</p>';
+
+    h += '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
+      '<th>팀</th><th>인원</th><th>구성</th><th>팀원</th></tr></thead><tbody>';
     teams.forEach(t => {
-      h += '<tr><td><b>' + t.id + '팀</b></td><td>' + t.members.length + '</td><td style="text-align:left">' +
-        t.members.map(m => esc('[' + (m.loc || '-') + '] ' + m.name)).join(', ') + '</td></tr>';
+      const s = teamStat(t);
+      h += '<tr' + (teamOk(t) ? '' : ' style="background:#f6d3ce"') + '>' +
+        '<td><b>' + t.id + '팀</b></td><td>' + s.n + '명</td>' +
+        '<td>SR3 ' + s.sr3 + ' · S1L ' + s.s1l + '</td>' +
+        '<td style="text-align:left">' + (t.members || []).map(m =>
+          esc('[' + (m.loc || '-') + '] ' + m.name)).join(', ') + '</td></tr>';
     });
     h += '</tbody></table></div>';
+    h += '<p style="font-size:11px;color:#3f4453;margin-top:8px">' +
+      '총 <b>' + teams.length + '팀</b> · 3명 팀 ' + teams.filter(t => teamStat(t).n === 3).length +
+      ' · 4명 팀 ' + teams.filter(t => teamStat(t).n === 4).length +
+      (bad ? ' · <span style="color:#c0392b">규칙 미충족 ' + bad + '팀</span>' : '') +
+      '<br>※ 팀마다 출제되는 3문제 조합이 달라집니다(컨닝 방지).</p>';
+
     modal({
-      title: '🎲 랜덤 팀 구성 결과', html: h + '<p style="font-size:11px;color:#3f4453;margin-top:8px">※ 팀마다 출제되는 3문제 조합이 달라집니다(컨닝 방지).</p>',
-      wide: true, closable: true,
+      title: '🎲 랜덤 팀 구성 결과', html: h, wide: true, closable: true,
       buttons: [
         { label: '🔄 다시 구성', cls: 'pk-btn-red', close: true, onClick: () => buildTeams() },
+        { label: '✏️ 직접 편집', cls: 'pk-btn-gold', close: true, onClick: () => openTeamEditor() },
         { label: '💾 CSV 저장', cls: 'pk-btn-green', close: false, onClick: () => downloadCSV('teams.csv', teamsCSV(teams)) }
       ]
     });
   }
   function teamsCSV(teams) {
-    let s = '팀,근무지,이름\n';
-    teams.forEach(t => t.members.forEach(m => { s += t.id + ',' + (m.loc || '') + ',' + m.name + '\n'; }));
+    let s = '팀,인원,근무지,이름\n';
+    teams.forEach(t => (t.members || []).forEach(m => {
+      s += t.id + ',' + (t.members || []).length + ',' + (m.loc || '') + ',' + m.name + '\n';
+    }));
     return s;
   }
 
