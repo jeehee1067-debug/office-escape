@@ -503,3 +503,10 @@ button,input,select{font-family:inherit}
   .modal{padding:12px}
   .avatar-picker{grid-template-columns:repeat(4,1fr)}
 }
+
+/* 근무지 전용 문제 표시 */
+.quiz-site{
+  display:block;background:#e8f0ff;border:2px solid var(--blue-dark,#2b4a7d);
+  border-radius:6px;padding:5px 8px;font-size:11px;margin-bottom:9px;line-height:1.5;
+}
+.quiz-site b{color:#c0392b}

@@ -171,7 +171,11 @@
     }
   };
 
-  /* ---------- 팀 구성 ---------- */
+  /* ---------- 팀 구성 ----------
+     방마다 SR3 전용 · S1L 전용 문제가 번갈아 출제되므로
+     한 팀에 SR3·S1L 인원이 모두 있어야 탈출할 수 있다.
+     그래서 두 근무지를 각각 팀에 돌려 담아 반드시 섞이게 한다.
+     ------------------------------------------------------ */
   function buildTeams() {
     const players = Object.values(g.GAME.S.players || {}).filter(p => p && p.uid && !p.isAdmin);
     if (players.length < 2) return toast('참가자가 너무 적습니다.', 'bad');
@@ -179,28 +183,43 @@
     const sr3 = shuffle(players.filter(p => p.loc === 'SR3'));
     const s1l = shuffle(players.filter(p => p.loc !== 'SR3'));
     const size = players.length <= 8 ? 2 : (players.length <= 24 ? 3 : 4);
-    const n = Math.max(1, Math.round(players.length / size));
-    const teams = Array.from({ length: n }, (_, i) => ({ id: i + 1, members: [] }));
-    let i = 0;
-    // 근무지가 골고루 섞이도록 번갈아 배분
-    while (sr3.length || s1l.length) {
-      const pick = (i % 2 === 0 ? (sr3.pop() || s1l.pop()) : (s1l.pop() || sr3.pop()));
-      if (!pick) break;
-      teams[i % n].members.push({ uid: pick.uid, name: pick.name, loc: pick.loc });
-      i++;
+    let n = Math.max(1, Math.round(players.length / size));
+
+    if (!sr3.length || !s1l.length) {
+      toast('한쪽 근무지 인원만 접속해 있습니다. 근무지 전용 문제를 못 푸는 팀이 생깁니다!', 'bad');
+    } else {
+      // 팀 수가 적은 쪽 근무지 인원보다 많으면 근무지가 빈 팀이 생긴다
+      n = Math.max(1, Math.min(n, Math.min(sr3.length, s1l.length)));
     }
+
+    const teams = Array.from({ length: n }, (_, i) => ({ id: i + 1, members: [] }));
+    const put = (p, i) => teams[i].members.push({ uid: p.uid, name: p.name, loc: p.loc });
+    // SR3 는 앞에서부터, S1L 은 뒤에서부터 돌려 담아 인원수까지 고르게 맞춘다
+    sr3.forEach((p, i) => put(p, i % n));
+    s1l.forEach((p, i) => put(p, n - 1 - (i % n)));
+
     NET.setTeams(teams);
     showTeams(teams);
   }
   function showTeams(teams) {
     let h = '<div class="scroll-y"><table class="pk-table"><thead><tr><th>팀</th><th>인원</th><th>팀원</th></tr></thead><tbody>';
+    let bad = 0;
     teams.forEach(t => {
+      const hasSR3 = t.members.some(m => m.loc === 'SR3');
+      const hasS1L = t.members.some(m => m.loc !== 'SR3');
+      const okMix = hasSR3 && hasS1L;
+      if (!okMix) bad++;
       h += '<tr><td><b>' + t.id + '팀</b></td><td>' + t.members.length + '</td><td style="text-align:left">' +
+        (okMix ? '' : '<b style="color:#c0392b">⚠ </b>') +
         t.members.map(m => esc('[' + (m.loc || '-') + '] ' + m.name)).join(', ') + '</td></tr>';
     });
     h += '</tbody></table></div>';
     modal({
-      title: '🎲 랜덤 팀 구성 결과', html: h + '<p style="font-size:11px;color:#3f4453;margin-top:8px">※ 팀마다 출제되는 3문제 조합이 달라집니다(컨닝 방지).</p>',
+      title: '🎲 랜덤 팀 구성 결과',
+      html: h +
+        '<p style="font-size:11px;color:#3f4453;margin-top:8px">※ 팀마다 출제되는 3문제 조합이 달라집니다(컨닝 방지).<br>' +
+        '※ 방마다 SR3 전용·S1L 전용 문제가 번갈아 나오므로 팀에 두 근무지가 모두 있어야 합니다.</p>' +
+        (bad ? '<p style="font-size:11px;color:#c0392b">⚠ 근무지가 한쪽뿐인 팀이 ' + bad + '개 있습니다. 다시 구성하거나 인원을 옮겨주세요.</p>' : ''),
       wide: true, closable: true,
       buttons: [
         { label: '🔄 다시 구성', cls: 'pk-btn-red', close: true, onClick: () => buildTeams() },

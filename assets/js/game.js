@@ -4,7 +4,7 @@
 (function (g) {
   'use strict';
   const { $, $$, el, esc, modal, toast, say, mmss, SFX } = g.UI;
-  const { CONFIG, AVATARS, BOSSES, BANK, ROOMS } = g.DATA;
+  const { CONFIG, AVATARS, BOSSES, BANK, ROOMS, credoAnswers } = g.DATA;
 
   /* 시퀀스 기믹 좌표 (씬 픽셀 기준) */
   const SEQ_SPOTS = {
@@ -14,7 +14,7 @@
 
   const S = {
     me: null, global: null, run: null, players: {}, teams: null,
-    room: 0, phase: 'boot', quizzes: {}, seed: 1,
+    room: 0, phase: 'boot', quizzes: {}, roomSites: {}, seed: 1,
     gate: {}, clueApi: {}, bossEl: null, waitModal: null, timer: null, ended: false, lastRoomRendered: null
   };
 
@@ -28,22 +28,78 @@
     node.style.width = r[2] + '%'; node.style.height = r[3] + '%';
   }
 
-  /* ---------- 문제 배정 (팀 시드 기반, 재현 가능) ---------- */
+  /* ============================================================
+     문제 배정 (팀 시드 기반, 재현 가능)
+     ------------------------------------------------------------
+     방마다 3문제가 출제되며 구성은 항상 아래와 같다.
+       · 근무지 전용 1문제 : 그 관에 배정된 근무지(SR3/S1L) 문제 중 하나
+       · 공통 2문제        : loc 이 없는 문제 중 두 개
+     관마다 배정 근무지가 번갈아 정해지고 팀에 따라 순서가 뒤집히므로,
+     한 팀은 4개 관에서 SR3 전용 2문제 + S1L 전용 2문제를 반드시 만난다.
+     → 팀에 SR3·S1L 인원이 모두 있어야 탈출할 수 있다.
+     ============================================================ */
   function lcg(seed) { let s = (seed >>> 0) || 1; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+
+  /** 이 관에서 어느 근무지 전용 문제가 나올지 (팀 시드에 따라 배치가 뒤집힌다) */
+  function siteForRoom(room, seed) {
+    const flip = (seed % 2) === 0;
+    const odd = (room % 2) === 1;
+    return (odd !== flip) ? 'SR3' : 'S1L';
+  }
+
   function assignQuizzes(seed) {
     S.seed = seed;
-    const out = {};
+    const out = {}, sites = {};
     for (let r = 1; r <= CONFIG.ROOM_COUNT; r++) {
       const rand = lcg(seed * 7919 + r * 104729);
-      const pool = BANK[r].slice();
+      const take = arr => arr.splice(Math.floor(rand() * arr.length), 1)[0];
+      const bank = (BANK[r] || []).slice();
+      const site = siteForRoom(r, seed);
+      const sitePool = bank.filter(q => q.loc === site);
+      const commonPool = bank.filter(q => !q.loc);
       const pick = [];
-      while (pick.length < CONFIG.CLUES_PER_ROOM && pool.length) {
-        pick.push(pool.splice(Math.floor(rand() * pool.length), 1)[0]);
+
+      if (sitePool.length) pick.push(take(sitePool));            // 근무지 전용 1문제
+      while (pick.length < CONFIG.CLUES_PER_ROOM && commonPool.length) pick.push(take(commonPool));
+      // 문제은행을 줄였을 때를 대비한 보충 (남은 문제 아무거나)
+      const rest = bank.filter(q => pick.indexOf(q) < 0);
+      while (pick.length < CONFIG.CLUES_PER_ROOM && rest.length) pick.push(take(rest));
+
+      // 전용 문제가 항상 첫 단서에 오지 않도록 섞는다
+      for (let i = pick.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        const t = pick[i]; pick[i] = pick[j]; pick[j] = t;
       }
       out[r] = pick;
+      sites[r] = site;
     }
     S.quizzes = out;
+    S.roomSites = sites;
   }
+
+  /** 주관식 정답 목록 (크레도 문제는 data.js 의 CREDO 에서 자동 계산) */
+  function answersOf(q) {
+    if (q.credo) {
+      const a = credoAnswers(q.credo);
+      if (!a.length) console.warn('[S1FA] 크레도 정답을 만들 수 없습니다:', q.id, '— data.js 의 CREDO.lines 를 확인하세요.');
+      return a;
+    }
+    return q.ans || [];
+  }
+
+  /** 시작할 때 문제은행 구성을 점검해 콘솔에 경고를 남긴다 */
+  function checkBank() {
+    for (let r = 1; r <= CONFIG.ROOM_COUNT; r++) {
+      const bank = BANK[r] || [];
+      const sr3 = bank.filter(q => q.loc === 'SR3').length;
+      const s1l = bank.filter(q => q.loc === 'S1L').length;
+      const common = bank.filter(q => !q.loc).length;
+      if (!sr3 || !s1l) console.warn('[S1FA] ' + r + '관 문제은행에 SR3/S1L 전용 문제가 부족합니다. (SR3 ' + sr3 + ' / S1L ' + s1l + ')');
+      if (common < CONFIG.CLUES_PER_ROOM - 1) console.warn('[S1FA] ' + r + '관 공통 문제가 부족합니다. (' + common + '개)');
+      bank.forEach(q => { if (q.credo && !credoAnswers(q.credo).length) console.warn('[S1FA] 크레도 문제 정답 없음:', q.id); });
+    }
+  }
+
   function teamCode() { return 1000 + ((S.seed * 7919) % 9000); }
 
   /* ---------- 내 진행 상태 조회 ---------- */
@@ -606,7 +662,10 @@
     const meta = '<div class="quiz-meta"><span>단서 <b>' + (idx + 1) + '/' + CONFIG.CLUES_PER_ROOM + '</b></span>' +
       '<span>배점 <b>' + q.score.toLocaleString() + '점</b></span>' +
       '<span>오답 <b>-' + CONFIG.WRONG_PENALTY.toLocaleString() + '</b></span></div>';
-    let inner = meta + '<div class="quiz-q">' + esc(q.q) + '</div>';
+    const siteTag = q.loc
+      ? '<div class="quiz-site">🏢 <b>' + esc(q.loc) + '</b> 근무자만 아는 문제입니다 — 팀의 ' + esc(q.loc) + ' 멤버에게 물어보세요!</div>'
+      : '';
+    let inner = meta + siteTag + '<div class="quiz-q">' + esc(q.q) + '</div>';
     if (q.type === 'short') {
       if (q.hint) inner += '<div class="quiz-hint">💡 ' + esc(q.hint) + '</div>';
       inner += '<div class="quiz-input-row"><input id="qin" class="pk-input" type="text" maxlength="24" placeholder="정답 입력 후 Enter"><button id="qsub" class="pk-btn pk-btn-main">제출</button></div>';
@@ -622,7 +681,7 @@
       onMount: (body) => {
         const submit = (val, node) => {
           const ok = q.type === 'short'
-            ? q.ans.some(a => norm(a) === norm(val))
+            ? answersOf(q).some(a => norm(a) === norm(val))
             : (+val === q.ans);
           if (isSolved(S.room, slot)) { m.close(); toast('이미 해결한 단서입니다.', 'info'); return; }
           if (ok) {
@@ -867,6 +926,7 @@
       const seed = teamSeedFor(t);
       assignQuizzes(seed);
     });
+    checkBank();
     assignQuizzes(hashSeed(NET.uid));
     renderLobby();              // 기본 화면을 먼저 그리고
     startTicker();
@@ -886,6 +946,6 @@
 
   g.GAME = {
     S, boot, enterRoom, renderLobby, showResults, openBoard, computeBoard,
-    applyGlobal, finishRoom, assignQuizzes, teamCode, updateHUD
+    applyGlobal, finishRoom, assignQuizzes, siteForRoom, answersOf, teamCode, updateHUD
   };
 })(window);
