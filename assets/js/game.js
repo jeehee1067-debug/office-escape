@@ -285,6 +285,7 @@
     clearLayers(); usePixelScene('lobby'); showTitle('대기실');
     updateHUD();
     g.UI.bgmDown();        // 대기실 → 배경음악 서서히 줄이기
+    if (g.CHAT) g.CHAT.refresh();   // 대기실에서는 팀 + 전체 채팅
     say(msg || '대기실이다. 관리자가 게임을 시작할 때까지 기다리자!\n다른 참가자들도 속속 도착하고 있다.');
     drawLobbyCrowd();
   }
@@ -410,7 +411,8 @@
     updateHUD();
     say(R.welcome, R.full);
     SFX.door();
-    g.UI.bgmUp();          // 방 시작 → 배경음악 다시 올리기
+    g.UI.bgmUp();
+    if (g.CHAT) g.CHAT.refresh();   // 방 안에서는 팀 채팅만          // 방 시작 → 배경음악 다시 올리기
 
     /* 방 담당자 */
     S.bossEl = addBoss(R);
@@ -744,7 +746,10 @@
       html, closable: !!S.me.isAdmin, wide: true, low: true,
       onClose: () => { S.waitModal = null; },
       onMount: (body) => { renderBoardInto(body.querySelector('#im-board')); updateWaitPanel(!!(S.global && S.global.phase === 'playing' && S.global.startAt)); },
-      buttons: S.me.isAdmin ? [{ label: '👑 관리자 패널 열기', cls: 'pk-btn-gold', onClick: () => g.ADMIN.open() }] : []
+      buttons: (S.me.isAdmin
+        ? [{ label: '👑 관리자 패널 열기', cls: 'pk-btn-gold', close: false, onClick: () => g.ADMIN.open() }]
+        : []
+      ).concat([{ label: '💬 채팅 열기', cls: 'pk-btn-main', close: false, onClick: () => g.CHAT && g.CHAT.setOpen(true) }])
     });
   }
 
@@ -826,7 +831,10 @@
       title: '🏁 최종 결과', wide: true, closable: true,
       html: podium + mine + '<h4 style="font-size:12px;color:#274a75;margin:10px 0 2px">📖 내 방별 기록</h4>' + per +
         '<h4 style="font-size:12px;color:#274a75;margin:10px 0 2px">🏆 전체 순위</h4>' + g.UI.leaderboardHTML(rows, NET.uid),
-      buttons: S.me.isAdmin ? [{ label: '👑 관리자 패널', cls: 'pk-btn-gold', onClick: () => g.ADMIN.open() }] : []
+      buttons: (S.me.isAdmin
+        ? [{ label: '👑 관리자 패널', cls: 'pk-btn-gold', close: false, onClick: () => g.ADMIN.open() }]
+        : []
+      ).concat([{ label: '💬 채팅 열기', cls: 'pk-btn-main', close: false, onClick: () => g.CHAT && g.CHAT.setOpen(true) }])
     });
   }
 
@@ -900,6 +908,7 @@
       assignQuizzes(teamSeedFor(t));
       S.myTeam = myTeamNo(t);
       updateHUD();
+      if (g.CHAT) g.CHAT.refresh();
       // 관리자가 팀을 바꾸면 아직 못 푼 단서의 문제도 새 팀 기준으로 바뀐다
       if (S.phase === 'playing' && before !== S.seed) {
         toast('팀이 변경되어 출제 문제가 갱신되었습니다.', 'info', 3000);
@@ -908,6 +917,7 @@
 
     renderLobby();              // 기본 화면을 먼저 그리고
     startTicker();
+    if (g.CHAT) g.CHAT.init();  // 채팅 준비
     NET.onGlobal(applyGlobal);  // 그 다음 서버 상태를 반영한다 (순서 중요)
   }
 

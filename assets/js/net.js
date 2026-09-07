@@ -186,6 +186,25 @@
     },
     setRunMeta(patch) { return ref('runs/' + uid + '/meta').update(patch).catch(() => { }); },
 
+    /* ----- 채팅 ----- */
+    /** channel: 'global' 또는 'team/3' — 최근 60개만 구독한다 */
+    onChat(channel, cb) {
+      const q = ref('chat/' + channel).limitToLast(60);
+      const h = q.on('value', s => {
+        const v = s.val() || {};
+        cb(Object.keys(v).sort().map(k => Object.assign({ _id: k }, v[k])));
+      }, e => onSubError('chat/' + channel, e));
+      return () => { try { q.off('value', h); } catch (e) { } };
+    },
+    sendChat(channel, msg) {
+      return ref('chat/' + channel).push({
+        uid, name: String(msg.name || '').slice(0, 12),
+        team: msg.team == null ? null : msg.team,
+        text: String(msg.text || '').slice(0, 100),
+        at: TS
+      });
+    },
+
     /* ----- 팀 ----- */
     onTeams(cb) { ref('teams').on('value', s => cb(s.val() || null), e => onSubError('teams', e)); },
     setTeams(t) { return ref('teams').set({ _k: adminKey, list: t, at: TS }); },
@@ -195,6 +214,7 @@
       await ref('runs').set({ _k: adminKey });
       await ref('players').set({ _k: adminKey });
       await ref('teams').set({ _k: adminKey });
+      await ref('chat').set({ _k: adminKey });
       await this.replaceGlobal({
         phase: 'lobby', room: 1, startAt: null, pausedAt: null, pauseTotal: 0,
         resetToken: Date.now(), locked: false

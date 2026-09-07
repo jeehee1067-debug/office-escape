@@ -91,6 +91,7 @@
       '<button class="pk-btn pk-btn-green" data-act="start">🚀 1관부터 새로 시작</button>' +
       '<button class="pk-btn pk-btn-purple" data-act="teams">🎲 랜덤 팀 구성</button>' +
       '<button class="pk-btn pk-btn-gold" data-act="editteams">✏️ 팀 편집 · 이동</button>' +
+      '<button class="pk-btn pk-btn-ghost" data-act="chat">💬 채팅 열기</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="csv">💾 결과 CSV</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="results">🏁 결과 발표</button>' +
       '<button class="pk-btn pk-btn-red" data-act="wipe">🔄 전체 데이터 초기화</button>' +
@@ -166,6 +167,7 @@
     },
     teams() { buildTeams(); },
     editteams() { openTeamEditor(); },
+    chat() { if (g.CHAT) g.CHAT.setOpen(true); },
     csv() { exportCSV(); },
     logout() {
       confirmBox('관리자 로그아웃', '관리자 세션을 종료하고 로그인 화면으로 돌아갑니다.', () => {

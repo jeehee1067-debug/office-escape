@@ -66,13 +66,36 @@
     };
   }
 
-  function Ref(path) {
+  let pushSeq = 0;
+  function pushKey() {
+    pushSeq++;
+    return '-' + Date.now().toString(36) + String(pushSeq).padStart(4, '0');
+  }
+
+  function Ref(path, limit) {
+    function view(v) {
+      if (!limit || !v || typeof v !== 'object') return v;
+      const keys = Object.keys(v).sort();
+      const out = {};
+      keys.slice(-limit).forEach(k => { out[k] = v[k]; });
+      return out;
+    }
     return {
       path,
-      on(evt, cb) { const l = { path, cb }; listeners.push(l); cb(snap(getAt(path))); return cb; },
+      /** 마지막 N개만 보기 (Firebase 와 같은 이름) */
+      limitToLast(n) { return Ref(path, n); },
+      orderByKey() { return Ref(path, limit); },
+      /** 자동 키로 새 항목 추가 */
+      push(v) {
+        const k = pushKey();
+        setAt(path + '/' + k, resolve(v));
+        commit();
+        return Object.assign(Promise.resolve(), { key: k });
+      },
+      on(evt, cb) { const l = { path, cb: (sn) => cb(snap(view(getAt(path)))) }; listeners.push(l); l.cb(); return cb; },
       off() { for (let i = listeners.length - 1; i >= 0; i--) if (listeners[i].path === path) listeners.splice(i, 1); },
-      once(evt) { return Promise.resolve(snap(getAt(path))); },
-      get() { return Promise.resolve(snap(getAt(path))); },
+      once(evt) { return Promise.resolve(snap(view(getAt(path)))); },
+      get() { return Promise.resolve(snap(view(getAt(path)))); },
       set(v) { setAt(path, resolve(v)); commit(); return Promise.resolve(); },
       update(patch) {
         const cur = getAt(path);
