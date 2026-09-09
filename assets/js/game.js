@@ -151,7 +151,10 @@
     const dots = [];
     for (let i = 0; i < CONFIG.CLUES_PER_ROOM; i++) dots.push(i < solvedCount(S.room) ? '●' : '○');
     $('#hud-clues').textContent = S.room ? dots.join('') : '- - -';
-    $('#hud-room').textContent = S.room ? (ROOMS[S.room] ? ROOMS[S.room].full : '') : '대기실';
+    // 좁은 화면에서는 짧은 방 이름이 보이도록 두 벌을 함께 채운다 (CSS 가 골라 보여준다)
+    const RM = S.room ? ROOMS[S.room] : null;
+    $('#hud-room .rm-full').textContent  = RM ? (RM.full || RM.title || '') : '대기실';
+    $('#hud-room .rm-short').textContent = RM ? (RM.title || RM.full || '') : '대기실';
     $('#btn-admin').classList.toggle('hidden', !admin);
     // 관리자는 점수를 얻지 않으므로 개인 점수·단서 표시를 숨긴다
     $('#hud-score').classList.toggle('hidden', admin);
@@ -465,6 +468,30 @@
     btn.textContent = open
       ? (S.room === CONFIG.ROOM_COUNT ? '🎉 최종 탈출!' : '🚪 ' + (S.room + 1) + '관으로')
       : '🔒 다음 방 (' + solvedCount(S.room) + '/' + CONFIG.CLUES_PER_ROOM + ')';
+    placeExit();
+  }
+
+  /**
+   * '다음 방' 버튼을 보스·채팅창과 겹치지 않는 자리에 놓는다.
+   * 보스는 사용자가 넣는 PNG 라 크기를 미리 알 수 없으므로 실제 화면 좌표로 판단한다.
+   */
+  function placeExit() {
+    const btn = $('#exit-btn'); if (!btn) return;
+    const blockers = [S.bossEl, $('#chat-panel')].filter(
+      e => e && !e.classList.contains('hidden') && e.getBoundingClientRect().width > 0);
+    const spots = ['', 'at-left', 'lifted', 'at-left lifted'];
+    const hits = () => {
+      const a = btn.getBoundingClientRect();
+      return blockers.some(e => {
+        const c = e.getBoundingClientRect();
+        return a.left < c.right && c.left < a.right && a.top < c.bottom && c.top < a.bottom;
+      });
+    };
+    for (const s of spots) {
+      btn.className = 'exit-btn' + (btn.classList.contains('is-open') ? ' is-open' : '') +
+                      (s ? ' ' + s : '');
+      if (!hits()) return;
+    }
   }
 
   /* ============================================================
@@ -956,6 +983,7 @@
 
   g.GAME = {
     S, boot, enterRoom, renderLobby, showResults, openBoard, computeBoard,
-    applyGlobal, finishRoom, assignQuizzes, teamCode, updateHUD, myTeamNo, teamSeedFor
+    applyGlobal, finishRoom, assignQuizzes, teamCode, updateHUD, myTeamNo, teamSeedFor,
+    placeExit
   };
 })(window);

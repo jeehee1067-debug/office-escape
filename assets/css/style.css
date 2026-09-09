@@ -14,6 +14,21 @@
   --gold:#e8b83b;
   --purple:#7b5ea7;
   --shadow:0 4px 0 rgba(29,32,41,.35);
+
+  /* HUD 치수 — 화면 폭에 따라 아래 미디어 쿼리에서 바뀐다 */
+  --chip-h:30px;   /* 정보 칩 높이 (모두 같은 높이로 맞춘다) */
+  --btn-w:36px;    /* HUD 버튼 가로 */
+  --btn-h:32px;    /* HUD 버튼 세로 */
+  --btn-f:16px;    /* HUD 버튼 아이콘 크기 */
+}
+
+/* 손가락으로 누르는 기기에서는 버튼을 키운다 (터치 목표 확보) */
+@media (pointer:coarse){
+  :root{--btn-w:40px;--btn-h:38px;--btn-f:17px;--chip-h:32px}
+}
+/* 아주 좁은 화면 (아이폰 SE, 폴드 커버 등) */
+@media (max-width:360px){
+  :root{--btn-w:32px;--btn-h:32px;--btn-f:15px;--chip-h:28px}
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -27,7 +42,9 @@ body{
     radial-gradient(circle at 80% 90%, #23304a 0%, transparent 55%),
     repeating-linear-gradient(45deg,#141821 0 8px,#161b25 8px 16px);
   display:flex;align-items:center;justify-content:center;
-  min-height:100dvh;padding:8px;
+  min-height:100dvh;
+  padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right))
+          max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));
   user-select:none;-webkit-user-select:none;
   overflow-x:hidden;
 }
@@ -110,28 +127,59 @@ button,input,select{font-family:inherit}
 #game-screen{display:flex;flex-direction:column;gap:6px}
 #hud{
   background:var(--paper);border:3px solid var(--ink);border-radius:10px;
-  box-shadow:0 4px 0 rgba(0,0,0,.45);padding:6px 8px;display:flex;flex-direction:column;gap:5px;
+  box-shadow:0 4px 0 rgba(0,0,0,.45);padding:6px 8px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;
 }
-.hud-row{display:flex;align-items:center;gap:5px}
-.hud-spacer{flex:1}
+/* 왼쪽(정보) 구역은 줄어들고, 오른쪽(상태·조작) 구역은 항상 오른쪽에 붙는다 */
+.hud-zone{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
+.hud-zone-a{flex:1 1 auto;min-width:0}
+.hud-zone-b{flex:0 1 auto;margin-left:auto;justify-content:flex-end}
+/* 단서·점수는 같은 줄 오른쪽 끝에 붙는다 (관리자는 둘 다 숨겨져 폭 0) */
+.hud-stat{display:flex;align-items:center;gap:6px;flex:0 0 auto;margin-left:auto}
+
 .hud-chip{
-  font-size:11px;font-weight:700;padding:4px 8px;border:2px solid var(--ink);
+  display:inline-flex;align-items:center;justify-content:center;
+  height:var(--chip-h);box-sizing:border-box;
+  font-size:11px;font-weight:700;padding:0 8px;border:2px solid var(--ink);
   border-radius:6px;background:var(--paper-2);white-space:nowrap;
 }
-.hud-room{background:var(--blue);color:#fff;overflow:hidden;text-overflow:ellipsis;max-width:52vw}
+.hud-room{
+  background:var(--blue);color:#fff;
+  flex:0 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;display:inline-block;
+  line-height:calc(var(--chip-h) - 4px);max-width:min(46vw,260px);
+}
+/* 방 이름은 넓은 화면에서만 긴 이름을 쓴다 */
+.rm-short{display:none}
+@media (max-width:899px){
+  .rm-full{display:none}
+  .rm-short{display:inline}
+}
 .hud-score{background:var(--gold)}
-.hud-player{background:#fff}
+.hud-player{
+  background:#fff;overflow:hidden;text-overflow:ellipsis;display:inline-block;
+  line-height:calc(var(--chip-h) - 4px);max-width:min(44vw,200px);
+}
 .hud-clues{background:#fff;letter-spacing:2px}
-.hud-time{display:flex;align-items:center;gap:4px;background:#fff}
+.hud-time{gap:4px;background:#fff}
 .t-label{color:var(--ink-soft);font-size:10px}
 .t-room{color:var(--red);font-size:13px}
 .t-total{color:var(--purple);font-size:12px}
 .t-div{color:#c9c6ba}
 .t-room.is-warn{animation:blink .6s steps(2,end) infinite}
 @keyframes blink{50%{opacity:.25}}
+
+/* 버튼은 한 덩어리로 움직이고, 절대 찌그러지지 않는다 */
+.hud-btns{display:flex;align-items:center;gap:5px;flex:0 0 auto}
 .hud-btn{
-  width:30px;height:28px;font-size:13px;border:2px solid var(--ink);border-radius:6px;
-  background:var(--paper-2);cursor:pointer;line-height:1;
+  flex:0 0 auto;
+  width:var(--btn-w);height:var(--btn-h);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:var(--btn-f);line-height:1;padding:0;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",
+              "Segoe UI Symbol",'Galmuri11',system-ui,sans-serif;
+  border:2px solid var(--ink);border-radius:6px;
+  background:var(--paper-2);cursor:pointer;
 }
 .hud-btn:active{transform:translateY(2px)}
 .hud-btn-admin{background:var(--gold)}
@@ -299,8 +347,9 @@ button,input,select{font-family:inherit}
   box-shadow:0 4px 0 rgba(0,0,0,.45);white-space:nowrap;
 }
 .exit-btn:active{transform:translateY(3px);box-shadow:none}
-/* 채팅창이 열리면 가려지지 않도록 반대편으로 */
-body.chat-open .exit-btn{right:auto;left:2.5%}
+/* 보스·채팅창과 겹칠 때 옮겨 갈 자리 (placeExit 가 골라 붙인다) */
+.exit-btn.at-left{right:auto;left:2.5%}
+.exit-btn.lifted{bottom:auto;top:6%}
 body.chat-open .dialogue{padding-right:16px}
 .exit-btn.is-open{
   background:var(--green);color:#fff;
@@ -610,7 +659,31 @@ body.chat-open .dialogue{padding-right:16px}
 
 @media (max-width:560px){
   body{padding:4px}
-  .hud-room{max-width:40vw}
+  #hud{padding:5px 6px;gap:5px 6px}
   .modal{padding:12px}
   .avatar-picker{grid-template-columns:repeat(4,1fr)}
+}
+/* 좁은 화면에서는 관리자 버튼을 한 줄에 하나씩 — 글자가 어중간하게 잘리지 않게 */
+@media (max-width:520px){
+  .admin-grid{grid-template-columns:1fr}
+  .admin-grid .pk-btn{font-size:14px;padding:11px 10px;text-align:center}
+  .modal-actions .pk-btn{min-width:0}
+}
+/* 좁은 화면에서는 타이머의 '방/전체' 글자를 빼서 자리를 만든다 */
+@media (max-width:430px){
+  .hud-time .t-label{display:none}
+  .hud-time{gap:3px;padding:0 6px}
+  .hud-room,.hud-player{max-width:min(52vw,180px)}
+}
+@media (max-width:360px){
+  .hud-btns{gap:4px}
+  .t-room{font-size:12px}
+  .t-total{font-size:11px}
+}
+/* 넓은 화면에서는 HUD 를 한 줄로 유지한다 */
+@media (min-width:720px){
+  #hud,.hud-zone{flex-wrap:nowrap}
+  .hud-chip{font-size:12px;padding:0 10px}
+  .t-room{font-size:15px}
+  .t-total{font-size:13px}
 }
