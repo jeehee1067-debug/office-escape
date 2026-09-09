@@ -82,24 +82,39 @@
       : '<button class="pk-btn pk-btn-green" data-act="resume">▶ ' + cur + '관 시작 (타이머 처음부터)</button>';
 
     return stateHTML() +
+
+      '<h5 class="admin-h">▶ 진행 제어</h5>' +
       '<div class="admin-grid">' +
       startRoomBtn +
       '<button class="pk-btn pk-btn-main" data-act="next">' + nextLabel + '</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="prev"' + (cur > 1 ? '' : dim) + '>⬅ ' + Math.max(1, cur - 1) + '관으로</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="lobby"' + (playing ? '' : dim) + '>🏠 전원 대기실로</button>' +
-      '<button class="pk-btn pk-btn-ghost" data-act="resetroom">🧹 ' + cur + '관 리셋 후 재시작</button>' +
-      '<button class="pk-btn pk-btn-green" data-act="start">🚀 1관부터 새로 시작</button>' +
+      '</div>' +
+
+      (playing ? '' : '<p class="admin-hint">지금은 <b>대기실</b> 상태입니다. ' +
+        '위의 <b>' + cur + '관 시작</b> 또는 <b>' + (isLast ? '결과 발표' : (cur + 1) + '관 열기') +
+        '</b> 를 눌러 진행하세요.</p>') +
+
+      '<h5 class="admin-h">👥 팀</h5>' +
+      '<div class="admin-grid">' +
       '<button class="pk-btn pk-btn-purple" data-act="teams">🎲 랜덤 팀 구성</button>' +
       '<button class="pk-btn pk-btn-gold" data-act="editteams">✏️ 팀 편집 · 이동</button>' +
+      '</div>' +
+
+      '<h5 class="admin-h">🛠 도구</h5>' +
+      '<div class="admin-grid">' +
       '<button class="pk-btn pk-btn-ghost" data-act="chat">💬 채팅 열기</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="csv">💾 결과 CSV</button>' +
-      '<button class="pk-btn pk-btn-ghost" data-act="results">🏁 결과 발표</button>' +
+      '</div>' +
+
+      '<h5 class="admin-h">⚠️ 되돌리기 · 마무리</h5>' +
+      '<div class="admin-grid">' +
+      '<button class="pk-btn pk-btn-ghost" data-act="resetroom">🧹 ' + cur + '관 리셋 후 재시작</button>' +
+      '<button class="pk-btn pk-btn-green" data-act="start">🚀 1관부터 새로 시작</button>' +
+      '<button class="pk-btn pk-btn-main" data-act="results">🏁 결과 발표</button>' +
       '<button class="pk-btn pk-btn-red" data-act="wipe">🔄 전체 데이터 초기화</button>' +
       '</div>' +
-      (playing ? '' : '<p style="font-size:11px;color:#8a5a12;background:#fff7d6;border:2px solid var(--gold);' +
-        'border-radius:6px;padding:6px 8px;margin-top:8px;line-height:1.7">' +
-        '지금은 <b>대기실</b> 상태입니다. 위의 <b>' + cur + '관 시작</b> 또는 <b>' + (isLast ? '결과 발표' : (cur + 1) + '관 열기') +
-        '</b> 를 눌러 진행하세요.</p>') +
+
       '<div class="admin-sec"><h4>👥 참가자 실시간 현황</h4>' + playersHTML() + '</div>' +
       '<div class="admin-sec"><button class="pk-btn pk-btn-ghost pk-btn-sm" data-act="logout">🚪 관리자 로그아웃</button></div>';
   }

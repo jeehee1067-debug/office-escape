@@ -143,15 +143,19 @@
 
   /* ---------- HUD ---------- */
   function updateHUD() {
+    const admin = !!S.me.isAdmin;
     const sc = NET.scoreOf(S.run);
     $('#hud-score').textContent = sc.score.toLocaleString() + ' P';
-    $('#hud-player').textContent = (S.me.isAdmin ? '👑 ' : '') + S.me.name +
+    $('#hud-player').textContent = (admin ? '👑 ' : '') + S.me.name +
       (S.me.loc ? ' · ' + S.me.loc : '') + (S.myTeam != null ? ' · ' + S.myTeam + '팀' : '');
     const dots = [];
     for (let i = 0; i < CONFIG.CLUES_PER_ROOM; i++) dots.push(i < solvedCount(S.room) ? '●' : '○');
     $('#hud-clues').textContent = S.room ? dots.join('') : '- - -';
     $('#hud-room').textContent = S.room ? (ROOMS[S.room] ? ROOMS[S.room].full : '') : '대기실';
-    $('#btn-admin').classList.toggle('hidden', !S.me.isAdmin);
+    $('#btn-admin').classList.toggle('hidden', !admin);
+    // 관리자는 점수를 얻지 않으므로 개인 점수·단서 표시를 숨긴다
+    $('#hud-score').classList.toggle('hidden', admin);
+    $('#hud-clues').classList.toggle('hidden', admin);
   }
 
   /* ---------- 씬 렌더 ---------- */
@@ -718,6 +722,18 @@
     // 같은 창이 두 번 열려 관리자 패널을 덮는 것을 막는다
     if (S.waitModal && document.body.contains(S.waitModal.back)) return;
     const last = S.room >= CONFIG.ROOM_COUNT;
+
+    /* 관리자는 통제 패널에서 모든 현황을 보므로 점수 창을 띄우지 않는다 */
+    if (S.me.isAdmin) {
+      clearLayers(); usePixelScene('lobby'); showTitle(last ? '최종 대기실' : '대기실');
+      g.UI.bgmDown();
+      drawLobbyCrowd();
+      say(last ? '모든 관이 끝났습니다. 관리자 패널에서 결과를 발표하세요.'
+               : S.room + '관이 끝났습니다. 관리자 패널에서 다음 방을 열어주세요.');
+      toast(S.room + '관 완료 — 관리자 패널에서 진행하세요.', 'info', 2500);
+      return;
+    }
+
     const sc = NET.scoreOf(S.run);
     const rs = sc.rooms[S.room] || 0;
     const head = reason === 'timeout'

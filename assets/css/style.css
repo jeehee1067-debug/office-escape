@@ -492,8 +492,9 @@ body.chat-open .dialogue{padding-right:16px}
   font-style:normal;border:2px solid var(--ink);
 }
 .chat-team-pick{
-  font-family:inherit;font-size:10px;padding:3px 4px;max-width:96px;
-  border:2px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink);
+  font-family:inherit;font-size:11px;font-weight:700;padding:4px 6px;
+  flex:1;min-width:0;max-width:none;
+  border:2px solid var(--ink);border-radius:7px;background:var(--gold);color:var(--ink);
 }
 .chat-x{
   width:26px;height:26px;flex:0 0 auto;background:var(--red);color:#fff;
@@ -507,7 +508,8 @@ body.chat-open .dialogue{padding-right:16px}
 .chat-msg{display:flex;flex-direction:column;align-items:flex-start;max-width:88%}
 .chat-msg.mine{align-self:flex-end;align-items:flex-end}
 .chat-name{font-size:9px;color:var(--ink-soft);margin-bottom:2px;padding:0 2px}
-.chat-name b{color:var(--blue-dark)}
+.chat-name b{color:var(--blue-dark);font-weight:700}
+.chat-name em{font-style:normal;color:#a8802a}
 .chat-bubble{
   font-size:12px;line-height:1.6;padding:5px 9px;border-radius:9px;
   background:#fff;border:2px solid var(--ink);word-break:break-word;
@@ -586,6 +588,15 @@ body.chat-open .dialogue{padding-right:16px}
 /* ---------- 관리자 ---------- */
 .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .admin-grid .pk-btn{margin-top:0}
+.admin-h{
+  font-size:11px;color:var(--blue-dark);margin:12px 0 6px;
+  padding-bottom:3px;border-bottom:2px solid #d8d4c4;letter-spacing:.5px;
+}
+.admin-h:first-of-type{margin-top:4px}
+.admin-hint{
+  font-size:11px;color:#8a5a12;background:#fff7d6;border:2px solid var(--gold);
+  border-radius:6px;padding:6px 8px;margin-top:8px;line-height:1.7;
+}
 .admin-state{
   background:#20242e;color:#8ef08e;border:3px solid var(--ink);border-radius:8px;
   padding:8px 10px;font-size:11px;line-height:1.7;margin-bottom:10px;

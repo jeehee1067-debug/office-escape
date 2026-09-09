@@ -14,7 +14,6 @@
   const S = {
     open: false,
     tab: 'team',                // 'team' | 'global'
-    watchTeam: null,            // 관리자가 들여다보는 팀 번호
     subs: {},                   // 채널별 구독 해제 함수
     msgs: {},                   // 채널별 메시지
     seen: {},                   // 채널별로 읽은 개수
@@ -26,12 +25,20 @@
   const isAdmin = () => !!(g.GAME && g.GAME.S && g.GAME.S.me && g.GAME.S.me.isAdmin);
   const inRoom = () => !!(g.GAME && g.GAME.S && g.GAME.S.phase === 'playing');
 
+  const teamIds = () => (((g.GAME.S.teams || {}).list) || []).map(t => t.id);
+
   /** 지금 화면에서 쓸 수 있는 채널 목록 */
   function channels() {
+    if (isAdmin()) {
+      // 관리자는 전체 대화와 모든 팀 대화를 볼 수 있다
+      return [{ key: 'global', path: 'global', label: '전체' }].concat(
+        teamIds().map(id => ({ key: 'team' + id, path: 'team/' + id, label: id + '팀' }))
+      );
+    }
     const list = [];
-    const t = isAdmin() ? S.watchTeam : myTeam();
-    if (t != null) list.push({ key: 'team', path: 'team/' + t, label: t + '팀' });
-    if (!inRoom() || isAdmin()) list.push({ key: 'global', path: 'global', label: '전체' });
+    const t = myTeam();
+    if (t != null) list.push({ key: 'team', path: 'team/' + t, label: '우리 팀(' + t + '팀)' });
+    if (!inRoom()) list.push({ key: 'global', path: 'global', label: '전체' });
     return list;
   }
   function pathOf(key) {
@@ -67,37 +74,42 @@
       if (e.key === 'Enter') { e.preventDefault(); send(); }
     });
     $('#chat-team-pick').onchange = (e) => {
-      S.watchTeam = e.target.value ? +e.target.value : null;
-      S.tab = S.watchTeam != null ? 'team' : 'global';   // 고른 팀 대화로 바로 전환
-      resubscribe(); renderTabs(); renderLog();
+      S.tab = e.target.value;          // 'global' 또는 'team3'
+      markRead(S.tab);
+      renderTabs(); renderLog(); SFX.select();
     };
   }
 
   function renderTabs() {
     const box = $('#chat-tabs'); if (!box) return;
     const list = channels();
-    box.innerHTML = list.map(c =>
-      '<button class="chat-tab' + (S.tab === c.key ? ' on' : '') + '" data-ch="' + c.key + '">' +
-      esc(c.label) + '<i class="chat-dot' + (unread(c.key) ? '' : ' hidden') + '">' +
-      (unread(c.key) > 99 ? '99+' : unread(c.key)) + '</i></button>').join('');
-    box.querySelectorAll('.chat-tab').forEach(b => {
-      b.onclick = () => { S.tab = b.dataset.ch; markRead(S.tab); renderTabs(); renderLog(); SFX.select(); };
-    });
-
-    // 관리자용 팀 선택
     const pick = $('#chat-team-pick');
+
     if (isAdmin()) {
-      const teams = ((g.GAME.S.teams || {}).list) || [];
-      const cur = S.watchTeam;
-      pick.innerHTML = '<option value="">팀 대화 보기</option>' +
-        teams.map(t => '<option value="' + t.id + '"' + (cur === t.id ? ' selected' : '') + '>' + t.id + '팀</option>').join('');
+      // 대화방이 여러 개라 드롭다운으로 고른다 (읽지 않은 수를 함께 표시)
+      box.innerHTML = '';
+      pick.innerHTML = list.map(c => {
+        const u = unread(c.key);
+        return '<option value="' + c.key + '"' + (S.tab === c.key ? ' selected' : '') + '>' +
+          esc(c.label) + (u ? ' (' + (u > 99 ? '99+' : u) + ')' : '') + '</option>';
+      }).join('');
       pick.classList.remove('hidden');
-    } else pick.classList.add('hidden');
+    } else {
+      pick.classList.add('hidden');
+      box.innerHTML = list.map(c =>
+        '<button class="chat-tab' + (S.tab === c.key ? ' on' : '') + '" data-ch="' + c.key + '">' +
+        esc(c.label) + '<i class="chat-dot' + (unread(c.key) ? '' : ' hidden') + '">' +
+        (unread(c.key) > 99 ? '99+' : unread(c.key)) + '</i></button>').join('');
+      box.querySelectorAll('.chat-tab').forEach(b => {
+        b.onclick = () => { S.tab = b.dataset.ch; markRead(S.tab); renderTabs(); renderLog(); SFX.select(); };
+      });
+    }
 
     // 안내 문구
     const note = $('#chat-note');
     if (!list.length) note.textContent = '아직 팀이 배정되지 않았습니다. 관리자가 팀을 구성하면 팀 대화를 할 수 있어요.';
-    else if (inRoom() && !isAdmin()) note.textContent = '방 안에서는 같은 팀끼리만 대화할 수 있습니다.';
+    else if (isAdmin()) note.textContent = '관리자는 전체 대화와 모든 팀 대화를 볼 수 있습니다.';
+    else if (inRoom()) note.textContent = '방 안에서는 같은 팀끼리만 대화할 수 있습니다.';
     else note.textContent = '';
     note.classList.toggle('hidden', !note.textContent);
   }
@@ -112,9 +124,9 @@
       const mine = m.uid === NET.uid;
       const t = new Date(m.at || Date.now());
       const hm = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+      const who = (m.team != null ? '<b>' + m.team + '팀</b> · ' : '') + esc(m.name || '?');
       return '<div class="chat-msg' + (mine ? ' mine' : '') + '">' +
-        (mine ? '' : '<span class="chat-name">' + esc(m.name || '?') +
-          (m.team != null ? ' <b>' + m.team + '팀</b>' : '') + '</span>') +
+        '<span class="chat-name">' + who + (mine ? ' <em>(나)</em>' : '') + '</span>' +
         '<span class="chat-bubble">' + esc(m.text || '') + '</span>' +
         '<span class="chat-time">' + hm + '</span></div>';
     }).join('');
