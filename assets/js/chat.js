@@ -202,6 +202,8 @@
     const p = $('#chat-panel');
     p.classList.toggle('hidden', !v);
     document.body.classList.toggle('chat-open', v);   // 가려지는 버튼을 옮기기 위해
+    // 채팅창이 덮은 자리를 피해 '다음 방' 버튼을 다시 배치한다
+    setTimeout(() => { if (g.GAME && g.GAME.placeExit) g.GAME.placeExit(); }, 0);
     if (v) {
       // 방 안에서는 팀 탭으로, 팀이 없으면 전체로
       const list = channels();

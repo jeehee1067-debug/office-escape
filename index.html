@@ -49,25 +49,27 @@
   <section id="game-screen" class="screen hidden">
 
     <header id="hud">
-      <div class="hud-row hud-row-1">
-        <div id="hud-room" class="hud-chip hud-room">대기실</div>
-        <div class="hud-spacer"></div>
-        <div id="hud-clues" class="hud-chip hud-clues"></div>
-        <div id="hud-score" class="hud-chip hud-score">0 P</div>
-      </div>
-      <div class="hud-row hud-row-2">
+      <div class="hud-zone hud-zone-a">
+        <div id="hud-room" class="hud-chip hud-room"><span class="rm-full">대기실</span><span class="rm-short">대기실</span></div>
         <div id="hud-player" class="hud-chip hud-player">-</div>
-        <div class="hud-spacer"></div>
+        <div class="hud-stat">
+          <div id="hud-clues" class="hud-chip hud-clues"></div>
+          <div id="hud-score" class="hud-chip hud-score">0 P</div>
+        </div>
+      </div>
+      <div class="hud-zone hud-zone-b">
         <div class="hud-chip hud-time">
           <span class="t-label">방</span><span id="hud-room-time" class="t-room">05:00</span>
           <span class="t-div">|</span>
           <span class="t-label">전체</span><span id="hud-total-time" class="t-total">20:00</span>
         </div>
-        <button id="btn-chat" class="hud-btn hud-btn-chat" title="채팅" data-n="0">💬</button>
-        <button id="btn-board" class="hud-btn" title="순위표">🏆</button>
-        <button id="btn-sound" class="hud-btn" title="사운드">🔊</button>
-        <button id="btn-admin" class="hud-btn hud-btn-admin hidden" title="관리자 패널">👑</button>
-        <button id="btn-logout" class="hud-btn" title="로그아웃">🚪</button>
+        <div class="hud-btns">
+          <button id="btn-chat" class="hud-btn hud-btn-chat" title="채팅" aria-label="채팅" data-n="0">💬</button>
+          <button id="btn-board" class="hud-btn" title="순위표" aria-label="순위표">🏆</button>
+          <button id="btn-sound" class="hud-btn" title="사운드" aria-label="사운드">🔊</button>
+          <button id="btn-admin" class="hud-btn hud-btn-admin hidden" title="관리자 패널" aria-label="관리자 패널">👑</button>
+          <button id="btn-logout" class="hud-btn" title="로그아웃" aria-label="로그아웃">🚪</button>
+        </div>
       </div>
     </header>
 
