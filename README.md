@@ -32,7 +32,12 @@ python3 -m http.server 8000
 1. [Firebase 콘솔](https://console.firebase.google.com/) 에서 프로젝트를 만들고
    **Realtime Database** 를 생성합니다.
 2. `assets/js/net.js` 상단의 `firebaseConfig` 를 내 프로젝트 값으로 교체합니다.
-3. **Realtime Database → 규칙** 탭에 `database.rules.json` 의 `rules` 내용을 붙여넣고 게시합니다.
+3. **Realtime Database → 규칙** 탭에 붙여넣을 내용을 아래 명령으로 뽑아 그대로 붙여넣고 **게시**합니다.
+   ```bash
+   node tools/print-rules.js
+   ```
+   (`database.rules.json` 에는 설명용 `_comment` 가 들어 있어서 파일 전체를 그대로 붙여넣으면
+   규칙 탭이 거부합니다. 최상위에는 `rules` 만 있어야 합니다.)
 
 ### 규칙이 지켜주는 것 (기록 위·변조 방지)
 | 대상 | 규칙 |
@@ -441,6 +446,7 @@ assets/img/rooms/          ★ 방 배경 그림을 넣는 곳 (room1~room4)
 char-preview.html          넣은 PNG 가 제대로 보이는지 확인하는 페이지
 tools/extract-sprite.py    스크린샷에서 캐릭터를 뽑아내는 도구
 tools/check-bank.js        ★ 문제은행·자료 자가 점검 (node tools/check-bank.js)
+tools/print-rules.js       ★ Firebase 규칙 탭에 붙여넣을 내용 출력
 ```
 
 ### 방 담당자(파트장님) 위치 조정
@@ -462,8 +468,8 @@ tools/check-bank.js        ★ 문제은행·자료 자가 점검 (node tools/ch
 
 - 채팅만 막힌 경우 → 게임 화면에 `💬 채팅만 사용할 수 없습니다` 창이 뜨고,
   채팅 버튼이 숨겨집니다. **게임 진행과 점수 기록은 정상입니다.**
-- 이때는 Firebase 콘솔 → Realtime Database → **규칙** 탭에
-  지금 저장소의 `database.rules.json` 을 다시 붙여넣고 **[게시]** 한 뒤 새로고침하세요.
+- 이때는 `node tools/print-rules.js` 결과를 Firebase 콘솔 → Realtime Database →
+  **규칙** 탭에 다시 붙여넣고 **[게시]** 한 뒤 새로고침하세요.
 
 어디가 막혔는지는 안내 창의 **거부된 경로** 와
 F12 → Console 의 `[S1FA] 실시간 구독 실패 (경로)` 메시지로 알 수 있습니다.
