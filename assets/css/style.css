@@ -708,7 +708,7 @@ body.chat-open .dialogue{padding-right:16px}
 .doc-tab:active{transform:translateY(2px);box-shadow:none}
 
 .doc-stage{
-  position:relative;height:340px;overflow:hidden;cursor:grab;touch-action:none;
+  position:relative;height:clamp(190px,40dvh,340px);overflow:hidden;cursor:grab;touch-action:none;
   background:#2a3243;border:3px solid var(--ink);border-radius:10px;
   display:flex;align-items:center;justify-content:center;
 }
@@ -878,4 +878,29 @@ body.chat-open .dialogue{padding-right:16px}
 .quiz-tier{
   background:var(--red);color:#fff;border-radius:4px;padding:1px 6px;
   font-size:10px;margin-left:auto;
+}
+
+/* ============================================================
+   채팅 패널 ↔ 창(모달) 자리 나누기
+   ------------------------------------------------------------
+   채팅은 창보다 위에 떠야 문제를 푸는 도중에도 팀원에게 물어볼 수 있다.
+   대신 겹쳐서 버튼을 가리지 않도록, 채팅이 열려 있는 동안에는
+   창이 채팅을 피해 자리를 잡는다. (넓은 화면 = 왼쪽 / 좁은 화면 = 위쪽)
+   ============================================================ */
+body.modal-up{--chat-h:min(36vh,260px)}   /* 창이 떠 있는 동안엔 채팅을 조금 낮춘다 */
+body.chat-open.modal-up .modal-back{
+  padding-right:calc(330px + 24px);
+  justify-content:flex-start;
+}
+@media (max-width:760px){
+  body.chat-open.modal-up .modal-back{
+    padding-right:12px;
+    padding-bottom:calc(var(--chat-h) + 24px);
+    align-items:flex-start;
+  }
+  body.modal-up .chat-panel{height:var(--chat-h)}
+  /* 창은 채팅 위쪽 공간 안에서만 자라고, 넘치면 창 안에서 스크롤된다 */
+  body.chat-open.modal-up .modal-back > .modal{max-height:calc(100dvh - var(--chat-h) - 36px)}
+  /* 자료 창은 종이를 줄여서 확대·UV 버튼이 화면 밖으로 밀리지 않게 한다 */
+  body.chat-open.modal-up .doc-stage{height:clamp(150px,26dvh,240px)}
 }

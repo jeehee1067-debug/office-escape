@@ -92,11 +92,19 @@
     if (opts.backdropClose) back.addEventListener('click', e => { if (e.target === back) { close(back); if (opts.onClose) opts.onClose(); } });
     $('#modal-root').appendChild(back);
     stack.push(back);
+    syncModalFlag();
     if (opts.onMount) opts.onMount(body, back);
     SFX.open();
     return { back, body, close: () => close(back) };
   }
-  function close(back) { if (!back) return; back.remove(); const i = stack.indexOf(back); if (i >= 0) stack.splice(i, 1); }
+  function close(back) {
+    if (!back) return;
+    back.remove();
+    const i = stack.indexOf(back); if (i >= 0) stack.splice(i, 1);
+    syncModalFlag();
+  }
+  /** 창이 떠 있는 동안 body 에 표시를 남긴다 — 채팅 패널과 자리를 나누는 데 쓴다 */
+  function syncModalFlag() { document.body.classList.toggle('modal-up', stack.length > 0); }
   /** 열린 창을 모두 닫는다. dataset.keep 이 붙은 창(관리자 패널)은 남긴다 */
   function closeAll(force) {
     for (let i = stack.length - 1; i >= 0; i--) {
