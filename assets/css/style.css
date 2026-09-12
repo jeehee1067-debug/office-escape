@@ -519,15 +519,35 @@ body.chat-open .dialogue{padding-right:16px}
   border:2px solid var(--ink);
 }
 .chat-panel{
+  /* 위치·크기는 chat.js 가 inline 으로 넣는다 (끌어서 옮기기 / 크기 조절) */
   position:fixed;right:12px;bottom:12px;z-index:940;
-  width:330px;max-width:calc(100vw - 24px);height:min(62vh,460px);
+  width:330px;height:min(62vh,460px);
   background:var(--paper);border:4px solid var(--ink);border-radius:12px;
   box-shadow:0 8px 0 rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;
 }
+.chat-panel.is-dragging{opacity:.94;box-shadow:0 12px 0 rgba(0,0,0,.5);transition:none}
+.chat-panel.is-max{border-radius:10px}
 .chat-head{
   display:flex;align-items:center;gap:6px;padding:6px 8px;
   background:var(--blue);border-bottom:3px solid var(--ink);
+  cursor:move;touch-action:none;user-select:none;
 }
+/* 끌기 손잡이 */
+.chat-grip{
+  flex:0 0 auto;color:rgba(255,255,255,.75);font-size:14px;line-height:1;
+  letter-spacing:-2px;padding:0 2px;cursor:move;
+}
+.chat-max{background:var(--blue-dark)}
+/* 오른쪽 아래 크기 조절 손잡이 */
+.chat-resize{
+  position:absolute;right:0;bottom:0;width:26px;height:26px;
+  cursor:nwse-resize;touch-action:none;z-index:2;
+  background:
+    linear-gradient(135deg,transparent 0 48%,var(--ink) 48% 56%,transparent 56% 68%,
+                    var(--ink) 68% 76%,transparent 76%);
+}
+.chat-panel.is-max .chat-resize,
+.chat-panel.is-max .chat-grip{display:none}
 .chat-tabs{display:flex;gap:5px;flex:1;min-width:0}
 .chat-tab{
   position:relative;font-family:inherit;font-size:11px;font-weight:700;
@@ -582,10 +602,8 @@ body.chat-open .dialogue{padding-right:16px}
 }
 .chat-send:active{transform:translateY(2px)}
 @media (max-width:560px){
-  .chat-panel{
-    left:6px;right:6px;bottom:6px;width:auto;height:min(66vh,440px);
-  }
   .chat-tab{padding:4px 8px;font-size:10px}
+  .chat-resize{width:30px;height:30px}
 }
 
 /* ---------- 토스트 ---------- */
@@ -668,6 +686,10 @@ body.chat-open .dialogue{padding-right:16px}
   .admin-grid{grid-template-columns:1fr}
   .admin-grid .pk-btn{font-size:14px;padding:11px 10px;text-align:center}
   .modal-actions .pk-btn{min-width:0}
+}
+/* 좁은 화면에서 채팅을 열면 게임을 위로 붙여 아래쪽에 대화창 자리를 만든다 */
+@media (max-width:700px){
+  body.chat-open{align-items:flex-start}
 }
 /* 좁은 화면에서는 타이머의 '방/전체' 글자를 빼서 자리를 만든다 */
 @media (max-width:430px){
