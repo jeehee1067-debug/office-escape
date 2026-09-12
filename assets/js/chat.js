@@ -59,20 +59,30 @@
      ============================================================ */
   const BOX_KEY = 's1fa.chatbox';
   const MIN_W = 260, MIN_H = 240;
+  const WIDE = 760;             // 이 폭부터 "옆에 띄우기" — style.css 의 760px 과 맞춘다
 
   /** 게임 화면을 가리지 않는 자리를 먼저 찾는다 */
   function defaultBox() {
     const vw = innerWidth, vh = innerHeight;
     const app = document.getElementById('app');
-    const r = app ? app.getBoundingClientRect()
-                  : { top: 0, bottom: vh, left: 0, right: vw };
+    const rectOf = () => app ? app.getBoundingClientRect()
+                             : { top: 0, bottom: vh, left: 0, right: vw };
+    let r = rectOf();
 
-    if (vw > 700) {
+    if (vw > WIDE) {
       const w = Math.min(Math.max(MIN_W, Math.round(vw * 0.3)), 460);
       const h = Math.min(Math.max(MIN_H, Math.round(vh * 0.72)), 680);
-      // 게임 오른쪽에 자리가 남으면 거기에 (넓은 모니터)
+      // 게임이 비켜 줄 폭을 먼저 정하고 나서 게임 위치를 다시 잰다.
+      // (아주 넓은 화면에서는 비켜 주지 않으므로 게임이 가운데로 돌아온다)
+      reserve(w);
+      r = rectOf();
+      // 게임 오른쪽에 자리가 남으면 거기에 — 단, 게임 바로 옆에 붙여서
+      // 넓은 모니터에서 화면 양끝으로 갈라져 보이지 않게 한다
       if (vw - r.right >= w + 20) {
-        return { x: Math.round(vw - w - 12), y: Math.round((vh - h) / 2), w, h };
+        return {
+          x: Math.round(Math.min(vw - w - 12, r.right + 16)),
+          y: Math.round((vh - h) / 2), w, h
+        };
       }
       return { x: vw - w - 14, y: vh - h - 14, w, h };
     }
@@ -135,9 +145,17 @@
     reserve(S.box.w);
   }
 
-  /** 게임 화면이 오른쪽에 비워 둘 폭 — 채팅창 실제 너비에 맞춘다 */
+  /** 게임 화면이 오른쪽에 비워 둘 폭 — 채팅창 실제 너비에 맞춘다.
+      화면이 아주 넓어서 가운데 그대로 두어도 채팅창이 옆에 들어가면 비켜 주지 않는다.
+      (안 그러면 창·게임·채팅이 넓은 화면 양끝으로 갈라져 보인다) */
+  const APP_MAX = 900;          // #app 의 최대 폭 (style.css 와 같이 맞춘다)
   function reserve(w) {
-    document.documentElement.style.setProperty('--chat-reserve', (w + 24) + 'px');
+    const app = document.getElementById('app');
+    const appW = Math.min(app ? app.offsetWidth || APP_MAX : APP_MAX, APP_MAX);
+    const need = w + 24;
+    const free = (innerWidth - appW) / 2;      // 가운데 정렬일 때 한쪽에 남는 폭
+    document.documentElement.style.setProperty('--chat-reserve',
+      (free >= need ? 0 : need) + 'px');
   }
   function toggleMax() {
     S.maxed = !S.maxed;
