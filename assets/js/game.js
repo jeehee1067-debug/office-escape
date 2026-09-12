@@ -441,6 +441,7 @@
     });
   }
 
+  /** 배경 적용. 그림이 준비될 때까지 기다릴 수 있도록 Promise 를 돌려준다. */
   function setRoomBackground(R) {
     const stage = $('#stage'), cv = $('#bg-canvas'), layer = $('#bg-image');
     const useFallback = () => {
@@ -449,17 +450,17 @@
       stage.style.aspectRatio = '3 / 2'; setStageRatio(1.5);
       PX.renderScene(cv, R && R.fallback ? R.fallback : 'lobby');
     };
-    if (!R || !R.bg) { useFallback(); return; }
+    if (!R || !R.bg) { useFallback(); return Promise.resolve(); }
 
     const cached = bgCache[R.bg];
-    if (cached) { applyImage(cached); return; }        // 이미 받아둔 그림은 곧바로
-    if (cached === null) { useFallback(); return; }    // 그림이 없는 것이 확인된 경우
+    if (cached) { applyImage(cached); return Promise.resolve(); }      // 이미 받아둔 그림은 곧바로
+    if (cached === null) { useFallback(); return Promise.resolve(); }  // 그림이 없는 것이 확인된 경우
 
     // 아직 모르는 상태 — 도트 배경을 깜빡 보여주지 않고 빈 화면으로 기다린다
     cv.classList.add('hidden');
     layer.classList.remove('hidden');
     layer.style.backgroundImage = '';
-    findRoomImage(R.bg).then(im => {
+    return findRoomImage(R.bg).then(im => {
       if (S.room !== R.__n) return;
       if (im) applyImage(im); else useFallback();
     });
@@ -485,7 +486,7 @@
     g.UI.closeAll();
     S.waitModal = null;
     clearLayers();
-    setRoomBackground(R);
+    S.bgReady = setRoomBackground(R);
     showTitle(R.banner);
     updateHUD();
     say(R.welcome, R.full);
@@ -560,18 +561,25 @@
     const blockers = [S.bossEl, $('#chat-panel')].filter(
       e => e && !e.classList.contains('hidden') && e.getBoundingClientRect().width > 0);
     const spots = ['', 'at-left', 'lifted', 'at-left lifted'];
-    const hits = () => {
+    const base = 'exit-btn' + (btn.classList.contains('is-open') ? ' is-open' : '');
+    /** 가려지는 넓이 (0 이면 완전히 드러난다) */
+    const hidden = () => {
       const a = btn.getBoundingClientRect();
-      return blockers.some(e => {
+      return blockers.reduce((sum, e) => {
         const c = e.getBoundingClientRect();
-        return a.left < c.right && c.left < a.right && a.top < c.bottom && c.top < a.bottom;
-      });
+        const w = Math.min(a.right, c.right) - Math.max(a.left, c.left);
+        const h = Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top);
+        return sum + (w > 0 && h > 0 ? w * h : 0);
+      }, 0);
     };
+    let best = spots[0], bestArea = Infinity;
     for (const s of spots) {
-      btn.className = 'exit-btn' + (btn.classList.contains('is-open') ? ' is-open' : '') +
-                      (s ? ' ' + s : '');
-      if (!hits()) return;
+      btn.className = base + (s ? ' ' + s : '');
+      const area = hidden();
+      if (area === 0) return;                 // 완전히 드러나는 자리를 찾았다
+      if (area < bestArea) { bestArea = area; best = s; }
     }
+    btn.className = base + (best ? ' ' + best : '');
   }
 
   /* ============================================================
@@ -985,7 +993,13 @@
 
     if (gs.phase === 'results') { if (S.phase !== 'results') showResults(); return; }
     if (gs.phase === 'lobby') {
-      if (S.phase !== 'lobby') { clearInterval(S.timer); renderLobby('관리자가 전원을 대기실로 불러 모았다.\n다음 안내를 기다리자!'); startTicker(); }
+      if (S.phase !== 'lobby') {
+        clearInterval(S.timer);
+        // 막 접속한 순간(boot)에는 '불러 모았다' 안내가 어색하므로 넣지 않는다
+        renderLobby(S.phase === 'boot' ? undefined
+          : '관리자가 전원을 대기실로 불러 모았다.\n다음 안내를 기다리자!');
+        startTicker();
+      }
       return;
     }
     if (gs.phase === 'playing') {
@@ -1001,8 +1015,16 @@
   /* ============================================================
      시작
      ============================================================ */
-  function boot(me) {
+  /**
+   * @param pre 재접속 때 미리 받아둔 서버 상태 { global, run, teams }.
+   *            있으면 대기실을 거치지 않고 곧바로 맞는 화면으로 들어간다.
+   */
+  function boot(me, pre) {
     S.me = me;
+    if (pre) {
+      if (pre.run) S.run = pre.run;
+      if (pre.teams) { S.teams = pre.teams; S.myTeam = myTeamNo(pre.teams); }
+    }
     $('#login-screen').classList.add('hidden');
     $('#game-screen').classList.remove('hidden');
     updateHUD();
@@ -1022,8 +1044,9 @@
       S.players = ps;
       if (S.phase === 'lobby' || S.phase === 'intermission') drawLobbyCrowd();
     });
-    /* 팀이 없을 때 쓸 기본 출제 — 반드시 팀 구독보다 먼저 (팀 배정을 덮어쓰지 않도록) */
-    assignQuizzes(hashSeed(NET.uid));
+    /* 팀이 없을 때 쓸 기본 출제 — 반드시 팀 구독보다 먼저 (팀 배정을 덮어쓰지 않도록).
+       미리 받아둔 팀이 있으면 그 시드로 시작해 첫 화면부터 팀 문제가 나오게 한다. */
+    assignQuizzes(pre && pre.teams ? teamSeedFor(pre.teams) : hashSeed(NET.uid));
 
     NET.onTeams(t => {
       S.teams = t;
@@ -1038,7 +1061,10 @@
       }
     });
     checkBank();                // 문제은행·자료 구성 점검 (콘솔 경고)
-    renderLobby();              // 기본 화면을 먼저 그리고
+
+    // 서버 상태를 이미 알고 있으면 대기실을 거치지 않고 곧바로 그 화면을 그린다
+    if (pre && pre.global) applyGlobal(pre.global);
+    else renderLobby();
     startTicker();
     if (g.CHAT) g.CHAT.init();  // 채팅 준비
     NET.onGlobal(applyGlobal);  // 그 다음 서버 상태를 반영한다 (순서 중요)

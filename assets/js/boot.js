@@ -8,6 +8,19 @@
 
   let chosen = { avatar: 0, loc: 'SR3' };
 
+  /* ---------- 가림막 (준비 전 화면이 스쳐 보이지 않게) ---------- */
+  let coverGone = false;
+  function hideCover(why) {
+    if (coverGone) return;
+    coverGone = true;
+    const c = document.getElementById('boot-cover');
+    if (!c) return;
+    c.classList.add('is-gone');
+    setTimeout(() => { if (c.parentNode) c.parentNode.removeChild(c); }, 400);
+    if (why) console.info('[S1FA] 준비 완료 (' + why + ')');
+  }
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
   /* ---------- PNG 캐릭터 미리 불러오기 ---------- */
   async function preloadSprites() {
     const list = AVATARS.concat(Object.values(g.DATA.BOSSES));
@@ -20,6 +33,13 @@
     );
     const ok = found.filter(Boolean);
     if (ok.length) console.info('[S1FA] PNG 캐릭터 사용: ' + ok.join(', '));
+  }
+  /** PNG 를 다 확인할 때까지(혹은 제한 시간까지) 기다린 뒤 '확인 끝' 표시를 한다.
+   *  이 표시 전에는 기본 도트 캐릭터를 아예 그리지 않는다. */
+  function settleSprites(limitMs) {
+    return Promise.race([preloadSprites().catch(e => {
+      console.warn('[S1FA] 캐릭터 이미지 로딩 문제:', e);
+    }), wait(limitMs || 6000)]).then(() => PX.markSpritesSettled());
   }
 
   /* ---------- 캐릭터 선택 ---------- */
@@ -171,9 +191,20 @@
     }
     chosen.avatar = me.avatar || 0;
     chosen.loc = me.loc || 'SR3';
-    try { await NET.joinPlayer(me); }
-    catch (e) { console.warn('[S1FA] 재접속 등록 실패:', e); }
-    g.GAME.boot(me);
+
+    /* 진행 상태·내 기록·팀을 한 번에 받아온 뒤 화면을 그린다.
+       이렇게 해야 '로그인 화면 → 대기실 → 실제 방' 으로 두세 번 바뀌지 않고
+       처음부터 맞는 방이 나온다. */
+    const [gs, run, teams] = await Promise.all([
+      NET.getGlobal().catch(() => null),
+      NET.getRun().catch(() => null),
+      NET.getTeams().catch(() => null)
+    ]);
+
+    // 접속 표시는 화면을 막지 않는다 (뒤에서 기록된다)
+    NET.joinPlayer(me).catch(e => console.warn('[S1FA] 재접속 등록 실패:', e));
+
+    g.GAME.boot(me, { global: gs, run, teams });
     toast('이전 진행 상황을 불러왔습니다.', 'info');
     return true;
   }
@@ -220,8 +251,7 @@
 
   /* ---------- 시작 ---------- */
   document.addEventListener('DOMContentLoaded', async () => {
-    /* 1) 화면과 버튼부터 즉시 준비 — 네트워크를 절대 기다리지 않는다 */
-    renderAvatars();
+    /* 화면 뒤에서 버튼과 기본 배경을 먼저 준비한다 (가림막이 덮고 있는 동안) */
     bindLoc();
     bindHUD();
     $('#join-btn').onclick = join;
@@ -229,16 +259,6 @@
     $('#name-input').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
     try { PX.renderScene($('#bg-canvas'), 'lobby'); } catch (e) { }
 
-    if (g.__S1FA_OFFLINE__) {
-      toast('오프라인 모드: 서버(Firebase)에 연결하지 못했습니다. 이 브라우저 안에서만 진행됩니다.', 'bad', 5000);
-    }
-
-    /* 2) PNG 캐릭터는 뒤에서 천천히 불러오고, 도착하면 다시 그린다 */
-    preloadSprites()
-      .then(() => { if ($('#login-screen') && !$('#login-screen').classList.contains('hidden')) renderAvatars(); })
-      .catch(e => console.warn('[S1FA] 캐릭터 이미지 로딩 문제:', e));
-
-    /* 3) 서버 상태 확인 및 이전 세션 복구 */
     if (!g.__S1FA_OFFLINE__) {
       NET.onSubscribeError((path) => showConnError(null, path));
       NET.probe().then(st => {
@@ -249,14 +269,42 @@
       });
     }
 
-    try {
-      const restored = await restore();
-      if (!restored) {
-        const gs2 = await NET.getGlobal();
-        if (gs2 && gs2.resetToken) localStorage.setItem('s1fa.resetToken', String(gs2.resetToken));
+    /* 캐릭터 PNG 확인과 세션 복구를 동시에 진행한다 */
+    const spritesDone = settleSprites(6000);
+
+    const session = (async () => {
+      try {
+        const restored = await restore();
+        if (!restored) {
+          const gs2 = await NET.getGlobal().catch(() => null);
+          if (gs2 && gs2.resetToken) localStorage.setItem('s1fa.resetToken', String(gs2.resetToken));
+        }
+        return restored;
+      } catch (e) {
+        console.warn('[S1FA] 세션 복구 실패:', e);
+        return false;
       }
-    } catch (e) {
-      console.warn('[S1FA] 세션 복구 실패:', e);
+    })();
+
+    /* 가림막은 (1) 캐릭터 확인 (2) 세션 복구 (3) 방 배경까지 끝나야 걷는다.
+       어느 하나가 늦어져도 화면이 멈추지 않도록 전체 제한 시간을 둔다. */
+    const ready = (async () => {
+      await Promise.all([spritesDone, session]);
+      renderAvatars();                       // PNG 가 확정된 뒤에 그린다
+      const bg = g.GAME && g.GAME.S && g.GAME.S.bgReady;
+      if (bg) await Promise.race([bg, wait(2500)]);
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    })();
+
+    await Promise.race([ready.then(() => '준비됨'), wait(7000).then(() => '제한 시간')])
+      .then(why => {
+        if (!PX.areSpritesSettled()) PX.markSpritesSettled();   // 더는 기다리지 않는다
+        renderAvatars();
+        hideCover(why);
+      });
+
+    if (g.__S1FA_OFFLINE__) {
+      toast('오프라인 모드: 서버(Firebase)에 연결하지 못했습니다. 이 브라우저 안에서만 진행됩니다.', 'bad', 5000);
     }
   });
 
