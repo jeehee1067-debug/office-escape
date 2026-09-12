@@ -923,6 +923,8 @@ body.chat-min{--chat-h:104px}             /* 접으면 입력칸만 */
 .chat-panel.min .chat-log,
 .chat-panel.min .chat-note{display:none}
 .chat-min-btn{background:var(--blue-dark)}
+/* 옮겨 둔 채팅창을 처음 자리로 되돌리는 단추 */
+.chat-reset-btn{background:var(--ink-soft,#6b7280)}
 
 /* 게임 화면이 채팅 자리를 비켜 준다 — 방 화면·대사창이 가려지지 않게
    단, 사용자가 창을 직접 옮기거나 크기를 바꾸면(body.chat-free) 비켜 주지 않는다.

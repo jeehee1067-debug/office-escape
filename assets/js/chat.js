@@ -98,7 +98,13 @@
   function loadBox() {
     try {
       const b = JSON.parse(localStorage.getItem(BOX_KEY) || 'null');
-      if (b && b.w > 0 && b.h > 0) { S.userSet = true; return b; }
+      if (b && b.w > 0 && b.h > 0) {
+        // 지난번에 직접 잡아 둔 자리다. 그때처럼 게임 화면은 자리를 비켜 주지 않는다.
+        // (안 그러면 사용자가 옮겨 둔 채팅창 때문에 게임·창이 계속 한쪽으로 밀린다)
+        S.userSet = true;
+        document.body.classList.add('chat-free');
+        return b;
+      }
     } catch (e) { }
     return null;
   }
@@ -263,6 +269,7 @@
       '  <span class="chat-grip" title="끌어서 옮기기">⠿</span>' +
       '  <div class="chat-tabs" id="chat-tabs"></div>' +
       '  <select id="chat-team-pick" class="chat-team-pick hidden"></select>' +
+      '  <button id="chat-reset" class="chat-x chat-reset-btn" title="제자리로">↺</button>' +
       '  <button id="chat-min" class="chat-x chat-min-btn" title="접기">▾</button>' +
       '  <button id="chat-max" class="chat-x chat-max" title="크게 / 원래대로">⛶</button>' +
       '  <button id="chat-close" class="chat-x" title="닫기">✕</button>' +
@@ -278,6 +285,7 @@
     document.body.appendChild(wrap);
 
     $('#chat-close').onclick = () => setOpen(false);
+    $('#chat-reset').onclick = () => { resetBox(); SFX.select(); };
     $('#chat-min').onclick = () => setMin(!S.min);
     $('#chat-max').onclick = () => { toggleMax(); SFX.select(); };
     initDragResize(wrap);
