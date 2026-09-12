@@ -510,3 +510,188 @@ button,input,select{font-family:inherit}
   border-radius:6px;padding:5px 8px;font-size:11px;margin-bottom:9px;line-height:1.5;
 }
 .quiz-site b{color:#c0392b}
+
+/* ============================================================
+   자료(문서) 뷰어 — 확대 · 드래그 · UV 램프
+   ============================================================ */
+.doc-view{display:flex;flex-direction:column;gap:8px}
+.doc-tabs{display:flex;gap:5px;flex-wrap:wrap}
+.doc-tab{
+  background:var(--paper-2);border:2px solid var(--ink);border-radius:7px;
+  padding:5px 9px;font-size:11px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
+}
+.doc-tab.on{background:var(--blue);color:#fff}
+.doc-tab:active{transform:translateY(2px);box-shadow:none}
+
+.doc-stage{
+  position:relative;height:340px;overflow:hidden;cursor:grab;touch-action:none;
+  background:#2a3243;border:3px solid var(--ink);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+}
+.doc-stage.grabbing{cursor:grabbing}
+.doc-zoom{position:relative;transition:transform .06s linear;transform-origin:center center;will-change:transform}
+.doc-lamp{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s}
+
+/* UV 램프 켠 상태 : 램프 안쪽만 밝고 숨은 글씨가 드러난다 */
+.doc-stage.uv-on{background:#131426}
+.doc-stage.uv-on .doc-paper{filter:brightness(.35) saturate(.5)}
+.doc-stage.uv-on .doc-lamp{
+  opacity:1;
+  background:radial-gradient(circle 110px at var(--lx,50%) var(--ly,50%),
+    rgba(150,90,255,.32) 0 60%, rgba(8,6,20,.86) 78%, rgba(6,5,16,.95) 100%);
+}
+.doc-uvlayer{position:absolute;inset:0;pointer-events:none}
+.doc-uvtext{
+  position:absolute;transform:translate(-50%,-50%);
+  font-size:15px;color:#c9a3ff;opacity:0;letter-spacing:1px;
+  text-shadow:0 0 8px #8a4bff,0 0 16px #6a2bd0;white-space:nowrap;
+}
+.doc-stage.uv-on .doc-uvtext{opacity:1}
+
+.doc-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.doc-btn{
+  background:var(--paper-2);border:2px solid var(--ink);border-radius:7px;
+  padding:5px 9px;font-size:11px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
+}
+.doc-btn:active{transform:translateY(2px);box-shadow:none}
+.doc-uvbtn.on{background:var(--purple);color:#fff}
+.doc-zoomval{font-size:11px;color:var(--ink-soft);min-width:44px;text-align:center}
+.doc-tip{font-size:10px;color:var(--ink-soft);line-height:1.6}
+
+/* ---------- 자료 종이 ---------- */
+.doc-paper{
+  position:relative;width:330px;padding:16px 18px;background:var(--doc-tint,#fdfcf3);
+  border:3px solid #2a2a24;border-radius:4px;color:#20232b;
+  box-shadow:0 10px 24px rgba(0,0,0,.5);font-size:12px;line-height:1.75;
+}
+.doc-head{font-size:9px;letter-spacing:2px;color:#7a725f;margin-bottom:4px}
+.doc-title{font-size:14px;font-weight:700;border-bottom:2px solid #2a2a24;padding-bottom:6px;margin-bottom:8px}
+.doc-sub{font-size:10px;color:#6d6552;margin:-4px 0 8px}
+.doc-foot{margin-top:10px;padding-top:6px;border-top:1px dashed #b9b19a;font-size:10px;color:#6d6552}
+.doc-lines{margin:0;padding-left:20px}
+.doc-lines li{margin-bottom:5px}
+.doc-note p{margin-bottom:6px}
+.doc-frame{}
+.doc-paper.doc-frame{background:#fffdf0;border:8px double #8a6a2b}
+.doc-paper.doc-note{background:#fff7d6;transform:rotate(-.6deg)}
+
+.doc-table{width:100%;border-collapse:collapse;font-size:11px}
+.doc-table th,.doc-table td{border:2px solid #3a3a32;padding:4px 5px;text-align:center}
+.doc-table thead th{background:#3a3a32;color:#fdfcf3}
+.doc-table tbody th{background:#eae4cf}
+
+.doc-seatmap{text-align:center}
+.doc-screenbar{
+  background:#3a4a63;color:#dfe8f5;font-size:9px;letter-spacing:3px;
+  padding:3px;border-radius:3px;margin-bottom:8px;
+}
+.doc-seats{width:100%;border-collapse:separate;border-spacing:4px}
+.doc-seats th{font-size:10px;color:#6d6552}
+.doc-seats td{
+  border:2px solid #3a3a32;border-radius:4px;background:#eef1e6;
+  padding:4px 2px;min-width:52px;line-height:1.35;
+}
+.doc-seats td.empty{background:transparent;border:2px dashed #c3bda8;color:#c3bda8}
+.doc-seats td b{display:block;font-size:11px}
+.doc-seats td span{display:block;font-size:10px}
+.doc-seats td i{display:block;font-size:9px;color:#7a725f;font-style:normal}
+
+.doc-labels{display:flex;flex-direction:column;gap:5px}
+.doc-label{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted #b9b19a;padding-bottom:3px}
+.doc-label b{font-size:11px}
+.doc-label span{font-size:11px;color:#4b4a42}
+
+/* 문제·대사창에 붙는 "자료 열기" 버튼 */
+.doc-open{
+  display:inline-block;background:#fff3c4;border:2px solid var(--ink);border-radius:7px;
+  padding:5px 9px;font-size:11px;cursor:pointer;margin:0 5px 5px 0;
+  box-shadow:0 2px 0 rgba(29,32,41,.3);
+}
+.doc-open:active{transform:translateY(2px);box-shadow:none}
+
+/* ============================================================
+   문제 입력 위젯
+   ============================================================ */
+.quiz-sub{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
+.quiz-docs{margin-bottom:9px}
+
+.quiz-slots{display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+.quiz-slot{display:flex;flex-direction:column;gap:3px}
+.quiz-slot label{font-size:10px;color:var(--ink-soft)}
+.quiz-slot .pk-input{text-align:center;letter-spacing:2px}
+.quiz-slot-plus{font-size:16px;color:var(--ink-soft);padding-bottom:8px}
+
+.quiz-order{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}
+.ord-item{
+  display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--ink);
+  border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;text-align:left;
+  box-shadow:0 3px 0 rgba(29,32,41,.3);
+}
+.ord-item i{
+  width:20px;height:20px;border-radius:50%;background:var(--paper-2);
+  border:2px solid var(--ink);font-style:normal;font-size:10px;
+  display:flex;align-items:center;justify-content:center;flex:none;
+}
+.ord-item.on{background:#dff0e2;border-color:var(--green)}
+.ord-item.on i{background:var(--green);color:#fff;border-color:var(--green)}
+.ord-item:active{transform:translateY(2px);box-shadow:none}
+
+.quiz-grid{border-collapse:separate;border-spacing:4px;margin:0 auto 9px}
+.quiz-grid th{font-size:10px;color:var(--ink-soft)}
+.grid-cell{
+  width:46px;height:34px;background:#fff;border:2px solid var(--ink);border-radius:6px;
+  font-size:11px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
+}
+.grid-cell.on{background:var(--blue);color:#fff}
+.grid-cell:active{transform:translateY(2px);box-shadow:none}
+.quiz-pick{font-size:11px;color:var(--ink-soft);margin-right:auto}
+
+.lock-row{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+.lock-dial{display:flex;flex-direction:column;align-items:center;gap:3px}
+.lock-dial button{
+  width:38px;height:22px;background:var(--paper-2);border:2px solid var(--ink);
+  border-radius:5px;cursor:pointer;font-size:10px;padding:0;
+}
+.lock-dial button:active{transform:translateY(1px)}
+.lock-win{
+  width:44px;height:66px;background:#20242e;border:3px solid var(--ink);border-radius:7px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#8ef08e;overflow:hidden;
+}
+.lock-win span{font-size:11px;opacity:.35}
+.lock-win b{font-size:22px;line-height:1.2}
+.lock-win.spin{animation:lockspin .18s}
+@keyframes lockspin{from{transform:translateY(-8px);opacity:.4}}
+
+/* ============================================================
+   연출 효과 (색종이 · 번쩍임 · 흔들림 · 도장)
+   ============================================================ */
+#fx-root{position:fixed;inset:0;pointer-events:none;z-index:1200}
+.fx-flash{position:absolute;inset:0;opacity:0;animation:fxflash .42s ease-out}
+@keyframes fxflash{20%{opacity:var(--fa,.55)}100%{opacity:0}}
+.confetti-box{position:absolute;inset:0;overflow:hidden}
+.confetti-box i{
+  position:absolute;top:-16px;width:9px;height:14px;border-radius:2px;
+  animation:confall linear forwards;
+}
+@keyframes confall{
+  0%{transform:translateY(0) rotate(0);opacity:1}
+  100%{transform:translateY(105vh) rotate(720deg);opacity:.15}
+}
+.fx-shake{animation:fxshake .5s}
+@keyframes fxshake{
+  10%,90%{transform:translateX(-3px)} 20%,80%{transform:translateX(5px)}
+  30%,50%,70%{transform:translateX(-8px)} 40%,60%{transform:translateX(8px)}
+}
+.fx-stamp{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-14deg);
+  border:5px solid var(--red);color:var(--red);border-radius:10px;
+  padding:6px 16px;font-size:22px;letter-spacing:3px;opacity:.9;
+  background:rgba(255,255,255,.6);z-index:5;pointer-events:none;
+  animation:stampin .3s cubic-bezier(.2,1.6,.4,1);
+}
+@keyframes stampin{from{transform:translate(-50%,-50%) rotate(-14deg) scale(2.4);opacity:0}}
+.quiz-tier{
+  background:var(--red);color:#fff;border-radius:4px;padding:1px 6px;
+  font-size:10px;margin-left:auto;
+}

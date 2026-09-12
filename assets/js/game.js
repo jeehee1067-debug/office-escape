@@ -55,22 +55,23 @@
       const take = arr => arr.splice(Math.floor(rand() * arr.length), 1)[0];
       const bank = (BANK[r] || []).slice();
       const site = siteForRoom(r, seed);
-      const sitePool = bank.filter(q => q.loc === site);
-      const commonPool = bank.filter(q => !q.loc);
+      const pools = {
+        site: bank.filter(q => q.loc === site),
+        hard: bank.filter(q => !q.loc && q.tier === 'hard'),
+        easy: bank.filter(q => !q.loc && q.tier !== 'hard')
+      };
       const pick = [];
-
-      if (sitePool.length) pick.push(take(sitePool));            // 근무지 전용 1문제
-      while (pick.length < CONFIG.CLUES_PER_ROOM && commonPool.length) pick.push(take(commonPool));
-      // 문제은행을 줄였을 때를 대비한 보충 (남은 문제 아무거나)
+      ['site', 'hard', 'easy'].forEach(k => { if (pools[k].length) pick.push(take(pools[k])); });
+      // 문제은행을 줄였을 때를 대비한 보충
       const rest = bank.filter(q => pick.indexOf(q) < 0);
       while (pick.length < CONFIG.CLUES_PER_ROOM && rest.length) pick.push(take(rest));
 
-      // 전용 문제가 항상 첫 단서에 오지 않도록 섞는다
+      // 전용·고난도 문제가 늘 같은 자리에 오지 않도록 섞는다
       for (let i = pick.length - 1; i > 0; i--) {
         const j = Math.floor(rand() * (i + 1));
         const t = pick[i]; pick[i] = pick[j]; pick[j] = t;
       }
-      out[r] = pick;
+      out[r] = pick.slice(0, CONFIG.CLUES_PER_ROOM);
       sites[r] = site;
     }
     S.quizzes = out;
@@ -79,6 +80,7 @@
 
   /** 주관식 정답 목록 (크레도 문제는 data.js 의 CREDO 에서 자동 계산) */
   function answersOf(q) {
+    if (q.type === 'order') return [(q.order || []).join('')];
     if (q.credo) {
       const a = credoAnswers(q.credo);
       if (!a.length) console.warn('[S1FA] 크레도 정답을 만들 수 없습니다:', q.id, '— data.js 의 CREDO.lines 를 확인하세요.');
@@ -93,10 +95,15 @@
       const bank = BANK[r] || [];
       const sr3 = bank.filter(q => q.loc === 'SR3').length;
       const s1l = bank.filter(q => q.loc === 'S1L').length;
-      const common = bank.filter(q => !q.loc).length;
+      const hard = bank.filter(q => !q.loc && q.tier === 'hard').length;
+      const easy = bank.filter(q => !q.loc && q.tier !== 'hard').length;
       if (!sr3 || !s1l) console.warn('[S1FA] ' + r + '관 문제은행에 SR3/S1L 전용 문제가 부족합니다. (SR3 ' + sr3 + ' / S1L ' + s1l + ')');
-      if (common < CONFIG.CLUES_PER_ROOM - 1) console.warn('[S1FA] ' + r + '관 공통 문제가 부족합니다. (' + common + '개)');
-      bank.forEach(q => { if (q.credo && !credoAnswers(q.credo).length) console.warn('[S1FA] 크레도 문제 정답 없음:', q.id); });
+      if (!hard) console.warn('[S1FA] ' + r + '관에 고난도(tier:hard) 문제가 없습니다.');
+      if (!easy) console.warn('[S1FA] ' + r + '관에 일반 문제가 없습니다.');
+      bank.forEach(q => {
+        if (q.credo && !credoAnswers(q.credo).length) console.warn('[S1FA] 크레도 문제 정답 없음:', q.id);
+        (q.docs || []).forEach(d => { if (!(g.DATA.DOCS || {})[d]) console.warn('[S1FA] ' + q.id + ' 가 없는 자료를 가리킵니다:', d); });
+      });
     }
   }
 
@@ -443,14 +450,22 @@
     S.bossEl = addBoss(R);
 
     /* 살펴보기 지점 */
-    (R.hints || []).forEach(h => addHotspot(h.at, () => { SFX.select(); say(h.msg, '👀 살펴보기'); }, h.label || '살펴보기', 'look'));
+    (R.hints || []).forEach(h => addHotspot(h.at, () => {
+      SFX.select();
+      say(h.msg, '👀 살펴보기');
+      if (h.docs && h.docs.length) setTimeout(() => g.DOCVIEW.open(h.docs), 260);
+    }, h.label || '살펴보기', 'look'));
 
     /* 함정(낚시) */
     (R.traps || []).forEach(t => {
       addHotspot(t.at, () => {
         SFX.trap();
         say(t.msg, '🎣 …');
-        if (t.cost) { NET.addTrap(S.room); toast('함정! -' + CONFIG.TRAP_PENALTY + '점', 'bad'); }
+        if (t.cost) {
+          NET.addTrap(S.room);
+          g.QKIT.shake($('#stage'));
+          toast('함정! -' + CONFIG.TRAP_PENALTY + '점', 'bad');
+        }
       }, t.label || '???', 'look');
     });
 
@@ -659,51 +674,48 @@
   function askQuiz(q, slot, idx, boss) {
     if (!q) return;
     const wrap = el('div');
+    const tier = q.tier === 'hard'
+      ? '<span class="quiz-tier">\u2605 고난도</span>' : '';
     const meta = '<div class="quiz-meta"><span>단서 <b>' + (idx + 1) + '/' + CONFIG.CLUES_PER_ROOM + '</b></span>' +
       '<span>배점 <b>' + q.score.toLocaleString() + '점</b></span>' +
-      '<span>오답 <b>-' + CONFIG.WRONG_PENALTY.toLocaleString() + '</b></span></div>';
+      '<span>오답 <b>-' + CONFIG.WRONG_PENALTY.toLocaleString() + '</b></span>' + tier + '</div>';
     const siteTag = q.loc
       ? '<div class="quiz-site">🏢 <b>' + esc(q.loc) + '</b> 근무자만 아는 문제입니다 — 팀의 ' + esc(q.loc) + ' 멤버에게 물어보세요!</div>'
       : '';
-    let inner = meta + siteTag + '<div class="quiz-q">' + esc(q.q) + '</div>';
-    if (q.type === 'short') {
-      if (q.hint) inner += '<div class="quiz-hint">💡 ' + esc(q.hint) + '</div>';
-      inner += '<div class="quiz-input-row"><input id="qin" class="pk-input" type="text" maxlength="24" placeholder="정답 입력 후 Enter"><button id="qsub" class="pk-btn pk-btn-main">제출</button></div>';
-    } else {
-      inner += '<div class="quiz-choices">' + q.choices.map((c, i) =>
-        '<button class="quiz-choice" data-i="' + i + '">' + (i + 1) + '. ' + esc(c) + '</button>').join('') + '</div>';
-    }
-    wrap.innerHTML = inner;
+    const docBtns = (q.docs && q.docs.length)
+      ? '<div class="quiz-docs">' + g.DOCVIEW.buttonsHTML(q.docs) + '</div>' : '';
+
+    wrap.innerHTML = meta + siteTag +
+      '<div class="quiz-q">' + esc(q.q).replace(/\n/g, '<br>') + '</div>' +
+      (q.hint ? '<div class="quiz-hint">💡 ' + esc(q.hint) + '</div>' : '') +
+      docBtns + '<div id="qhost"></div>';
 
     const m = modal({
       title: '📋 단서 ' + slot + ' · ' + (ROOMS[S.room] ? ROOMS[S.room].title : ''),
       html: wrap, closable: true,
-      onMount: (body) => {
+      onMount: (body, back) => {
+        if (q.docs && q.docs.length) g.DOCVIEW.bind(body, q.docs);
+
         const submit = (val, node) => {
-          const ok = q.type === 'short'
-            ? answersOf(q).some(a => norm(a) === norm(val))
-            : (+val === q.ans);
           if (isSolved(S.room, slot)) { m.close(); toast('이미 해결한 단서입니다.', 'info'); return; }
+          const ok = q.type === 'choice'
+            ? (+val === q.ans)
+            : answersOf(q).some(a => norm(a) === norm(val));
           if (ok) {
             if (node) node.classList.add('ok');
             SFX.great();
+            g.QKIT.celebrate(back.querySelector('.modal'));
             onCorrect(q, slot, boss);
-            setTimeout(() => m.close(), 420);
+            setTimeout(() => m.close(), 900);
           } else {
             if (node) { node.classList.add('no'); setTimeout(() => node.classList.remove('no'), 600); }
             SFX.no();
+            g.QKIT.shake(back.querySelector('.modal'));
             NET.addWrong(S.room, slot);
             toast('❌ 오답! -' + CONFIG.WRONG_PENALTY.toLocaleString() + '점', 'bad');
           }
         };
-        if (q.type === 'short') {
-          const i = body.querySelector('#qin');
-          setTimeout(() => i.focus(), 80);
-          i.addEventListener('keydown', e => { if (e.key === 'Enter') submit(i.value, null); });
-          body.querySelector('#qsub').onclick = () => submit(i.value, null);
-        } else {
-          body.querySelectorAll('.quiz-choice').forEach(b => b.onclick = () => submit(b.dataset.i, b));
-        }
+        g.QKIT.mount(q, body.querySelector('#qhost'), submit);
       }
     });
   }
