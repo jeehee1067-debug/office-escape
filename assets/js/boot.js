@@ -109,14 +109,42 @@
     }
   }
 
-  /* ---------- 연결 실패 안내 ---------- */
-  let connErrShown = false;
-  function showConnError(code) {
+  /* ---------- 연결 실패 안내 ----------
+     어디가 막혔는지까지 알려준다. 채팅만 막힌 경우(규칙이 옛 버전)는
+     게임 진행에는 문제가 없으므로 따로 안내한다. */
+  let connErrShown = false, chatErrShown = false;
+  function showConnError(code, path) {
+
+    /* 채팅 경로만 거부된 경우 — 규칙에 chat 항목이 없는 이전 버전이 올라가 있다 */
+    if (path && String(path).indexOf('chat') === 0) {
+      if (chatErrShown) return;
+      chatErrShown = true;
+      const btn = $('#btn-chat'); if (btn) btn.classList.add('hidden');
+      if (g.CHAT) g.CHAT.setOpen(false);
+      g.UI.modal({
+        title: '💬 채팅만 사용할 수 없습니다',
+        html: '<p style="line-height:1.9;white-space:pre-line">' + esc(
+          '채팅 기록에 접근할 수 없습니다. (거부된 경로: ' + path + ')\n\n' +
+          '채팅 기능이 추가되면서 보안 규칙에 chat 항목이 늘었습니다.\n' +
+          '예전에 게시한 규칙만 올라가 있으면 채팅만 막힙니다.\n\n' +
+          'Firebase 콘솔 → Realtime Database → 규칙 탭에\n' +
+          '저장소의 database.rules.json 을 다시 붙여넣고 [게시]한 뒤\n' +
+          '새로고침하면 채팅이 켜집니다.\n\n' +
+          '게임 진행과 점수 기록은 그대로 됩니다.') + '</p>',
+        buttons: [{ label: '확인', cls: 'pk-btn-main' }]
+      });
+      return;
+    }
+
     if (connErrShown) return;
     connErrShown = true;
+    const where = path ? '\n\n거부된 경로: ' + path : '';
     const msg = code === 'timeout'
       ? '서버(Firebase)가 응답하지 않습니다. 인터넷 연결 또는 방화벽을 확인해주세요.'
-      : '서버(Firebase)에 접근할 수 없습니다.\n\nFirebase 콘솔 → Realtime Database → 규칙 탭에\ndatabase.rules.json 내용을 붙여넣고 [게시]했는지 확인해주세요.\n(새로 만든 데이터베이스는 기본적으로 모든 접근이 차단되어 있습니다.)';
+      : '서버(Firebase)에 접근할 수 없습니다.' + where +
+        '\n\nFirebase 콘솔 → Realtime Database → 규칙 탭에\ndatabase.rules.json 내용을 붙여넣고 [게시]했는지 확인해주세요.\n' +
+        '(새로 만든 데이터베이스는 기본적으로 모든 접근이 차단되어 있습니다.)\n' +
+        '자세한 내용은 F12 → Console 에 찍힌 [S1FA] 메시지를 확인하세요.';
     g.UI.modal({
       title: '⚠️ 서버 연결 문제',
       html: '<p style="line-height:1.9;white-space:pre-line">' + esc(msg) + '</p>',
@@ -232,7 +260,7 @@
     try { PX.renderScene($('#bg-canvas'), 'lobby'); } catch (e) { }
 
     if (!g.__S1FA_OFFLINE__) {
-      NET.onSubscribeError(() => showConnError());
+      NET.onSubscribeError((path) => showConnError(null, path));
       NET.probe().then(st => {
         if (!st.ok) {
           console.error('[S1FA] Firebase 접근 실패:', st);
@@ -280,5 +308,5 @@
     }
   });
 
-  g.BOOT = { backToLogin, join, adminLogin };
+  g.BOOT = { backToLogin, join, adminLogin, showConnError };
 })(window);

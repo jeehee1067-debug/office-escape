@@ -13,6 +13,7 @@
 
   const S = {
     open: false,
+    min: false,                 // 접힘 상태 (입력칸만 남김)
     tab: 'team',                // 'team' | 'global'
     subs: {},                   // 채널별 구독 해제 함수
     msgs: {},                   // 채널별 메시지
@@ -21,8 +22,11 @@
     built: false,
     box: null,                  // {x,y,w,h} — 끌어서 옮긴 위치와 크기
     userSet: false,             // 사용자가 직접 옮기거나 크기를 바꿨는지
-    maxed: false                // 크게 보기
+    maxed: false,               // 크게 보기
+    min: false,                 // 접힘 (입력칸만 남김)
+    prevH: ''                   // 접기 전 높이 (펼칠 때 되돌린다)
   };
+  const MIN_BAR = 104;          // 접었을 때 높이 (머리말 + 입력칸)
 
   const myTeam = () => (g.GAME && g.GAME.S ? g.GAME.S.myTeam : null);
   const isAdmin = () => !!(g.GAME && g.GAME.S && g.GAME.S.me && g.GAME.S.me.isAdmin);
@@ -90,6 +94,8 @@
   }
   function saveBox(b) {
     S.userSet = true;
+    // 사용자가 자리를 직접 잡았으니 게임 화면은 더 이상 자리를 비켜 주지 않는다
+    document.body.classList.add('chat-free');
     try { localStorage.setItem(BOX_KEY, JSON.stringify(b)); } catch (e) { }
   }
 
@@ -110,6 +116,13 @@
   function applyBox(recompute) {
     const p = $('#chat-panel'); if (!p) return;
     if (recompute && !S.userSet) S.box = null;
+    if (S.min) {                       // 접힌 동안에는 자리만 잡고 높이는 건드리지 않는다
+      const b = clampBox(S.box || loadBox() || defaultBox());
+      Object.assign(p.style, { left: b.x + 'px', top: b.y + 'px',
+        width: b.w + 'px', height: MIN_BAR + 'px', right: 'auto', bottom: 'auto' });
+      reserve(b.w);
+      return;
+    }
     if (S.maxed) {
       const vw = innerWidth, vh = innerHeight;
       Object.assign(p.style, { left: '8px', top: '8px',
@@ -119,16 +132,52 @@
     S.box = clampBox(S.box || loadBox() || defaultBox());
     Object.assign(p.style, { left: S.box.x + 'px', top: S.box.y + 'px',
       width: S.box.w + 'px', height: S.box.h + 'px', right: 'auto', bottom: 'auto' });
+    reserve(S.box.w);
+  }
+
+  /** 게임 화면이 오른쪽에 비워 둘 폭 — 채팅창 실제 너비에 맞춘다 */
+  function reserve(w) {
+    document.documentElement.style.setProperty('--chat-reserve', (w + 24) + 'px');
   }
   function toggleMax() {
     S.maxed = !S.maxed;
+    if (S.maxed) { S.min = false; setMinClass(false); }   // 크게 볼 때는 펼친다
     $('#chat-panel').classList.toggle('is-max', S.maxed);
+    document.body.classList.toggle('chat-free', S.maxed || S.userSet);
     applyBox();
+  }
+
+  /* ---------------- 접기 / 펼치기 ----------------
+     접으면 입력칸만 남아 게임 화면을 거의 가리지 않는다.
+     크기는 인라인으로 잡혀 있으므로, 접기 전 높이를 기억했다가 되돌린다. */
+  function setMinClass(v) {
+    const p = $('#chat-panel'); if (p) p.classList.toggle('min', v);
+    document.body.classList.toggle('chat-min', v);
+    const b = $('#chat-min');
+    if (b) { b.textContent = v ? '▴' : '▾'; b.title = v ? '펼치기' : '접기'; }
+  }
+  function setMin(v) {
+    const p = $('#chat-panel'); if (!p) return;
+    S.min = v;
+    setMinClass(v);
+    if (v) {
+      S.prevH = p.style.height || '';
+      p.style.height = MIN_BAR + 'px';
+    } else if (S.prevH) {
+      p.style.height = S.prevH; S.prevH = '';
+    } else {
+      applyBox();
+    }
+    SFX.select();
+    setTimeout(() => { if (g.GAME && g.GAME.placeExit) g.GAME.placeExit(); }, 0);
+    if (!v) { renderLog(); const i = $('#chat-input'); if (i) i.focus(); }
   }
   /** 위치·크기를 처음 상태로 되돌린다 */
   function resetBox() {
     S.maxed = false;
     S.userSet = false;
+    S.min = false; setMinClass(false); S.prevH = '';
+    document.body.classList.remove('chat-free');   // 다시 게임 화면이 자리를 비켜 준다
     try { localStorage.removeItem(BOX_KEY); } catch (e) { }
     $('#chat-panel').classList.remove('is-max');
     S.box = null;
@@ -196,6 +245,7 @@
       '  <span class="chat-grip" title="끌어서 옮기기">⠿</span>' +
       '  <div class="chat-tabs" id="chat-tabs"></div>' +
       '  <select id="chat-team-pick" class="chat-team-pick hidden"></select>' +
+      '  <button id="chat-min" class="chat-x chat-min-btn" title="접기">▾</button>' +
       '  <button id="chat-max" class="chat-x chat-max" title="크게 / 원래대로">⛶</button>' +
       '  <button id="chat-close" class="chat-x" title="닫기">✕</button>' +
       '</div>' +
@@ -210,6 +260,7 @@
     document.body.appendChild(wrap);
 
     $('#chat-close').onclick = () => setOpen(false);
+    $('#chat-min').onclick = () => setMin(!S.min);
     $('#chat-max').onclick = () => { toggleMax(); SFX.select(); };
     initDragResize(wrap);
     $('#chat-send').onclick = send;
@@ -344,7 +395,8 @@
     S.open = v;
     const p = $('#chat-panel');
     p.classList.toggle('hidden', !v);
-    document.body.classList.toggle('chat-open', v);   // 가려지는 버튼을 옮기기 위해
+    document.body.classList.toggle('chat-open', v);   // 게임 화면이 채팅 자리를 비켜 주도록
+    document.body.classList.toggle('chat-min', v && S.min);
     // 채팅창이 덮은 자리를 피해 '다음 방' 버튼을 다시 배치한다
     setTimeout(() => { if (g.GAME && g.GAME.placeExit) g.GAME.placeExit(); }, 0);
     if (v) {
@@ -373,5 +425,5 @@
     setInterval(refresh, 4000);      // 팀/화면 상태 변화를 따라간다
   }
 
-  g.CHAT = { init, toggle, refresh, setOpen, resetBox, toggleMax };
+  g.CHAT = { init, toggle, refresh, setOpen, setMin, resetBox, toggleMax };
 })(window);
