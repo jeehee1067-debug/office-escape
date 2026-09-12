@@ -119,6 +119,12 @@
      PX.setCharImage('girl', 'assets/img/char/girl.png')  →  AVATARS 에 sprite:'girl' 추가
      이미지 크기는 자유(도트 원본 크기 그대로 권장). 화면에서는 키 48 기준으로 맞춰진다. */
   const charImages = {};
+  /* PNG 를 다 받아봤는지 여부.
+     아직 모르는 동안에는 sprite 를 쓰기로 한 캐릭터를 '투명'으로 그린다.
+     — 준비된 그림 대신 기본 도트 캐릭터가 잠깐 스쳐 보이는 것을 막는다. */
+  let spritesSettled = false;
+  function markSpritesSettled() { spritesSettled = true; }
+  function areSpritesSettled() { return spritesSettled; }
   function setCharImage(key, url) {
     return new Promise((res) => {
       const im = new Image();
@@ -137,6 +143,16 @@
   function characterCanvas(opts, scale, frame) {
     scale = scale || 4;
     const img = opts && opts.sprite && charImages[opts.sprite];
+    // PNG 를 쓰기로 한 캐릭터인데 아직 도착 여부를 모른다 → 아무것도 그리지 않는다
+    if (!img && opts && opts.sprite && !spritesSettled) {
+      const cfg0 = (global.DATA && global.DATA.CONFIG) || {};
+      const c0 = make(1, 1);
+      const uh0 = (opts && opts.spriteH) || cfg0.SPRITE_HEIGHT || CH_H;
+      c0.dataset.uh = uh0;
+      c0.dataset.uw = Math.round(uh0 * CH_W / CH_H);
+      c0.dataset.pending = '1';
+      return c0;
+    }
     if (img) {
       /* 큰 그림을 원본 크기 그대로 캔버스에 올리면 메모리가 폭증한다.
          화면에서 필요한 높이(MAX_SPRITE_PX)까지만 줄여 그린다. */
@@ -631,6 +647,7 @@
   global.PX = {
     W, H, OUT, make, ctxOf, box, text, textW, rnd,
     drawChibi, characterCanvas, CH_W, CH_H, tint, setCharImage, hasCharImage,
+    markSpritesSettled, areSpritesSettled,
     renderScene, scenes, props, propCanvas,
     prims: { floorTiles, wall, ceiling, plantSmallBig, windowPane, whiteboard, deskLong, monitor, keyboard, tower, shelfUnit, serverRack, plant, doorway, poster, cooler, coffeeMachine, vending, sofa, roundTable, noticeBoard, semMachine, gasCylinder, fumeHood, fridge, microwave, trashBins, drawers, ceilingLights }
   };

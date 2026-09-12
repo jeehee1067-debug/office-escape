@@ -207,6 +207,7 @@
 
     /* ----- 팀 ----- */
     onTeams(cb) { ref('teams').on('value', s => cb(s.val() || null), e => onSubError('teams', e)); },
+    async getTeams() { const s = await withTimeout(ref('teams').get(), 8000, 'teams'); return s.val() || null; },
     setTeams(t) { return ref('teams').set({ _k: adminKey, list: t, at: TS }); },
 
     /* ----- 초기화 ----- */

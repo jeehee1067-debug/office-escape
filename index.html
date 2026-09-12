@@ -6,12 +6,58 @@
 <meta name="theme-color" content="#20242e">
 <title>S1FA 방탈출 : 분석기술팀 탈출 대작전</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
+<!-- 캐릭터 PNG 를 스크립트보다 먼저 받기 시작한다 (없으면 그냥 무시된다) -->
+<link rel="preload" as="image" href="assets/img/char/p1.png">
+<link rel="preload" as="image" href="assets/img/char/p2.png">
+<link rel="preload" as="image" href="assets/img/char/p3.png">
+<link rel="preload" as="image" href="assets/img/char/p4.png">
+<link rel="preload" as="image" href="assets/img/char/boss1.png">
+<link rel="preload" as="image" href="assets/img/char/boss2.png">
+<link rel="preload" as="image" href="assets/img/char/boss3.png">
+<link rel="preload" as="image" href="assets/img/char/boss4.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
 <link rel="stylesheet" href="assets/css/style.css">
+<style>
+html{background:#141821}
+/* 첫 프레임부터 화면을 덮는 가림막.
+   준비가 끝나기 전의 로그인 화면·대기실·기본 캐릭터가 스쳐 보이지 않게 한다.
+   style.css 를 기다리면 늦으므로 여기에 직접 적는다. */
+#boot-cover{
+  position:fixed;inset:0;z-index:3000;background:#141821;
+  background-image:
+    radial-gradient(circle at 20% 10%, #2b3550 0%, transparent 55%),
+    radial-gradient(circle at 80% 90%, #23304a 0%, transparent 55%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  color:#9fb4d4;font-family:system-ui,-apple-system,sans-serif;
+  transition:opacity .28s ease;
+}
+#boot-cover.is-gone{opacity:0;pointer-events:none}
+#boot-cover .bc-title{
+  font-size:26px;font-weight:800;color:#fff;letter-spacing:2px;
+  text-shadow:0 3px 0 rgba(0,0,0,.5);
+}
+#boot-cover .bc-msg{font-size:12px;letter-spacing:1px}
+#boot-cover .bc-bar{
+  width:180px;height:10px;border:3px solid #1d2029;border-radius:6px;
+  background:#20242e;overflow:hidden;
+}
+#boot-cover .bc-bar i{
+  display:block;height:100%;width:40%;background:#e8b83b;
+  animation:bcSlide 1.1s ease-in-out infinite;
+}
+@keyframes bcSlide{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+@media (prefers-reduced-motion:reduce){#boot-cover .bc-bar i{animation:none;width:100%}}
+</style>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
+
+<div id="boot-cover">
+  <div class="bc-title">S1FA 방탈출</div>
+  <div class="bc-bar"><i></i></div>
+  <div class="bc-msg">불러오는 중...</div>
+</div>
 
 <div id="app">
 
@@ -93,9 +139,11 @@
 
   </section>
 
-  <div id="modal-root"></div>
-  <div id="toast-root"></div>
 </div>
+
+<!-- 창과 알림은 #app 밖에 둔다 — 어떤 경우에도 화면 기준으로 가운데 뜨도록 -->
+<div id="modal-root"></div>
+<div id="toast-root"></div>
 
 <audio id="bgm" src="assets/img/battle.mp3" loop preload="none"></audio>
 
