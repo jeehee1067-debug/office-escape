@@ -41,7 +41,13 @@ console.log('\n[2] 자료 참조 · 정답 존재');
 for (let r = 1; r <= CONFIG.ROOM_COUNT; r++) {
   (BANK[r] || []).forEach(x => {
     (x.docs || []).forEach(d => ok(!!DOCS[d], x.id + ' → 자료 ' + d));
-    if (x.credo) ok(credoAnswers(x.credo).length > 0, x.id + ' 크레도 정답 = ' + credoAnswers(x.credo)[0]);
+    if (x.credo) {
+      const a = credoAnswers(x.credo)[0];
+      // 낱말 세기 문제가 0 이면 크레도를 바꾼 뒤 그 낱말이 사라진 것이다
+      const zero = x.credo.count && String(a) === '0';
+      ok(credoAnswers(x.credo).length > 0 && !zero,
+        x.id + ' 크레도 정답 = ' + a + (zero ? '  ← "' + x.credo.count + '" 가 크레도에 없습니다' : ''));
+    }
     else if (x.type !== 'order' && x.type !== 'choice') ok(!!(x.ans && x.ans.length), x.id + ' 정답 있음');
   });
 }
