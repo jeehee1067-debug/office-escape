@@ -939,9 +939,10 @@ body.chat-min{--chat-h:104px}             /* 접으면 입력칸만 */
   }
 }
 
+/* 창(모달)은 게임과 같은 자리 기준으로 가운데 — 게임이 비켜 준 만큼만 함께 비켜 준다.
+   (--chat-reserve 가 0 이면 창도 화면 한가운데, 즉 게임 위에 그대로 뜬다) */
 body.chat-open:not(.chat-free).modal-up .modal-back{
-  padding-right:calc(330px + 24px);
-  justify-content:flex-start;
+  padding-right:calc(12px + var(--chat-reserve,354px));
 }
 @media (max-width:760px){
   body.chat-open:not(.chat-free).modal-up .modal-back{
