@@ -13,6 +13,7 @@
 
   const S = {
     open: false,
+    min: false,                 // 접힘 상태 (입력칸만 남김)
     tab: 'team',                // 'team' | 'global'
     subs: {},                   // 채널별 구독 해제 함수
     msgs: {},                   // 채널별 메시지
@@ -57,6 +58,7 @@
       '<div class="chat-head">' +
       '  <div class="chat-tabs" id="chat-tabs"></div>' +
       '  <select id="chat-team-pick" class="chat-team-pick hidden"></select>' +
+      '  <button id="chat-min" class="chat-x chat-min-btn" title="접기">▾</button>' +
       '  <button id="chat-close" class="chat-x" title="닫기">✕</button>' +
       '</div>' +
       '<div id="chat-log" class="chat-log"></div>' +
@@ -69,6 +71,7 @@
     document.getElementById('app').appendChild(wrap);
 
     $('#chat-close').onclick = () => setOpen(false);
+    $('#chat-min').onclick = () => setMin(!S.min);
     $('#chat-send').onclick = send;
     $('#chat-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); send(); }
@@ -195,13 +198,29 @@
     SFX.select();
   }
 
+  /* ---------------- 접기 / 펼치기 ----------------
+     접으면 입력칸만 남아 방 화면을 거의 가리지 않는다. */
+  function setMin(v) {
+    S.min = v;
+    const p = $('#chat-panel'); if (!p) return;
+    p.classList.toggle('min', v);
+    document.body.classList.toggle('chat-min', v);
+    const b = $('#chat-min');
+    b.textContent = v ? '▴' : '▾';
+    b.title = v ? '펼치기' : '접기';
+    SFX.select();
+    setTimeout(() => { if (g.GAME && g.GAME.placeExit) g.GAME.placeExit(); }, 0);
+    if (!v) { renderLog(); const i = $('#chat-input'); if (i) i.focus(); }
+  }
+
   /* ---------------- 열고 닫기 ---------------- */
   function setOpen(v) {
     build();
     S.open = v;
     const p = $('#chat-panel');
     p.classList.toggle('hidden', !v);
-    document.body.classList.toggle('chat-open', v);   // 가려지는 버튼을 옮기기 위해
+    document.body.classList.toggle('chat-open', v);   // 게임 화면이 채팅 자리를 비켜 주도록
+    document.body.classList.toggle('chat-min', v && S.min);
     // 채팅창이 덮은 자리를 피해 '다음 방' 버튼을 다시 배치한다
     setTimeout(() => { if (g.GAME && g.GAME.placeExit) g.GAME.placeExit(); }, 0);
     if (v) {
@@ -229,5 +248,5 @@
     setInterval(refresh, 4000);      // 팀/화면 상태 변화를 따라간다
   }
 
-  g.CHAT = { init, toggle, refresh, setOpen };
+  g.CHAT = { init, toggle, refresh, setOpen, setMin };
 })(window);

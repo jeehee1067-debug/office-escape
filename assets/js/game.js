@@ -18,6 +18,13 @@
     gate: {}, clueApi: {}, bossEl: null, waitModal: null, myTeam: null, timer: null, ended: false, lastRoomRendered: null
   };
 
+  /** 방 화면의 가로세로 비율을 CSS 변수로 남긴다.
+      좁은 화면에서 채팅이 열리면 이 값으로 화면을 비율 그대로 줄인다. */
+  function setStageRatio(r) {
+    const w = $('#stage-wrap');
+    if (w && r > 0) w.style.setProperty('--stage-ar', String(r));
+  }
+
   /* ---------- 좌표 (배경 그림 기준 백분율) ---------- */
   const pctX = v => (v / PX.W * 100) + '%';
   const pctY = v => (v / PX.H * 100) + '%';
@@ -239,7 +246,7 @@
   function usePixelScene(name) {
     const layer = $('#bg-image'); if (layer) layer.classList.add('hidden');
     const cv = $('#bg-canvas'); if (cv) cv.classList.remove('hidden');
-    const st = $('#stage'); if (st) st.style.aspectRatio = '3 / 2';
+    const st = $('#stage'); if (st) { st.style.aspectRatio = '3 / 2'; setStageRatio(1.5); }
     PX.renderScene(cv, name);
   }
   function showTitle(txt) {
@@ -439,7 +446,7 @@
     const useFallback = () => {
       layer.classList.add('hidden');
       cv.classList.remove('hidden');
-      stage.style.aspectRatio = '3 / 2';
+      stage.style.aspectRatio = '3 / 2'; setStageRatio(1.5);
       PX.renderScene(cv, R && R.fallback ? R.fallback : 'lobby');
     };
     if (!R || !R.bg) { useFallback(); return; }
@@ -462,6 +469,7 @@
       layer.classList.remove('hidden');
       cv.classList.add('hidden');
       stage.style.aspectRatio = im.naturalWidth + ' / ' + im.naturalHeight;
+      setStageRatio(im.naturalWidth / im.naturalHeight);
     }
   }
 
