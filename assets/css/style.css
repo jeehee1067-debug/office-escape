@@ -520,7 +520,7 @@ body.chat-open .dialogue{padding-right:16px}
 }
 .chat-panel{
   position:fixed;right:12px;bottom:12px;z-index:940;
-  width:330px;max-width:calc(100vw - 24px);height:min(62vh,460px);
+  width:330px;max-width:calc(100vw - 24px);height:var(--chat-h);
   background:var(--paper);border:4px solid var(--ink);border-radius:12px;
   box-shadow:0 8px 0 rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;
 }
@@ -583,7 +583,7 @@ body.chat-open .dialogue{padding-right:16px}
 .chat-send:active{transform:translateY(2px)}
 @media (max-width:560px){
   .chat-panel{
-    left:6px;right:6px;bottom:6px;width:auto;height:min(66vh,440px);
+    left:6px;right:6px;bottom:6px;width:auto;height:var(--chat-h);
   }
   .chat-tab{padding:4px 8px;font-size:10px}
 }
@@ -887,7 +887,30 @@ body.chat-open .dialogue{padding-right:16px}
    대신 겹쳐서 버튼을 가리지 않도록, 채팅이 열려 있는 동안에는
    창이 채팅을 피해 자리를 잡는다. (넓은 화면 = 왼쪽 / 좁은 화면 = 위쪽)
    ============================================================ */
-body.modal-up{--chat-h:min(36vh,260px)}   /* 창이 떠 있는 동안엔 채팅을 조금 낮춘다 */
+/* 채팅 높이 — 상황에 따라 한 변수로 정한다 */
+:root{--chat-h:min(62vh,460px)}
+@media (max-width:760px){ :root{--chat-h:min(36vh,260px)} }
+body.modal-up{--chat-h:min(36vh,260px)}   /* 창이 떠 있으면 조금 낮춘다 */
+body.chat-min{--chat-h:104px}             /* 접으면 입력칸만 */
+
+/* 접힌 채팅 : 머리말 + 입력칸만 남긴다 */
+.chat-panel.min .chat-log,
+.chat-panel.min .chat-note{display:none}
+.chat-min-btn{background:var(--blue-dark)}
+
+/* 게임 화면이 채팅 자리를 비켜 준다 — 방 화면·대사창이 가려지지 않게 */
+@media (min-width:761px){
+  body.chat-open{padding-right:342px}
+}
+@media (max-width:760px){
+  body.chat-open{align-items:flex-start;padding-bottom:calc(var(--chat-h) + 20px)}
+  /* 자리가 모자라면 방 화면을 비율 그대로 줄여서 대사창까지 다 보이게 한다 */
+  body.chat-open #stage-wrap{
+    width:100%;align-self:center;      /* 세로 flex 안에서는 margin:auto 대신 align-self */
+    max-width:calc((100dvh - var(--chat-h) - 220px) * var(--stage-ar,1.5));
+  }
+}
+
 body.chat-open.modal-up .modal-back{
   padding-right:calc(330px + 24px);
   justify-content:flex-start;
@@ -898,7 +921,6 @@ body.chat-open.modal-up .modal-back{
     padding-bottom:calc(var(--chat-h) + 24px);
     align-items:flex-start;
   }
-  body.modal-up .chat-panel{height:var(--chat-h)}
   /* 창은 채팅 위쪽 공간 안에서만 자라고, 넘치면 창 안에서 스크롤된다 */
   body.chat-open.modal-up .modal-back > .modal{max-height:calc(100dvh - var(--chat-h) - 36px)}
   /* 자료 창은 종이를 줄여서 확대·UV 버튼이 화면 밖으로 밀리지 않게 한다 */
