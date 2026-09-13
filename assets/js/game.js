@@ -757,6 +757,7 @@
       ? '<span class="quiz-tier">\u2605 고난도</span>' : '';
     const meta = '<div class="quiz-meta"><span>단서 <b>' + (idx + 1) + '/' + CONFIG.CLUES_PER_ROOM + '</b></span>' +
       '<span>배점 <b>' + q.score.toLocaleString() + '점</b></span>' +
+      '<span>⚡속도 <b>+' + speedBonus(roomRemain()).toLocaleString() + '</b></span>' +
       '<span>오답 <b>-' + CONFIG.WRONG_PENALTY.toLocaleString() + '</b></span>' + tier + '</div>';
     const siteTag = q.loc
       ? '<div class="quiz-site">🏢 <b>' + esc(q.loc) + '</b> 근무자만 아는 문제입니다 — 팀의 ' + esc(q.loc) + ' 멤버에게 물어보세요!</div>'
@@ -800,15 +801,24 @@
   }
   function norm(s) { return String(s).trim().toLowerCase().replace(/\s+/g, ''); }
 
+  /** 정답을 맞힌 순간의 남은 시간에 비례하는 속도 점수 (초 단위) */
+  function speedBonus(remSec) {
+    const per = CONFIG.SPEED_PER_SEC || 0;
+    return Math.max(0, Math.min(CONFIG.ROOM_SECONDS, Math.round(remSec))) * per;
+  }
+
   async function onCorrect(q, slot, boss) {
     const rem = roomRemain();
+    const speed = speedBonus(rem);
+    const total = q.score + speed;
     const fresh = await NET.recordSolve(S.room, slot, {
-      qid: q.id, points: q.score, room: S.room, left: Math.round(rem)
+      qid: q.id, points: total, room: S.room, left: Math.round(rem)
     });
     const who = boss || (BOSSES[ROOMS[S.room].boss] || {}).name || '';
     if (fresh) {
-      toast('✅ 정답! +' + q.score.toLocaleString() + '점', 'good');
-      say((q.ok || '정답!') + '\n(+' + q.score.toLocaleString() + '점)', who);
+      toast('✅ 정답! +' + total.toLocaleString() + '점 (배점 ' + q.score.toLocaleString() +
+        ' + 속도 ' + speed.toLocaleString() + ')', 'good', 3200);
+      say((q.ok || '정답!') + '\n(+' + q.score.toLocaleString() + '점  ⚡속도 +' + speed.toLocaleString() + ')', who);
     } else {
       // 이미 서버에 기록된 단서 — 점수는 다시 오르지 않는다
       toast('이미 해결한 단서입니다. 점수는 추가되지 않습니다.', 'info', 3000);
@@ -884,30 +894,184 @@
     });
   }
 
-  /* ---------- 순위표 ---------- */
+  /* ============================================================
+     순위표 — 팀 / 개인 · 점수순 / 최단 시간순
+     ------------------------------------------------------------
+     팀전이므로 기본은 팀 순위. 개인 순위는 탭으로 넘겨 본다.
+     ============================================================ */
+  function teamListNow() {
+    const t = S.teams;
+    return (t && t.list) ? t.list : [];
+  }
+
+  /** 개인 기록 */
   function computeBoard() {
     const runs = S.allRuns || {};
+    const list = teamListNow();
+    const teamOf = {};
+    list.forEach(t => (t.members || []).forEach(m => { teamOf[m.uid] = t.id; }));
     const rows = [];
     Object.keys(S.players || {}).forEach(u => {
       const p = S.players[u];
       if (!p || !p.uid || p.isAdmin) return;
       const sc = NET.scoreOf(runs[u]);
-      rows.push({ uid: u, name: p.name, loc: p.loc, score: sc.score, time: sc.time, solved: sc.solved, online: !!p.online });
+      rows.push({
+        uid: u, name: p.name, loc: p.loc, team: teamOf[u] || null,
+        score: sc.score, time: sc.time, solved: sc.solved, wrong: sc.wrong || 0,
+        online: !!p.online
+      });
     });
-    rows.sort((a, b) => b.score - a.score || a.time - b.time);
-    return rows;
+    return sortSolo(rows, 'score');
   }
+
+  /** 팀 합산 기록 — 팀원 점수를 모두 더한다 */
+  function computeTeamBoard() {
+    const runs = S.allRuns || {};
+    const players = S.players || {};
+    return sortTeams(teamListNow().map(t => {
+      const mem = (t.members || []).filter(m => m && m.uid);
+      let score = 0, time = 0, solved = 0, wrong = 0, sr3 = 0, s1l = 0, on = 0;
+      const names = [];
+      mem.forEach(m => {
+        const sc = NET.scoreOf(runs[m.uid]);
+        const p = players[m.uid] || m;
+        score += sc.score; time += sc.time; solved += sc.solved; wrong += sc.wrong || 0;
+        if ((p.loc || m.loc) === 'SR3') sr3++; else s1l++;
+        if (p.online) on++;
+        names.push(p.name || m.name);
+      });
+      const n = mem.length || 1;
+      return {
+        id: t.id, n: mem.length, names, score, time, solved, wrong, sr3, s1l, online: on,
+        avg: Math.round(score / n), avgTime: Math.round(time / n)
+      };
+    }), 'score');
+  }
+
+  /* 정렬 — 동점이면 시간 → 단서 → 오답 순으로 가른다 */
+  function sortSolo(rows, mode) {
+    const byTime = mode === 'time';
+    return rows.slice().sort((a, b) =>
+      byTime
+        ? (a.time - b.time) || (b.score - a.score) || (b.solved - a.solved) || a.name.localeCompare(b.name)
+        : (b.score - a.score) || (a.time - b.time) || (b.solved - a.solved) || (a.wrong - b.wrong) ||
+          a.name.localeCompare(b.name));
+  }
+  function sortTeams(rows, mode) {
+    if (mode === 'time') return rows.slice().sort((a, b) =>
+      (a.avgTime - b.avgTime) || (b.score - a.score) || (b.solved - a.solved) || (a.id - b.id));
+    if (mode === 'avg') return rows.slice().sort((a, b) =>
+      (b.avg - a.avg) || (a.avgTime - b.avgTime) || (b.solved - a.solved) || (a.id - b.id));
+    return rows.slice().sort((a, b) =>
+      (b.score - a.score) || (a.avgTime - b.avgTime) || (b.solved - a.solved) || (a.wrong - b.wrong) || (a.id - b.id));
+  }
+
+  /* ---------- 표 ---------- */
+  function soloTableHTML(rows) {
+    if (!rows.length) return '<p class="board-empty">아직 기록이 없습니다.</p>';
+    let h = '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
+      '<th>#</th><th>이름</th><th>팀</th><th>근무지</th><th>점수</th><th>시간</th><th>단서</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach((r, i) => {
+      const cls = (r.uid === NET.uid ? 'me-row' : (i < 3 ? 'rank-' + (i + 1) : ''));
+      h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td><td>' + esc(r.name) + '</td>' +
+        '<td>' + (r.team ? r.team + '팀' : '-') + '</td><td>' + esc(r.loc || '-') + '</td>' +
+        '<td><b>' + r.score.toLocaleString() + '</b></td><td>' + mmss(r.time) + '</td>' +
+        '<td>' + r.solved + '</td></tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+  function teamTableHTML(rows) {
+    if (!rows.length) return '<p class="board-empty">아직 팀이 구성되지 않았습니다.<br>관리자가 팀을 만들면 여기에 팀 순위가 나옵니다.</p>';
+    const mine = S.myTeam;
+    let h = '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
+      '<th>#</th><th>팀</th><th>인원</th><th>합계</th><th>1인 평균</th><th>평균 시간</th><th>단서</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach((r, i) => {
+      const cls = (r.id === mine ? 'me-row' : (i < 3 ? 'rank-' + (i + 1) : ''));
+      h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td>' +
+        '<td><b>' + r.id + '팀</b><span class="board-mem">' + esc(r.names.join(', ')) + '</span></td>' +
+        '<td>' + r.n + '명<span class="board-mem">SR3 ' + r.sr3 + '·S1L ' + r.s1l + '</span></td>' +
+        '<td><b>' + r.score.toLocaleString() + '</b></td>' +
+        '<td>' + r.avg.toLocaleString() + '</td>' +
+        '<td>' + mmss(r.avgTime) + '</td><td>' + r.solved + '</td></tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+
+  /* ---------- 탭이 붙은 순위판 ---------- */
+  const BOARD_KEY = 's1fa.board';
+  function boardPref() {
+    try { return JSON.parse(localStorage.getItem(BOARD_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function saveBoardPref(v) { try { localStorage.setItem(BOARD_KEY, JSON.stringify(v)); } catch (e) { } }
+
+  /** node 안에 순위판을 그린다(탭·정렬 상태 유지) */
+  function mountBoard(node, opts) {
+    if (!node) return;
+    opts = opts || {};
+    const pref = boardPref();
+    const hasTeams = teamListNow().length > 0;
+    let view = node.dataset.view || pref.view || (hasTeams ? 'team' : 'solo');
+    if (view === 'team' && !hasTeams && !opts.keepTeamTab) view = 'solo';
+    let sort = node.dataset.sort || pref.sort || 'score';
+    if (view === 'solo' && sort === 'avg') sort = 'score';
+
+    const sorts = view === 'team'
+      ? [['score', '🏆 합계 점수'], ['avg', '👤 1인 평균'], ['time', '⏱ 최단 시간']]
+      : [['score', '🏆 점수순'], ['time', '⏱ 최단 시간순']];
+
+    node.innerHTML =
+      '<div class="board-head">' +
+      '  <div class="board-tabs">' +
+      '    <button class="board-tab' + (view === 'team' ? ' on' : '') + '" data-view="team">🏅 팀 순위</button>' +
+      '    <button class="board-tab' + (view === 'solo' ? ' on' : '') + '" data-view="solo">👤 개인 순위</button>' +
+      '  </div>' +
+      '  <div class="board-sorts">' +
+      sorts.map(x => '<button class="board-sort' + (sort === x[0] ? ' on' : '') + '" data-sort="' + x[0] + '">' +
+        x[1] + '</button>').join('') +
+      '  </div>' +
+      '</div>' +
+      '<div class="board-body">' +
+      (view === 'team' ? teamTableHTML(sortTeams(computeTeamBoard(), sort))
+                       : soloTableHTML(sortSolo(computeBoard(), sort))) +
+      '</div>' +
+      (view === 'team'
+        ? '<p class="board-note">팀 점수는 <b>팀원 점수의 합</b>입니다. 인원이 다른 팀끼리는 <b>1인 평균</b>으로도 볼 수 있습니다.</p>'
+        : '<p class="board-note">같은 점수면 <b>총 소요 시간이 짧은 사람</b>이 앞섭니다.</p>');
+
+    node.dataset.view = view; node.dataset.sort = sort;
+    node.querySelectorAll('.board-tab').forEach(b => b.onclick = () => {
+      SFX.select();
+      node.dataset.view = b.dataset.view;
+      saveBoardPref({ view: b.dataset.view, sort: node.dataset.sort });
+      mountBoard(node, opts);
+    });
+    node.querySelectorAll('.board-sort').forEach(b => b.onclick = () => {
+      SFX.select();
+      node.dataset.sort = b.dataset.sort;
+      saveBoardPref({ view: node.dataset.view, sort: b.dataset.sort });
+      mountBoard(node, opts);
+    });
+  }
+
   function renderBoardInto(node) {
     if (!node) return;
-    node.innerHTML = '<h4 style="font-size:12px;color:#274a75;margin:8px 0 4px">🏆 실시간 순위</h4>' +
-      g.UI.leaderboardHTML(computeBoard(), NET.uid);
+    if (!node.dataset.built) {
+      node.innerHTML = '<h4 class="board-title">🏆 실시간 순위</h4><div class="board-host"></div>';
+      node.dataset.built = '1';
+    }
+    mountBoard(node.querySelector('.board-host'));
   }
   function openBoard() {
     const m = modal({ title: '🏆 실시간 순위표', html: '<div id="bd"></div>', wide: true, closable: true });
-    renderBoardInto(m.body.querySelector('#bd'));
+    const host = m.body.querySelector('#bd');
+    mountBoard(host);
     m.body._timer = setInterval(() => {
       if (!document.body.contains(m.body)) return clearInterval(m.body._timer);
-      renderBoardInto(m.body.querySelector('#bd'));
+      if (document.activeElement && document.activeElement.classList &&
+          document.activeElement.classList.contains('board-tab')) return;
+      mountBoard(host);
     }, 3000);
   }
 
@@ -920,34 +1084,56 @@
     g.UI.closeAll();
     clearLayers(); usePixelScene('hall'); showTitle('결과 발표');
     g.UI.bgmDown(2500);
-    const rows = computeBoard();
-    const me = rows.findIndex(r => r.uid === NET.uid);
+
+    const solo = computeBoard();
+    const teams = computeTeamBoard();
+    const myRank = solo.findIndex(r => r.uid === NET.uid);
+    const myTeamRank = teams.findIndex(t => t.id === S.myTeam);
     const sc = NET.scoreOf(S.run);
-    say('모든 방의 탈출이 끝났다!\n최종 순위를 확인하자.');
+    say('모든 방의 탈출이 끝났다!\n팀 순위를 확인하자.');
     SFX.great();
 
-    // 무대 위 시상대 캐릭터
+    /* 무대 위 — 상위 세 팀의 최고 득점자를 시상대에 세운다 */
     const podPos = [[120, 132], [82, 138], [158, 138]];
-    rows.slice(0, 3).forEach((r, i) => {
-      const p = S.players[r.uid] || {};
-      addActor(AVATARS[p.avatar] || AVATARS[0], podPos[i][0], podPos[i][1], ['🥇', '🥈', '🥉'][i] + ' ' + r.name, i === 0 ? 'me' : '', 3);
+    const topOf = (t) => solo.filter(r => r.team === t.id)[0];
+    (teams.length ? teams : []).slice(0, 3).forEach((t, i) => {
+      const best = topOf(t); if (!best) return;
+      const p = S.players[best.uid] || {};
+      addActor(AVATARS[p.avatar] || AVATARS[0], podPos[i][0], podPos[i][1],
+        ['🥇', '🥈', '🥉'][i] + ' ' + t.id + '팀', t.id === S.myTeam ? 'me' : '', 3);
     });
+    if (!teams.length) {
+      solo.slice(0, 3).forEach((r, i) => {
+        const p = S.players[r.uid] || {};
+        addActor(AVATARS[p.avatar] || AVATARS[0], podPos[i][0], podPos[i][1],
+          ['🥇', '🥈', '🥉'][i] + ' ' + r.name, i === 0 ? 'me' : '', 3);
+      });
+    }
 
+    /* 시상대 — 팀이 있으면 팀, 없으면 개인 */
+    const pod = teams.length
+      ? teams.slice(0, 3).map(t => ({ label: t.id + '팀', sub: t.names.join(', '), score: t.score }))
+      : solo.slice(0, 3).map(r => ({ label: r.name, sub: r.loc || '', score: r.score }));
     let podium = '<div class="podium">';
     [1, 0, 2].forEach(i => {
-      const r = rows[i]; if (!r) return;
+      const r = pod[i]; if (!r) return;
       const hgt = [64, 46, 36][i === 0 ? 0 : (i === 1 ? 1 : 2)];
       const col = ['#e8b83b', '#b9c0cc', '#c9925b'][i];
-      podium += '<div class="podium-col"><div class="podium-name">' + esc(r.name) + '</div>' +
+      podium += '<div class="podium-col"><div class="podium-name">' + esc(r.label) + '</div>' +
         '<div class="podium-score">' + r.score.toLocaleString() + 'P</div>' +
         '<div class="podium-bar" style="height:' + hgt + 'px;background:' + col + '">' + (i + 1) + '</div></div>';
     });
     podium += '</div>';
 
+    const myTeamRow = myTeamRank >= 0 ? teams[myTeamRank] : null;
     const mine = '<div class="result-sum">' +
-      '<div class="result-cell"><span>내 순위</span><b>' + (me < 0 ? '-' : (me + 1) + '위') + '</b></div>' +
-      '<div class="result-cell"><span>총 점수</span><b>' + sc.score.toLocaleString() + '</b></div>' +
-      '<div class="result-cell"><span>총 소요 시간</span><b>' + mmss(sc.time) + '</b></div>' +
+      '<div class="result-cell"><span>우리 팀 순위</span><b>' +
+        (myTeamRow ? (myTeamRank + 1) + '위 (' + myTeamRow.id + '팀)' : '-') + '</b></div>' +
+      '<div class="result-cell"><span>팀 합계 점수</span><b>' +
+        (myTeamRow ? myTeamRow.score.toLocaleString() : '-') + '</b></div>' +
+      '<div class="result-cell"><span>내 순위</span><b>' + (myRank < 0 ? '-' : (myRank + 1) + '위') + '</b></div>' +
+      '<div class="result-cell"><span>내 점수</span><b>' + sc.score.toLocaleString() + '</b></div>' +
+      '<div class="result-cell"><span>내 소요 시간</span><b>' + mmss(sc.time) + '</b></div>' +
       '<div class="result-cell"><span>맞춘 단서</span><b>' + sc.solved + '개</b></div></div>';
 
     let per = '<table class="pk-table"><thead><tr><th>방</th><th>점수</th><th>시간</th><th>단서</th></tr></thead><tbody>';
@@ -958,15 +1144,22 @@
     }
     per += '</tbody></table>';
 
-    modal({
+    const m = modal({
       title: '🏁 최종 결과', wide: true, closable: true,
-      html: podium + mine + '<h4 style="font-size:12px;color:#274a75;margin:10px 0 2px">📖 내 방별 기록</h4>' + per +
-        '<h4 style="font-size:12px;color:#274a75;margin:10px 0 2px">🏆 전체 순위</h4>' + g.UI.leaderboardHTML(rows, NET.uid),
+      html: podium + mine +
+        '<div id="final-board"></div>' +
+        '<h4 class="board-title">📖 내 방별 기록</h4>' + per,
+      onMount: (body) => mountBoard(body.querySelector('#final-board'), { keepTeamTab: true }),
       buttons: (S.me.isAdmin
         ? [{ label: '👑 관리자 패널', cls: 'pk-btn-gold', close: false, onClick: () => g.ADMIN.open() }]
         : []
       ).concat([{ label: '💬 채팅 열기', cls: 'pk-btn-main', close: false, onClick: () => g.CHAT && g.CHAT.setOpen(true) }])
     });
+    // 뒤늦게 도착하는 기록을 따라 갱신
+    const iv = setInterval(() => {
+      if (!document.body.contains(m.body)) return clearInterval(iv);
+      mountBoard(m.body.querySelector('#final-board'), { keepTeamTab: true });
+    }, 4000);
   }
 
   /* ============================================================
@@ -1090,6 +1283,7 @@
   g.GAME = {
     S, boot, enterRoom, renderLobby, showResults, openBoard, computeBoard,
     applyGlobal, finishRoom, assignQuizzes, siteForRoom, answersOf, teamCode, updateHUD,
+    computeTeamBoard, mountBoard,
     myTeamNo, teamSeedFor, placeExit
   };
 })(window);

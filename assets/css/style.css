@@ -957,3 +957,47 @@ body.chat-open:not(.chat-free).modal-up .modal-back{
   /* 자료 창은 종이를 줄여서 확대·UV 버튼이 화면 밖으로 밀리지 않게 한다 */
   body.chat-open:not(.chat-free).modal-up .doc-stage{height:clamp(150px,26dvh,240px)}
 }
+
+
+/* ============================================================
+   순위판 — 팀 / 개인 탭 · 정렬
+   ============================================================ */
+.board-title{font-size:12px;color:#274a75;margin:10px 0 4px}
+.board-head{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin:6px 0 8px}
+.board-tabs{display:flex;gap:4px}
+.board-tab{
+  font:inherit;font-size:12px;font-weight:700;cursor:pointer;
+  background:#e7e3d6;color:#5c6272;border:2px solid var(--ink);border-radius:7px 7px 0 0;
+  padding:5px 11px;border-bottom-width:2px;
+}
+.board-tab.on{background:var(--blue);color:#fff}
+.board-sorts{display:flex;gap:4px;flex-wrap:wrap}
+.board-sort{
+  font:inherit;font-size:11px;cursor:pointer;
+  background:var(--paper);color:#5c6272;border:2px solid #c9c3b2;border-radius:999px;padding:3px 9px;
+}
+.board-sort.on{background:var(--gold);color:#3f3204;border-color:var(--ink);font-weight:700}
+.board-tab:focus-visible,.board-sort:focus-visible{outline:2px solid var(--blue-dark);outline-offset:2px}
+.board-body{border-top:2px solid var(--ink);padding-top:6px}
+.board-mem{display:block;font-size:9px;color:#8a8f9c;font-weight:400;line-height:1.4;
+  max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-note{font-size:10.5px;color:#6b7280;margin-top:6px;line-height:1.7}
+.board-empty{text-align:center;padding:20px;color:#8a8f9c;font-size:12px;line-height:1.8}
+@media (max-width:520px){
+  .board-head{flex-direction:column;align-items:stretch}
+  .board-tab{flex:1}
+  .board-mem{max-width:96px}
+}
+
+/* 팀 배정 뒤 잠긴 근무지 선택 */
+.chip.is-locked{opacity:.4;cursor:not-allowed;filter:grayscale(.6)}
+.loc-lock-note{
+  font-size:11px;line-height:1.7;color:#8a5a12;background:#fff7d6;
+  border:2px solid var(--gold);border-radius:7px;padding:6px 9px;margin-top:6px;
+}
+
+/* 참가자 정보 수정 */
+.pl-edit{display:flex;flex-direction:column;gap:4px}
+.pl-lab{font-size:11px;font-weight:700;color:#5c6272;margin-top:6px}
+.pl-edit .chip-row{display:flex;gap:6px}
+.pk-btn-sm{padding:3px 8px;font-size:11px;min-width:0}
