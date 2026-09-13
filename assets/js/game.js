@@ -166,6 +166,12 @@
     return Math.max(0, CONFIG.ROOM_SECONDS * CONFIG.ROOM_COUNT - used);
   }
 
+  /** 방을 새로 시작하면 '늦은 도움' 표시를 끈다 */
+  function resetClueHint() {
+    S.clueHintOn = false;
+    document.body.classList.remove('clue-hint');
+  }
+
   function startTicker() {
     clearInterval(S.timer);
     S.timer = setInterval(tick, 250);
@@ -186,6 +192,14 @@
       if (S.phase === 'playing') {
         if (rem <= 30 && rem > 29.5) SFX.warn();
         if (rem <= 0 && !S.ended) finishRoom('timeout');
+        /* 한참 헤매면 그제야 남은 단서 자리를 금색으로 알려 준다 */
+        const at = CONFIG.CLUE_HINT_AT || 0;
+        const late = at > 0 && roomElapsed() >= at;
+        if (late !== S.clueHintOn) {
+          S.clueHintOn = late;
+          document.body.classList.toggle('clue-hint', late);
+          if (late) toast('⏳ 아직 못 찾은 단서 자리를 금색으로 표시했습니다.', 'info', 3200);
+        }
       }
     }
     updateWaitPanel(live);
@@ -373,13 +387,13 @@
   function addHotspot(rect, onClick, title, cls) {
     const h = el('div', 'hotspot ' + (cls || ''));
     placePct(h, rect);
-    // 단서 자리에는 작은 표시등을 달아 어디를 눌러야 하는지 알린다.
-    // 기믹 안의 선택지 칸(gate-sub)에는 달지 않는다 — 답을 알려주는 꼴이 된다.
+    /* 눌러볼 수 있는 자리에 작은 점을 찍는다.
+       단서·낚시·자료를 모두 같은 모양으로 표시하므로, 어디가 진짜 단서인지는
+       여전히 직접 눌러 보며 찾아야 한다. (기믹 안 선택지 칸에는 찍지 않는다) */
     const c = cls || '';
-    if (c.indexOf('clue') >= 0 && c.indexOf('gate-sub') < 0) {
-      // 화면 맨 위에 붙은 자리는 표시등이 잘리므로 안쪽에 그린다
-      if (rect[1] < 3) h.classList.add('dot-in');
-      h.appendChild(el('i', 'clue-dot'));
+    if (CONFIG.SPOT_DOTS !== false && c.indexOf('gate-sub') < 0) {
+      if (rect[1] < 3) h.classList.add('dot-in');   // 맨 위는 점이 잘려서 아래쪽에
+      h.appendChild(el('i', 'spot-dot'));
     }
     if (title) { h.title = title; h.dataset.label = title; }
     h.addEventListener('click', e => { e.stopPropagation(); onClick(h); });
@@ -578,6 +592,7 @@
     R.__n = n;
     S.room = n; S.phase = 'playing'; S.ended = false;
     S.gate = {};
+    resetClueHint();
     S.clueApi = {}; S.bossEl = null;
     g.UI.closeAll();
     S.waitModal = null;

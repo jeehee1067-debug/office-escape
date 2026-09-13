@@ -250,37 +250,34 @@ button,input,select{font-family:inherit}
   white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;margin-bottom:3px;
 }
 .hotspot:hover::before{opacity:1}
-/* 아직 못 푼 단서 3곳만 은은하게 숨쉬듯 표시한다.
-   (낚시·자료 힌트는 표시하지 않는다 — 찾는 재미를 남겨 둔다) */
-@keyframes cluePulse{
-  0%,100%{border-color:rgba(255,230,128,.30);box-shadow:inset 0 0 12px rgba(255,230,128,.10)}
-  50%    {border-color:rgba(255,214,90,.72); box-shadow:0 0 10px 1px rgba(255,214,90,.30),
-                                             inset 0 0 16px rgba(255,230,128,.20)}
+/* 눌러볼 수 있는 자리 표시 —
+   단서·낚시·자료를 모두 같은 모양으로 찍어, 위치만 알리고 정답은 알리지 않는다. */
+.spot-dot{
+  position:absolute;left:50%;top:-9px;width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, #ffffff, #dfe4ec 55%, #9aa3b2);
+  border:2px solid rgba(29,32,41,.7);
+  box-shadow:0 1px 3px rgba(0,0,0,.5);
+  transform:translate(-50%,0);opacity:.72;pointer-events:none;z-index:2;
+  transition:opacity .2s, background .3s, box-shadow .3s;
 }
-.hotspot.clue:not(.solved):not(.gate-sub)::after{
-  border-color:rgba(255,230,128,.30);
-  animation:cluePulse 2.8s ease-in-out infinite;
+.hotspot:hover .spot-dot{opacity:1}
+.hotspot.dot-in .spot-dot{top:auto;bottom:-9px;left:22%}
+.hotspot.solved .spot-dot{
+  background:radial-gradient(circle at 38% 32%, #d8f5df, #6cc98a 60%, #2e8b4f);
+  opacity:.55;
 }
-.hotspot.clue:hover::after{animation:none}
-/* 단서 표시등 — 배경 그림이 복잡해 테두리만으로는 잘 안 보인다 */
-.clue-dot{
-  position:absolute;left:50%;top:-10px;width:15px;height:15px;border-radius:50%;
+/* 한참 헤맸을 때(CLUE_HINT_AT 초 경과) 남은 단서만 금색으로 */
+body.clue-hint .hotspot.clue:not(.solved):not(.gate-sub) .spot-dot{
   background:radial-gradient(circle at 38% 32%, #fff8d2, #ffd24a 58%, #d99b12);
-  border:2px solid rgba(29,32,41,.8);
   box-shadow:0 0 9px 2px rgba(255,210,74,.6);
-  animation:clueBob 1.6s ease-in-out infinite;pointer-events:none;z-index:2;
+  opacity:1;animation:clueBob 1.6s ease-in-out infinite;
 }
 @keyframes clueBob{
   0%,100%{transform:translate(-50%,0) scale(1)}
-  50%    {transform:translate(-50%,-4px) scale(1.08)}
+  50%    {transform:translate(-50%,-4px) scale(1.1)}
 }
-/* 화면 맨 위에 붙은 자리는 표시등을 아래쪽에 (소품에 가려지지 않게) */
-.hotspot.dot-in .clue-dot{top:auto;bottom:-9px;left:22%}
-.hotspot.solved .clue-dot{display:none}
-@media (prefers-reduced-motion:reduce){ .clue-dot{animation:none} }
-@media (prefers-reduced-motion:reduce){
-  .hotspot.clue:not(.solved):not(.gate-sub)::after{animation:none;border-color:rgba(255,214,90,.55)}
-}
+body.clue-hint .hotspot.dot-in .spot-dot{animation:none}
+@media (prefers-reduced-motion:reduce){ .spot-dot{animation:none!important} }
 .hotspot.solved{pointer-events:none}
 .hotspot.solved::after{border-color:rgba(46,139,79,.9);background:rgba(46,139,79,.18)}
 .hotspot.is-lit::after{border-color:#8ef08e;background:rgba(142,240,142,.22)}
