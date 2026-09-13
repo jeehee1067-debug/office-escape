@@ -347,7 +347,8 @@ body.clue-hint .hotspot.dot-in .spot-dot{animation:none}
 }
 .ov svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
 .ov-postit{transform:rotate(-2deg)}
-.ov-poster{filter:drop-shadow(3px 5px 4px rgba(15,18,26,.5))}
+/* 벽에 붙은 종이라 그림자는 아주 얕게 (배경의 다른 게시물과 같은 정도) */
+.ov-poster{filter:drop-shadow(2px 3px 2px rgba(60,62,90,.28))}
 .ov-power{
   cursor:default;pointer-events:none;border-radius:6px;
   background:radial-gradient(circle at 50% 45%, rgba(160,225,255,.85), rgba(60,140,220,.35) 60%, transparent 75%);

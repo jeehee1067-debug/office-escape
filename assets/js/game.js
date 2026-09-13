@@ -358,21 +358,32 @@
       '<path d="M54 14 L86 16 L74 24 L46 22 Z" fill="#e9edf5" stroke="#b7bfcd" stroke-width="1.2"/>' +
       '</svg>',
 
-    /* 벽에 테이프로 붙여 둔 공지문 (A4) */
+    /* 벽에 붙은 공지문 — 배경 그림의 다른 벽 게시물과 같은 결로 그린다.
+       특징 : ① 연보라 종이 두 장이 살짝 어긋나게 겹쳐 있다
+              ② 글자는 회보라 블록으로 뭉뚱그려 표현한다
+              ③ 오른쪽 위에 빨간 압정 자국이 콕 찍혀 있다
+       (색은 room4.png 에서 그대로 뽑았다 — 종이 #e3e3ef · 블록 #a5a8c7 / #7e82a8) */
     poster:
-      '<svg viewBox="0 0 72 100" preserveAspectRatio="none">' +
-      '<g transform="rotate(-1.2 36 50)">' +
-      '<rect x="2" y="3" width="68" height="94" fill="#f7f5ec" stroke="#bcb8a9" stroke-width="1.2"/>' +
-      '<rect x="2" y="3" width="68" height="15" fill="#2f5f9e"/>' +
-      '<path d="M8 10h30" stroke="#cfe0f4" stroke-width="3.4"/>' +
-      '<path d="M8 28h56M8 36h56M8 44h38" stroke="#a8a598" stroke-width="2.6"/>' +
-      '<rect x="8" y="52" width="56" height="26" fill="#eaeef5" stroke="#bcc4d1"/>' +
-      '<path d="M13 72l10-12 8 7 7-13 10 18" stroke="#c0392b" stroke-width="2.2" fill="none"/>' +
-      '<path d="M8 86h34M8 92h22" stroke="#a8a598" stroke-width="2.6"/>' +
-      '<path d="M56 84l10 13H56z" fill="#e6e2d6" stroke="#bcb8a9" stroke-width="1"/>' +
+      '<svg viewBox="0 0 100 108" preserveAspectRatio="none">' +
+      '<rect x="11" y="11" width="85" height="94" fill="#d3d4e4"/>' +
+      '<rect x="7" y="7" width="85" height="94" fill="#dcdce9"/>' +
+      '<rect x="3" y="3" width="85" height="94" fill="#e6e6f1" stroke="#a5a8c7" stroke-width="1.2"/>' +
+      '<g fill="#7e82a8">' +
+      '<rect x="10" y="11" width="46" height="6"/>' +
+      '<rect x="10" y="21" width="26" height="4"/>' +
       '</g>' +
-      '<rect x="1" y="0" width="22" height="8" fill="rgba(240,244,250,.72)" transform="rotate(-16 12 4)"/>' +
-      '<rect x="49" y="0" width="22" height="8" fill="rgba(240,244,250,.72)" transform="rotate(13 60 4)"/>' +
+      '<g fill="#a8abcc">' +
+      '<rect x="10" y="31" width="68" height="3.4"/>' +
+      '<rect x="10" y="38" width="68" height="3.4"/>' +
+      '<rect x="10" y="45" width="44" height="3.4"/>' +
+      '</g>' +
+      '<rect x="10" y="55" width="68" height="27" fill="#dbdcea" stroke="#b3b8d5" stroke-width="1"/>' +
+      '<polyline points="15,76 27,64 38,70 50,58 62,67 73,60" fill="none" stroke="#7e82a8" stroke-width="2.2"/>' +
+      '<g fill="#a8abcc">' +
+      '<rect x="10" y="87" width="52" height="3.4"/>' +
+      '<rect x="10" y="94" width="34" height="3.4"/>' +
+      '</g>' +
+      '<rect x="79" y="7" width="5" height="5" fill="#c0392b"/>' +
       '</svg>'
   };
 
