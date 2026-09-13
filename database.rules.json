@@ -1,14 +1,7 @@
 {
-  "_comment": [
-    "S1FA 방탈출 — Firebase Realtime Database 보안 규칙",
-    "Firebase 콘솔 > Realtime Database > 규칙 탭에 그대로 붙여넣고 [게시]하세요.",
-    "핵심: (1) 점수/시간 기록은 한 번 쓰면 덮어쓸 수 없다(append-only).",
-    "      (2) 게임 진행 제어(global)와 데이터 삭제는 관리자 키를 아는 사람만 가능.",
-    "      (3) 관리자 키는 config 노드에 저장되며 클라이언트는 읽을 수 없다.",
-    "chat : 메시지는 한 번 쓰면 수정·삭제 불가. 100자 제한, 기록 시각은 서버 시각만 허용."
-  ],
   "rules": {
     "v2": {
+
       "config": {
         ".read": false,
         "adminKey": {
@@ -16,42 +9,56 @@
           ".validate": "newData.isString() && newData.val().length >= 8"
         },
         "verify": {
-          ".write": "newData.child('_k').val() === root.child('v2/config/adminKey').val()"
+          ".write": "root.child('v2/config/adminKey').exists() && newData.child('_k').val() === root.child('v2/config/adminKey').val() && newData.child('at').val() === now"
         }
       },
+
       "global": {
-        ".read": true,
-        ".write": "!root.child('v2/config/adminKey').exists() || newData.child('_k').val() === root.child('v2/config/adminKey').val()"
-      },
-      "teams": {
-        ".read": true,
-        ".write": "!root.child('v2/config/adminKey').exists() || newData.child('_k').val() === root.child('v2/config/adminKey').val()"
-      },
-      "players": {
-        ".read": true,
-        ".write": "newData.child('_k').val() === root.child('v2/config/adminKey').val()",
-        "$uid": {
-          ".write": "$uid === '_k' || !newData.exists() || newData.child('uid').val() === $uid",
-          "name": {
-            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 12"
-          },
-          "avatar": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 32"
+        ".write": "root.child('v2/config/adminKey').exists() && newData.child('_k/key').val() === root.child('v2/config/adminKey').val() && newData.child('_k/n').val() === now",
+        "state": {
+          ".read": true,
+          "phase":    { ".validate": "newData.val() === 'lobby' || newData.val() === 'playing' || newData.val() === 'results'" },
+          "room":     { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 4" },
+          "wipeAt":   { ".validate": "newData.val() === now || newData.val() === data.val()" },
+          "roomReset": {
+            "room": { ".validate": "newData.isString()" },
+            "at":   { ".validate": "newData.val() === now || newData.val() === data.val()" }
           }
         }
       },
+
+      "teams": {
+        ".write": "root.child('v2/config/adminKey').exists() && newData.child('_k/key').val() === root.child('v2/config/adminKey').val() && newData.child('_k/n').val() === now",
+        "state": { ".read": true }
+      },
+
+      "bank": {
+        ".write": "root.child('v2/config/adminKey').exists() && newData.child('_k/key').val() === root.child('v2/config/adminKey').val() && newData.child('_k/n').val() === now",
+        "scores": { ".read": true }
+      },
+
+      "players": {
+        ".read": true,
+        ".write": "!newData.exists() && root.child('v2/global/state/wipeAt').val() > now - 15000",
+        "$uid": {
+          ".write": "!newData.exists() || newData.child('uid').val() === $uid",
+          "name":   { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 12" },
+          "avatar": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 32" },
+          "loc":    { ".validate": "newData.isString() && newData.val().length <= 8" }
+        }
+      },
+
       "runs": {
         ".read": true,
-        ".write": "newData.child('_k').val() === root.child('v2/config/adminKey').val()",
+        ".write": "!newData.exists() && root.child('v2/global/state/wipeAt').val() > now - 15000",
         "$uid": {
-          "meta": {
-            ".write": true
-          },
+          "meta": { ".write": true },
           "rooms": {
             "$room": {
+              ".write": "!newData.exists() && root.child('v2/global/state/roomReset/room').val() === $room && root.child('v2/global/state/roomReset/at').val() > now - 15000",
               "traps": {
                 ".write": true,
-                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100 && (!data.exists() || newData.val() > data.val())"
               },
               "wrong": {
                 "$slot": {
@@ -62,31 +69,32 @@
               "solves": {
                 "$slot": {
                   ".write": "!data.exists()",
-                  ".validate": "newData.hasChildren(['qid', 'points']) && newData.child('points').isNumber() && newData.child('points').val() >= 0 && newData.child('points').val() <= 12000 && newData.child('at').val() === now"
+                  ".validate": "newData.hasChildren(['qid', 'points', 'at', 'uid']) && newData.child('uid').val() === $uid && newData.child('qid').isString() && newData.child('qid').val().matches(/^r[1-4][a-z0-9]{1,8}$/) && newData.child('points').isNumber() && newData.child('points').val() === root.child('v2/bank/scores/' + newData.child('qid').val()).val() && newData.child('at').val() === now"
                 }
               },
               "done": {
                 ".write": "!data.exists()",
-                ".validate": "newData.hasChildren(['sec']) && newData.child('sec').val() >= 0 && newData.child('sec').val() <= 600 && newData.child('bonus').val() >= 0 && newData.child('bonus').val() <= 3000 && newData.child('at').val() === now"
+                ".validate": "newData.hasChildren(['sec', 'bonus', 'reason', 'at']) && newData.child('sec').isNumber() && newData.child('sec').val() >= 0 && newData.child('sec').val() <= 300 && newData.child('bonus').isNumber() && newData.child('bonus').val() >= 0 && newData.child('bonus').val() <= 3000 && (newData.child('reason').val() === 'cleared' || newData.child('reason').val() === 'timeout') && (newData.child('reason').val() === 'cleared' || newData.child('bonus').val() === 0) && newData.child('at').val() === now"
               }
             }
           }
         }
       },
+
       "chat": {
         ".read": true,
-        ".write": "newData.child('_k').val() === root.child('v2/config/adminKey').val()",
-        "$channel": {
+        ".write": "!newData.exists() && root.child('v2/global/state/wipeAt').val() > now - 15000",
+        "global": {
           "$msg": {
             ".write": "!data.exists()",
-            ".validate": "newData.hasChildren(['uid','text','at']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 100 && newData.child('name').val().length <= 12 && newData.child('at').val() === now"
+            ".validate": "newData.hasChildren(['uid', 'text', 'at']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 100 && (!newData.hasChild('name') || newData.child('name').val().length <= 12) && newData.child('at').val() === now"
           }
         },
         "team": {
           "$teamId": {
             "$msg": {
               ".write": "!data.exists()",
-              ".validate": "newData.hasChildren(['uid','text','at']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 100 && newData.child('name').val().length <= 12 && newData.child('at').val() === now"
+              ".validate": "newData.hasChildren(['uid', 'text', 'at']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 100 && (!newData.hasChild('name') || newData.child('name').val().length <= 12) && newData.child('at').val() === now"
             }
           }
         }
