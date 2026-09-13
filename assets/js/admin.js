@@ -256,7 +256,7 @@
     if (hi > 2 * lo) return {
       ok: false, kind: 'ratio',
       msg: 'SR3 ' + a + '명 : S1L ' + b + '명 — ' + big + ' 가 ' + small + ' 의 2배를 넘습니다. ' +
-        '「같은 근무지 최대 2명」 을 지킬 수 없어 ' + big + ' 3명 이상인 팀이 생깁니다.'
+        small + ' 를 한 명씩 나눠 담아도 팀이 모자라, 모든 팀에 두 근무지를 넣을 수 없습니다.'
     };
     if (planTeams(a, b)) return { ok: true, kind: 'ok', msg: '' };
     return {
@@ -317,21 +317,33 @@
         teams.push({ id: id++, members: m.filter(Boolean).map(asMember) });
       });
     } else {
-      /* 규칙을 지킬 수 없는 인원 구성 — 최소 3명 / 되도록 균등하게 나누고 알린다 */
+      /* 규칙을 지킬 수 없을 만큼 한쪽으로 쏠린 인원 구성.
+         ── 팀을 크게 만들지 않는다. 섞을 수 있는 만큼 (적은 쪽 1 + 많은 쪽 2) 로 섞고,
+            남는 인원은 같은 근무지끼리 3~4명 팀으로 묶는다.
+            한 근무지만 있는 팀에는 그 근무지 전용 문제만 출제되므로 게임은 그대로 진행된다.
+            (예전에는 팀 수를 적은 쪽 인원에 맞춰 8명짜리 팀이 생겼다) */
       const few = sr3.length <= s1l.length ? sr3 : s1l;
       const many = sr3.length <= s1l.length ? s1l : sr3;
-      const n = players.length;
-      const T = Math.max(1, Math.min(Math.floor(n / 3), few.length || 1));
-      for (let i = 0; i < T; i++) teams.push({ id: id++, members: [] });
-      // 적은 쪽을 먼저 한 명씩 돌려 담아 모든 팀이 섞이게
-      few.forEach((p, i) => teams[i % T].members.push(asMember(p)));
-      // 많은 쪽은 인원이 적은 팀부터 채운다
-      many.forEach(p => {
-        teams.sort((A, B) => A.members.length - B.members.length || A.id - B.id);
-        teams[0].members.push(asMember(p));
-      });
+      const total = few.length + many.length;
+      const mixed = Math.min(few.length, Math.floor(total / 3));
+
+      const addTeam = (m) => teams.push({ id: id++, members: m.filter(Boolean).map(asMember) });
+      const smallest = () => teams.slice().sort((A, B) =>
+        A.members.length - B.members.length || A.id - B.id)[0];
+
+      for (let i = 0; i < mixed; i++) addTeam([few.pop(), many.pop(), many.pop()]);
+      while (many.length >= 3) addTeam([many.pop(), many.pop(), many.pop()]);
+      if (!teams.length) addTeam([few.pop(), many.pop(), many.pop()]);   // 최후의 보루
+      // 남은 사람은 가장 적은 팀에 한 명씩 (팀은 최대 4~5명)
+      while (few.length) smallest().members.push(asMember(few.pop()));
+      while (many.length) smallest().members.push(asMember(many.pop()));
       teams.sort((A, B) => A.id - B.id);
-      warn = diag.msg + ' 최대한 고르게 나누었으니, 필요하면 [직접 편집] 에서 손보세요.';
+
+      const solo = teams.filter(t => teamStat(t).sr3 === 0 || teamStat(t).s1l === 0).length;
+      warn = diag.msg +
+        (solo ? ' 그래서 ' + solo + '개 팀은 한 근무지만으로 구성했습니다. ' +
+          '그 팀에는 자기 근무지 전용 문제만 출제되므로 진행에는 문제가 없습니다.' : '') +
+        ' 필요하면 [직접 편집] 에서 손보세요.';
     }
 
     NET.setTeams(teams);

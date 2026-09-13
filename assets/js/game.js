@@ -55,6 +55,28 @@
     return (odd !== flip) ? 'SR3' : 'S1L';
   }
 
+  /** 우리 팀에 실제로 있는 근무지 목록 (팀이 없으면 내 근무지만) */
+  function teamSites() {
+    const list = (S.teams && S.teams.list) || [];
+    const t = list.find(x => (x.members || []).some(m => m && m.uid === NET.uid));
+    if (!t) return [(S.me && S.me.loc) || 'SR3'];
+    const set = {};
+    (t.members || []).forEach(m => {
+      const p = (S.players || {})[m.uid] || m;
+      if (p && p.loc) set[p.loc] = 1;
+    });
+    const arr = Object.keys(set);
+    return arr.length ? arr : [(S.me && S.me.loc) || 'SR3'];
+  }
+
+  /** 팀이 답할 수 있는 근무지로 바꿔 준다.
+      인원이 한쪽으로 크게 쏠려 한 근무지만 있는 팀이 생겨도
+      그 팀이 못 푸는 전용 문제가 나오지 않게 한다. */
+  function solvableSite(site) {
+    const have = teamSites();
+    return have.indexOf(site) >= 0 ? site : have[0];
+  }
+
   function assignQuizzes(seed) {
     S.seed = seed;
     const out = {}, sites = {};
@@ -62,7 +84,7 @@
       const rand = lcg(seed * 7919 + r * 104729);
       const take = arr => arr.splice(Math.floor(rand() * arr.length), 1)[0];
       const bank = (BANK[r] || []).slice();
-      const site = siteForRoom(r, seed);
+      const site = solvableSite(siteForRoom(r, seed));
       const pools = {
         site: bank.filter(q => q.loc === site),
         hard: bank.filter(q => !q.loc && q.tier === 'hard'),
@@ -1283,7 +1305,7 @@
   g.GAME = {
     S, boot, enterRoom, renderLobby, showResults, openBoard, computeBoard,
     applyGlobal, finishRoom, assignQuizzes, siteForRoom, answersOf, teamCode, updateHUD,
-    computeTeamBoard, mountBoard,
+    computeTeamBoard, mountBoard, teamSites,
     myTeamNo, teamSeedFor, placeExit
   };
 })(window);
