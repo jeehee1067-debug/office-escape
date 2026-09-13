@@ -33,6 +33,9 @@
   let connected = false;
   const connCbs = [];
 
+  /* ---------- 현재 진행 상태 (관리자가 통째로 다시 쓸 때 바탕이 된다) ---------- */
+  let curGlobal = null;
+
   /* ---------- 고유 ID (기기별 영구) ---------- */
   function uuid() {
     if (crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -58,6 +61,8 @@
 
   /* ---------- 관리자 키 (비밀번호 해시) ---------- */
   let adminKey = null;
+  /** 관리자 쓰기에 함께 싣는 증표: 키 + 서버 시각 */
+  const stamp = () => ({ key: adminKey, n: TS });
   async function makeAdminKey(pw) {
     try {
       const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('s1fa::' + pw));
@@ -89,26 +94,19 @@
     async initAdmin(pw) {
       adminKey = await makeAdminKey(pw);
 
-      // 규칙(database.rules.json) 적용 시 최초 1회만 기록되고, 이후에는 검증용으로 쓰인다.
-      try { await withTimeout(ref('config/adminKey').transaction(cur => (cur === null ? adminKey : undefined)), 8000); } catch (e) { }
+      /* 최초 1회 키 등록. 규칙상 이미 있으면 거부되므로 결과는 보지 않는다.
+         (config 는 읽을 수 없는 경로라 transaction 은 쓸 수 없다 — 평범한 set 이어야 한다) */
+      try { await withTimeout(ref('config/adminKey').set(adminKey), 8000); } catch (e) { }
 
-      let stored = null, readOk = false;
+      /* 검증: 키가 맞을 때만 쓸 수 있는 자리에 써 본다. 규칙이 비밀번호를 대신 확인해 준다.
+         규칙이 없는 상태(로컬 대체 저장소 등)에서는 저장된 키와 직접 비교한다. */
       try {
-        const s = await withTimeout(ref('config/adminKey').get(), 8000);
-        readOk = true;
-        if (s.exists()) stored = s.val();
-      } catch (e) { /* 규칙으로 읽기가 막혔거나 서버에 못 붙은 경우 */ }
-
-      if (readOk && stored !== null) {
-        if (stored !== adminKey) return 'wrong';
-        this.isAdmin = true;
-        return 'ok';
-      }
-
-      // 읽기가 막힌 경우 → 쓰기 성공 여부로 검증 (규칙이 비밀번호를 대신 확인해 준다)
-      try {
+        let stored = null;
+        try { const s = await withTimeout(ref('config/adminKey').get(), 3000); if (s.exists()) stored = s.val(); } catch (e) { }
+        if (stored !== null && stored !== adminKey) return 'wrong';
         await withTimeout(ref('config/verify').set({ _k: adminKey, at: TS }), 8000);
         this.isAdmin = true;
+        this.publishBank().catch(e => console.warn('[S1FA] 배점표 등록 실패:', e));
         return 'ok';
       } catch (e) {
         // 쓰기까지 막혔다면 비밀번호 문제인지 DB 문제인지 구분한다
@@ -120,25 +118,46 @@
     /** 데이터베이스에 실제로 붙을 수 있는지 확인 */
     async probe() {
       try {
-        await withTimeout(ref('global').get(), 8000, 'global');
+        await withTimeout(ref('global/state').get(), 8000, 'global');
         return { ok: true };
       } catch (e) {
         const msg = String((e && e.message) || e);
         return { ok: false, code: msg.indexOf('timeout') === 0 ? 'timeout' : 'denied', message: msg };
       }
     },
-    useAdminKey(k) { adminKey = k; this.isAdmin = true; },
+    useAdminKey(k) {
+      adminKey = k; this.isAdmin = true;
+      this.publishBank().catch(() => { });
+    },
+
+    /** 문제은행의 문제별 배점을 서버에 올린다.
+     *  규칙은 정답 기록의 points 가 이 표의 값과 같을 때만 받아 주므로,
+     *  참가자가 배점을 부풀릴 수 없고 문제은행을 고쳐도 규칙을 다시 손댈 필요가 없다. */
+    publishBank() {
+      const scores = {};
+      const bank = (g.DATA && g.DATA.BANK) || {};
+      Object.keys(bank).forEach(r => (bank[r] || []).forEach(q => {
+        if (q && q.id && typeof q.score === 'number') scores[q.id] = q.score;
+      }));
+      if (!Object.keys(scores).length) return Promise.resolve();
+      return ref('bank').set({ _k: stamp(), scores });
+    },
     get adminKey() { return adminKey; },
 
-    /* ----- 글로벌 진행 상태 ----- */
-    onGlobal(cb) { ref('global').on('value', s => cb(s.val() || null), e => onSubError('global', e)); },
-    async getGlobal() { const s = await withTimeout(ref('global').get(), 8000, 'global'); return s.val() || null; },
+    /* ----- 글로벌 진행 상태 -----
+       · 참가자가 읽는 것은 global/state 뿐. 관리자 키는 global/_k 에 두어 아무도 읽지 못한다.
+       · 관리자 쓰기는 항상 global 전체를 { _k:{key, n}, state } 로 통째로 set 한다.
+         n 은 서버 시각 — 규칙이 "이번 쓰기에 키를 함께 냈는지" 를 이것으로 확인하므로,
+         저장돼 있던 키에 기대어 state 만 고치는 부분 쓰기는 거부된다. */
+    onGlobal(cb) { ref('global/state').on('value', s => cb(s.val() || null), e => onSubError('global', e)); },
+    async getGlobal() { const s = await withTimeout(ref('global/state').get(), 8000, 'global'); return s.val() || null; },
     setGlobal(patch) {
-      const p = Object.assign({}, patch, { _k: adminKey, updatedAt: TS });
-      return ref('global').update(p);
+      const state = Object.assign({}, curGlobal || {}, patch, { updatedAt: TS });
+      Object.keys(state).forEach(k => { if (state[k] === undefined) delete state[k]; });
+      return ref('global').set({ _k: stamp(), state });
     },
     replaceGlobal(obj) {
-      return ref('global').set(Object.assign({}, obj, { _k: adminKey, updatedAt: TS }));
+      return ref('global').set({ _k: stamp(), state: Object.assign({}, obj, { updatedAt: TS }) });
     },
 
     /* ----- 참가자 ----- */
@@ -206,31 +225,143 @@
     },
 
     /* ----- 팀 ----- */
-    onTeams(cb) { ref('teams').on('value', s => cb(s.val() || null), e => onSubError('teams', e)); },
-    async getTeams() { const s = await withTimeout(ref('teams').get(), 8000, 'teams'); return s.val() || null; },
-    setTeams(t) { return ref('teams').set({ _k: adminKey, list: t, at: TS }); },
+    onTeams(cb) { ref('teams/state').on('value', s => cb(s.val() || null), e => onSubError('teams', e)); },
+    async getTeams() { const s = await withTimeout(ref('teams/state').get(), 8000, 'teams'); return s.val() || null; },
+    setTeams(t) { return ref('teams').set({ _k: stamp(), state: { list: t, at: TS } }); },
+
+    /* ============================================================
+       행사 준비 점검 — 실제 서버에 요청을 넣어 보고 결과를 돌려준다.
+       "규칙을 제대로 게시했는가" 는 눈으로 확인할 방법이 없으므로,
+       규칙이 막아야 하는 동작을 일부러 시도해 본다.
+       ============================================================ */
+    async selfCheck() {
+      const out = [];
+      const add = (name, ok, detail, fix) => out.push({ name, ok, detail: detail || '', fix: fix || '' });
+
+      /** 읽기 시도 — 'allowed' | 'denied' | 'unknown'(응답 없음) */
+      async function canRead(path) {
+        try { await withTimeout(ref(path).get(), 8000, path); return 'allowed'; }
+        catch (e) { return /^timeout/.test(String(e && e.message)) ? 'unknown' : 'denied'; }
+      }
+      /* 점검용 자리는 매번 새로 만든다 — 그 자리에 원래 있던 값을
+         '방금 써진 것' 으로 잘못 읽지 않기 위해서다. */
+      const tag = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+      /** 쓰기 시도 — 거부됐다는 응답을 믿지 않고 '실제로 써졌는지' 를 다시 읽어 확인하고, 흔적은 지운다.
+       *  (규칙에 막히지 않았는데 응답만 늦게 오는 경우를 '차단됨' 으로 잘못 읽지 않기 위해) */
+      async function canWrite(path, value) {
+        let said = 'denied';
+        try { await withTimeout(ref(path).set(value), 8000, path); said = 'allowed'; }
+        catch (e) { said = /^timeout/.test(String(e && e.message)) ? 'unknown' : 'denied'; }
+        let landed = null;
+        try { landed = (await withTimeout(ref(path).get(), 8000, path)).exists(); } catch (e) { }
+        if (landed) { try { await ref(path).remove(); } catch (e) { } }
+        if (landed === true) return 'allowed';                 // 실제로 써졌다 — 응답과 무관하게 열려 있는 것
+        if (landed === false) return said === 'unknown' ? 'denied' : said;
+        return said;                                            // 확인조차 못 한 경우
+      }
+      const verdict = (r, okWhen) => r === okWhen;
+      const unknownNote = (r) => r === 'unknown' ? ' (서버 응답을 받지 못했습니다 — 다시 검사해 주세요)' : '';
+
+      /* 1. 서버에 붙는가 */
+      const st = await this.probe();
+      add('서버 연결', st.ok,
+        st.ok ? '진행 상태를 읽을 수 있습니다.' : '읽지 못했습니다 (' + (st.code || '오류') + ')',
+        st.ok ? '' : '인터넷 연결과 net.js 의 firebaseConfig 를 확인하세요.');
+      if (!st.ok) return out;
+
+      /* 2. 규칙이 아예 열려 있지는 않은가 — 규칙에 없는 자리에 써 본다 */
+      const openWrite = await canWrite('runs/__ruletest__/' + tag, 1);
+      add('보안 규칙 게시됨', verdict(openWrite, 'denied'),
+        (openWrite === 'denied' ? '규칙에 없는 자리에 쓰기가 막혔습니다.'
+                                : '아무 데나 쓸 수 있습니다 — 임시 규칙(전부 허용)이 올라가 있습니다.')
+        + unknownNote(openWrite),
+        openWrite === 'denied' ? ''
+          : 'Firebase 콘솔 → Realtime Database → 규칙 탭에 database.rules.json 을 붙여넣고 [게시]하세요.');
+
+      /* 3. 예전 규칙인가 — 새 규칙은 global 통째 읽기를 막는다 (관리자 키가 그 안에 있다) */
+      const oldRead = await canRead('global');
+      add('관리자 키 숨겨짐', verdict(oldRead, 'denied'),
+        (oldRead === 'denied' ? '참가자는 global/state 만 읽을 수 있습니다.'
+                              : 'global 을 통째로 읽을 수 있습니다 — 관리자 키가 그대로 노출됩니다.')
+        + unknownNote(oldRead),
+        oldRead === 'denied' ? '' : '예전 규칙이 올라가 있습니다. 지금의 database.rules.json 으로 다시 게시하세요.');
+
+      /* 4. 배점표가 서버에 있는가 (규칙이 이 값과 대조해 점수 위조를 막는다) */
+      const local = {};
+      const bank = (g.DATA && g.DATA.BANK) || {};
+      Object.keys(bank).forEach(r => (bank[r] || []).forEach(q => {
+        if (q && q.id && typeof q.score === 'number') local[q.id] = q.score;
+      }));
+      let server = null;
+      try { server = (await withTimeout(ref('bank/scores').get(), 8000)).val(); } catch (e) { }
+      const ids = Object.keys(local);
+      const same = server && ids.length && ids.every(k => server[k] === local[k]) &&
+                   Object.keys(server).length === ids.length;
+      add('문제 배점표 등록됨', !!same,
+        server ? '서버 ' + Object.keys(server).length + '문제 / 코드 ' + ids.length + '문제'
+               : '서버에 배점표가 없습니다.',
+        same ? '' : '관리자로 다시 로그인하면 자동으로 올라갑니다. (문제은행 배점을 바꾼 뒤에도 필요합니다)');
+
+      /* 5. 점수를 부풀려 쓸 수 있는가 — 실제 문제 id 에 엉뚱한 점수를 넣어 본다 */
+      const probeId = ids[0];
+      let forge = 'unknown';
+      if (probeId) {
+        /* 배점표와 '다르지만 그럴듯한' 값으로 찔러 본다.
+           터무니없이 큰 값은 예전 규칙의 상한에도 걸려서, 배점표 대조가
+           동작하는지 아닌지를 구분하지 못한다. */
+        forge = await canWrite('runs/__selfcheck__/rooms/1/solves/' + tag, {
+          qid: probeId, points: Math.max(1, (local[probeId] || 1000) - 500), at: TS, uid: '__selfcheck__'
+        });
+        try { await ref('runs/__selfcheck__').remove(); } catch (e) { }
+      }
+      add('점수 위조 차단', verdict(forge, 'denied'),
+        (forge === 'denied' ? '배점표와 다른 점수는 서버가 거부합니다.'
+                            : '엉뚱한 점수가 그대로 기록됩니다.') + unknownNote(forge),
+        forge === 'denied' ? '' : '규칙 게시와 배점표 등록을 먼저 마치세요.');
+
+      /* 6. 예전 형식 데이터나 점검 흔적이 남아 있는가
+            (규칙이 잘못 올라가 있으면 위의 점검이 남긴 자리를 스스로 지우지 못한다) */
+      const legacy = [];
+      const exists = async (path) => {
+        try { return (await withTimeout(ref(path).get(), 8000, path)).exists(); } catch (e) { return false; }
+      };
+      for (const node of ['players/_k', 'runs/_k', 'chat/_k', 'runs/__selfcheck__', 'runs/__ruletest__']) {
+        if (await exists(node)) {
+          try { await ref(node).remove(); } catch (e) { }
+          if (await exists(node)) legacy.push(node);       // 지워지지 않은 것만 보고한다
+        }
+      }
+      add('예전 데이터 정리됨', legacy.length === 0,
+        legacy.length ? '남아 있음: ' + legacy.join(', ') : '남은 것이 없습니다.',
+        legacy.length ? '규칙을 올바로 게시한 뒤 아래 [전체 데이터 초기화] 를 한 번 누르면 지워집니다.' : '');
+
+      return out;
+    },
 
     /* ----- 초기화 ----- */
     async resetAll() {
-      await ref('runs').set({ _k: adminKey });
-      await ref('players').set({ _k: adminKey });
-      await ref('teams').set({ _k: adminKey });
-      await ref('chat').set({ _k: adminKey });
+      // 1) 관리자만 찍을 수 있는 '초기화 시각' — 규칙은 이 시각 15초 안의 삭제만 허용한다
+      await this.setGlobal({ wipeAt: TS });
+      // 2) 참가자·기록·채팅 삭제, 팀 비우기
+      await ref('runs').remove();
+      await ref('players').remove();
+      await ref('chat').remove();
+      await this.setTeams([]);
+      // 3) 새 판 — resetToken 이 바뀌면 참가자 화면은 로그인으로 돌아간다
       await this.replaceGlobal({
         phase: 'lobby', room: 1, startAt: null, pausedAt: null, pauseTotal: 0,
         resetToken: Date.now(), locked: false
       });
     },
     async resetRoomProgress(room) {
+      // 관리자가 '어느 방을 언제' 리셋하는지 찍은 뒤 15초 안에만 그 방 기록 삭제가 허용된다
+      await this.setGlobal({ roomReset: { room: String(room), at: TS } });
       const snap = await ref('runs').get();
       const all = snap.val() || {};
       const updates = {};
-      Object.keys(all).forEach(u => {
-        if (u === '_k') return;
-        updates[u + '/rooms/' + room] = null;
-      });
-      updates['_k'] = adminKey;
-      await ref('runs').update(updates).catch(() => { });
+      Object.keys(all).forEach(u => { updates[u + '/rooms/' + room] = null; });
+      if (Object.keys(updates).length) await ref('runs').update(updates);
     }
   };
 
@@ -257,6 +388,9 @@
     });
     return { score, time, solved, rooms };
   };
+
+  /* 진행 상태를 항상 최신으로 (관리자 setGlobal 의 바탕) */
+  ref('global/state').on('value', s => { curGlobal = s.val() || null; }, () => { });
 
   /* 연결 상태 구독 (NET 정의 이후) */
   db.ref('.info/connected').on('value', s => {
