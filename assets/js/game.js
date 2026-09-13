@@ -1094,14 +1094,16 @@
   function soloTableHTML(rows) {
     if (!rows.length) return '<p class="board-empty">아직 기록이 없습니다.</p>';
     let h = '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
-      '<th>#</th><th>이름</th><th>팀</th><th>근무지</th><th>점수</th><th>시간</th><th>단서</th>' +
+      '<th>#</th><th>이름</th><th>팀</th><th class="col-opt">근무지</th><th>점수</th>' +
+      '<th>시간</th><th class="col-opt">단서</th>' +
       '</tr></thead><tbody>';
     rows.forEach((r, i) => {
       const cls = (r.uid === NET.uid ? 'me-row' : (i < 3 ? 'rank-' + (i + 1) : ''));
       h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td><td>' + esc(r.name) + '</td>' +
-        '<td>' + (r.team ? r.team + '팀' : '-') + '</td><td>' + esc(r.loc || '-') + '</td>' +
+        '<td>' + (r.team ? r.team + '팀' : '-') + '</td>' +
+        '<td class="col-opt">' + esc(r.loc || '-') + '</td>' +
         '<td><b>' + r.score.toLocaleString() + '</b></td><td>' + mmss(r.time) + '</td>' +
-        '<td>' + r.solved + '</td></tr>';
+        '<td class="col-opt">' + r.solved + '</td></tr>';
     });
     return h + '</tbody></table></div>';
   }
@@ -1109,16 +1111,17 @@
     if (!rows.length) return '<p class="board-empty">아직 팀이 구성되지 않았습니다.<br>관리자가 팀을 만들면 여기에 팀 순위가 나옵니다.</p>';
     const mine = S.myTeam;
     let h = '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
-      '<th>#</th><th>팀</th><th>인원</th><th>합계</th><th>1인 평균</th><th>평균 시간</th><th>단서</th>' +
+      '<th>#</th><th>팀</th><th class="col-opt">인원</th><th>합계</th>' +
+      '<th class="col-opt">1인 평균</th><th>평균 시간</th><th class="col-opt">단서</th>' +
       '</tr></thead><tbody>';
     rows.forEach((r, i) => {
       const cls = (r.id === mine ? 'me-row' : (i < 3 ? 'rank-' + (i + 1) : ''));
       h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td>' +
         '<td><b>' + r.id + '팀</b><span class="board-mem">' + esc(r.names.join(', ')) + '</span></td>' +
-        '<td>' + r.n + '명<span class="board-mem">SR3 ' + r.sr3 + '·S1L ' + r.s1l + '</span></td>' +
+        '<td class="col-opt">' + r.n + '명<span class="board-mem">SR3 ' + r.sr3 + '·S1L ' + r.s1l + '</span></td>' +
         '<td><b>' + r.score.toLocaleString() + '</b></td>' +
-        '<td>' + r.avg.toLocaleString() + '</td>' +
-        '<td>' + mmss(r.avgTime) + '</td><td>' + r.solved + '</td></tr>';
+        '<td class="col-opt">' + r.avg.toLocaleString() + '</td>' +
+        '<td>' + mmss(r.avgTime) + '</td><td class="col-opt">' + r.solved + '</td></tr>';
     });
     return h + '</tbody></table></div>';
   }

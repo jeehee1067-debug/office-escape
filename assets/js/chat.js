@@ -26,7 +26,7 @@
     min: false,                 // 접힘 (입력칸만 남김)
     prevH: ''                   // 접기 전 높이 (펼칠 때 되돌린다)
   };
-  const MIN_BAR = 104;          // 접었을 때 높이 (머리말 + 입력칸)
+  const MIN_BAR = 118;          // 접었을 때 높이 (머리말 + 입력칸)
 
   const myTeam = () => (g.GAME && g.GAME.S ? g.GAME.S.myTeam : null);
   const isAdmin = () => !!(g.GAME && g.GAME.S && g.GAME.S.me && g.GAME.S.me.isAdmin);
@@ -58,7 +58,7 @@
      · 기기마다 따로 기억한다
      ============================================================ */
   const BOX_KEY = 's1fa.chatbox';
-  const MIN_W = 260, MIN_H = 240;
+  const MIN_W = 290, MIN_H = 260;
   const WIDE = 760;             // 이 폭부터 "옆에 띄우기" — style.css 의 760px 과 맞춘다
 
   /** 게임 화면을 가리지 않는 자리를 먼저 찾는다 */
@@ -70,7 +70,7 @@
     let r = rectOf();
 
     if (vw > WIDE) {
-      const w = Math.min(Math.max(MIN_W, Math.round(vw * 0.3)), 460);
+      const w = Math.min(Math.max(MIN_W, Math.round(vw * 0.3)), 500);
       const h = Math.min(Math.max(MIN_H, Math.round(vh * 0.72)), 680);
       // 게임이 비켜 줄 폭을 먼저 정하고 나서 게임 위치를 다시 잰다.
       // (아주 넓은 화면에서는 비켜 주지 않으므로 게임이 가운데로 돌아온다)
@@ -154,7 +154,7 @@
   /** 게임 화면이 오른쪽에 비워 둘 폭 — 채팅창 실제 너비에 맞춘다.
       화면이 아주 넓어서 가운데 그대로 두어도 채팅창이 옆에 들어가면 비켜 주지 않는다.
       (안 그러면 창·게임·채팅이 넓은 화면 양끝으로 갈라져 보인다) */
-  const APP_MAX = 900;          // #app 의 최대 폭 (style.css 와 같이 맞춘다)
+  const APP_MAX = 1060;         // #app 의 최대 폭 (style.css 와 같이 맞춘다)
   function reserve(w) {
     const app = document.getElementById('app');
     const appW = Math.min(app ? app.offsetWidth || APP_MAX : APP_MAX, APP_MAX);
