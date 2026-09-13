@@ -532,9 +532,11 @@
         SFX.trap();
         say(t.msg, '🎣 …');
         if (t.cost) {
-          NET.addTrap(S.room);
+          NET.addTrap(S.room);          // 몇 번 걸렸는지는 기록해 둔다 (감점은 없음)
           g.QKIT.shake($('#stage'));
-          toast('함정! -' + CONFIG.TRAP_PENALTY + '점', 'bad');
+          toast(CONFIG.TRAP_PENALTY > 0
+            ? '함정! -' + CONFIG.TRAP_PENALTY.toLocaleString() + '점'
+            : '🎣 낚였다! 시간만 버렸습니다 (감점은 없음)', 'bad', 2600);
         }
       }, t.label || '???', 'look');
     });
