@@ -176,6 +176,8 @@
       SFX.great();
       toast('관리자로 로그인했습니다.', 'good');
       setTimeout(() => g.ADMIN.open(), 500);
+      // 규칙 게시·배점표 등록이 빠지지 않았는지 조용히 확인한다 (문제가 있을 때만 알림)
+      setTimeout(() => g.ADMIN.autoCheck(), 2200);
     }, { password: true, max: 24 });
   }
 

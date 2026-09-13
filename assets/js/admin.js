@@ -103,6 +103,7 @@
 
       '<h5 class="admin-h">🛠 도구</h5>' +
       '<div class="admin-grid">' +
+      '<button class="pk-btn pk-btn-ghost" data-act="check">🧪 행사 준비 점검</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="chat">💬 채팅 열기</button>' +
       '<button class="pk-btn pk-btn-ghost" data-act="csv">💾 결과 CSV</button>' +
       '</div>' +
@@ -183,6 +184,7 @@
     teams() { buildTeams(); },
     editteams() { openTeamEditor(); },
     chat() { if (g.CHAT) g.CHAT.setOpen(true); },
+    check() { runSelfCheck(); },
     csv() { exportCSV(); },
     logout() {
       confirmBox('관리자 로그아웃', '관리자 세션을 종료하고 로그인 화면으로 돌아갑니다.', () => {
@@ -424,6 +426,53 @@
     }, 4000);
   }
 
+  /* ============================================================
+     행사 준비 점검
+     ============================================================ */
+  function checkHTML(rows, running) {
+    if (running) return '<p style="text-align:center;padding:26px;color:#3f4453">서버에 확인하는 중...</p>';
+    const bad = rows.filter(r => !r.ok).length;
+    let h = bad
+      ? '<p style="font-size:12px;line-height:1.8;color:#8a2b1e;background:#f6d3ce;border:2px solid var(--red);' +
+        'border-radius:6px;padding:8px 10px;margin-bottom:10px">⚠️ <b>' + bad + '개 항목</b>을 행사 전에 해결해야 합니다.</p>'
+      : '<p style="font-size:12px;line-height:1.8;color:#1c5c34;background:#cdf0d6;border:2px solid var(--green);' +
+        'border-radius:6px;padding:8px 10px;margin-bottom:10px">✅ 모두 정상입니다. 행사를 진행해도 됩니다.</p>';
+    h += '<table class="pk-table"><thead><tr><th style="width:44px">상태</th><th>항목</th><th>결과</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      h += '<tr' + (r.ok ? '' : ' style="background:#f6d3ce"') + '>' +
+        '<td>' + (r.ok ? '✅' : '❌') + '</td>' +
+        '<td style="text-align:left"><b>' + esc(r.name) + '</b></td>' +
+        '<td style="text-align:left">' + esc(r.detail) +
+        (r.fix ? '<br><span style="color:#8a5a12">→ ' + esc(r.fix) + '</span>' : '') + '</td></tr>';
+    });
+    return h + '</tbody></table>';
+  }
+
+  function runSelfCheck() {
+    const m = modal({ title: '🧪 행사 준비 점검', wide: true, closable: true,
+      html: checkHTML([], true),
+      buttons: [{ label: '🔄 다시 검사', cls: 'pk-btn-main', close: false, onClick: (back, body) => {
+        body.innerHTML = checkHTML([], true);
+        NET.selfCheck().then(rows => { body.innerHTML = checkHTML(rows); });
+      } }] });
+    NET.selfCheck().then(rows => { m.body.innerHTML = checkHTML(rows); })
+      .catch(e => { m.body.innerHTML = '<p style="line-height:1.9">점검에 실패했습니다: ' + esc(String(e && e.message || e)) + '</p>'; });
+    return m;
+  }
+
+  /** 관리자 로그인 직후 조용히 한 번 확인하고, 문제가 있을 때만 알린다 */
+  function autoCheck() {
+    NET.selfCheck().then(rows => {
+      const bad = rows.filter(r => !r.ok);
+      if (!bad.length) return;
+      modal({
+        title: '⚠️ 행사 전에 해결할 것이 있습니다', wide: true, closable: true,
+        html: checkHTML(rows),
+        buttons: [{ label: '알겠습니다', cls: 'pk-btn-main' }]
+      });
+    }).catch(() => { });
+  }
+
   /* ---------- CSV ---------- */
   function exportCSV() {
     const rows = g.GAME.computeBoard();
@@ -476,5 +525,5 @@
     });
   }
 
-  g.ADMIN = { open, buildTeams, exportCSV, openTeamEditor };
+  g.ADMIN = { open, buildTeams, exportCSV, openTeamEditor, runSelfCheck, autoCheck };
 })(window);
