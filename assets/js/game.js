@@ -296,10 +296,76 @@
     $('#actor-layer').appendChild(a);
     return a;
   }
-  /** 배경 그림 위에 얹는 오버레이 소품 (포스트잇 · 서류 · 포스터) */
+  /* ============================================================
+     배경 그림 위에 얹는 소품 (포스트잇 · 서류 더미 · 벽 공지문)
+     ------------------------------------------------------------
+     방 배경이 사진처럼 그려진 그림이라, 예전처럼 색칠한 네모에 이모지를
+     얹으면 겉돈다. 그래서 배경 그림결에 맞춰 SVG 로 그린다.
+     (칸 크기에 맞춰 늘어나도록 preserveAspectRatio="none")
+     ============================================================ */
+  const PROP_ART = {
+    /* 모니터에 덕지덕지 붙은 메모지 — 색이 다른 네 장이 겹쳐 있다 */
+    postit:
+      '<svg viewBox="0 0 100 72" preserveAspectRatio="none">' +
+      '<g stroke-linecap="round">' +
+      '<g transform="rotate(-7 26 30)">' +
+      '<rect x="4" y="10" width="38" height="38" fill="#ffe27a"/>' +
+      '<path d="M4 10h38v5H4z" fill="#f6cf58"/>' +
+      '<path d="M10 24h24M10 30h20M10 36h26" stroke="#a98a2e" stroke-width="2" fill="none"/>' +
+      '</g>' +
+      '<g transform="rotate(5 62 26)">' +
+      '<rect x="44" y="4" width="36" height="36" fill="#ffc4d6"/>' +
+      '<path d="M44 4h36v5H44z" fill="#f0a8bf"/>' +
+      '<path d="M50 18h22M50 24h16M50 30h20" stroke="#b76e88" stroke-width="2" fill="none"/>' +
+      '</g>' +
+      '<g transform="rotate(-3 72 52)">' +
+      '<rect x="54" y="32" width="38" height="36" fill="#bfe4ff"/>' +
+      '<path d="M54 32h38v5H54z" fill="#9ecdf0"/>' +
+      '<path d="M60 46h24M60 52h18" stroke="#5b87a8" stroke-width="2" fill="none"/>' +
+      '</g>' +
+      '<g transform="rotate(9 26 58)">' +
+      '<rect x="8" y="40" width="34" height="30" fill="#d8f3c4"/>' +
+      '<path d="M8 40h34v4H8z" fill="#b9dfa1"/>' +
+      '<path d="M14 52h20M14 58h14" stroke="#6d8f56" stroke-width="2" fill="none"/>' +
+      '</g>' +
+      '</g></svg>',
+
+    /* 책상 위에 쌓인 서류 — 비스듬히 내려다본 종이 더미와 파란 파일 */
+    papers:
+      '<svg viewBox="0 0 100 62" preserveAspectRatio="none">' +
+      '<ellipse cx="52" cy="56" rx="44" ry="6" fill="rgba(20,24,32,.28)"/>' +
+      '' +
+      '<path d="M12 44 L34 34 L96 38 L74 50 Z" fill="#3f6fa8"/>' +
+      '<path d="M12 44 L34 34 L96 38 L74 50 Z" fill="none" stroke="#28497a" stroke-width="1.5"/>' +
+      '<path d="M10 36 L32 26 L94 30 L72 42 Z" fill="#f7f6f0" stroke="#b9b6a8" stroke-width="1.5"/>' +
+      '<path d="M9 30 L31 20 L93 24 L71 36 Z" fill="#fdfdf8" stroke="#c4c1b3" stroke-width="1.5"/>' +
+      '<path d="M8 24 L30 14 L92 18 L70 30 Z" fill="#ffffff" stroke="#c9c6b8" stroke-width="1.5"/>' +
+      '<path d="M26 21 L74 24 M24 25 L72 28 M22 29 L60 31" stroke="#b0ada0" stroke-width="1.6" fill="none"/>' +
+      '<path d="M54 14 L86 16 L74 24 L46 22 Z" fill="#e9edf5" stroke="#b7bfcd" stroke-width="1.2"/>' +
+      '</svg>',
+
+    /* 벽에 테이프로 붙여 둔 공지문 (A4) */
+    poster:
+      '<svg viewBox="0 0 72 100" preserveAspectRatio="none">' +
+      '<g transform="rotate(-1.2 36 50)">' +
+      '<rect x="2" y="3" width="68" height="94" fill="#f7f5ec" stroke="#bcb8a9" stroke-width="1.2"/>' +
+      '<rect x="2" y="3" width="68" height="15" fill="#2f5f9e"/>' +
+      '<path d="M8 10h30" stroke="#cfe0f4" stroke-width="3.4"/>' +
+      '<path d="M8 28h56M8 36h56M8 44h38" stroke="#a8a598" stroke-width="2.6"/>' +
+      '<rect x="8" y="52" width="56" height="26" fill="#eaeef5" stroke="#bcc4d1"/>' +
+      '<path d="M13 72l10-12 8 7 7-13 10 18" stroke="#c0392b" stroke-width="2.2" fill="none"/>' +
+      '<path d="M8 86h34M8 92h22" stroke="#a8a598" stroke-width="2.6"/>' +
+      '<path d="M56 84l10 13H56z" fill="#e6e2d6" stroke="#bcb8a9" stroke-width="1"/>' +
+      '</g>' +
+      '<rect x="1" y="0" width="22" height="8" fill="rgba(240,244,250,.72)" transform="rotate(-16 12 4)"/>' +
+      '<rect x="49" y="0" width="22" height="8" fill="rgba(240,244,250,.72)" transform="rotate(13 60 4)"/>' +
+      '</svg>'
+  };
+
   function addOverlay(kind, rect, label) {
     const d = el('div', 'ov ov-' + kind);
     placePct(d, rect);
+    if (PROP_ART[kind]) d.innerHTML = PROP_ART[kind];
     if (label) d.appendChild(el('span', 'ov-label', esc(label)));
     $('#prop-layer').appendChild(d);
     return d;
@@ -307,6 +373,14 @@
   function addHotspot(rect, onClick, title, cls) {
     const h = el('div', 'hotspot ' + (cls || ''));
     placePct(h, rect);
+    // 단서 자리에는 작은 표시등을 달아 어디를 눌러야 하는지 알린다.
+    // 기믹 안의 선택지 칸(gate-sub)에는 달지 않는다 — 답을 알려주는 꼴이 된다.
+    const c = cls || '';
+    if (c.indexOf('clue') >= 0 && c.indexOf('gate-sub') < 0) {
+      // 화면 맨 위에 붙은 자리는 표시등이 잘리므로 안쪽에 그린다
+      if (rect[1] < 3) h.classList.add('dot-in');
+      h.appendChild(el('i', 'clue-dot'));
+    }
     if (title) { h.title = title; h.dataset.label = title; }
     h.addEventListener('click', e => { e.stopPropagation(); onClick(h); });
     $('#prop-layer').appendChild(h);

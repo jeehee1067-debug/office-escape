@@ -250,6 +250,37 @@ button,input,select{font-family:inherit}
   white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;margin-bottom:3px;
 }
 .hotspot:hover::before{opacity:1}
+/* 아직 못 푼 단서 3곳만 은은하게 숨쉬듯 표시한다.
+   (낚시·자료 힌트는 표시하지 않는다 — 찾는 재미를 남겨 둔다) */
+@keyframes cluePulse{
+  0%,100%{border-color:rgba(255,230,128,.30);box-shadow:inset 0 0 12px rgba(255,230,128,.10)}
+  50%    {border-color:rgba(255,214,90,.72); box-shadow:0 0 10px 1px rgba(255,214,90,.30),
+                                             inset 0 0 16px rgba(255,230,128,.20)}
+}
+.hotspot.clue:not(.solved):not(.gate-sub)::after{
+  border-color:rgba(255,230,128,.30);
+  animation:cluePulse 2.8s ease-in-out infinite;
+}
+.hotspot.clue:hover::after{animation:none}
+/* 단서 표시등 — 배경 그림이 복잡해 테두리만으로는 잘 안 보인다 */
+.clue-dot{
+  position:absolute;left:50%;top:-10px;width:15px;height:15px;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, #fff8d2, #ffd24a 58%, #d99b12);
+  border:2px solid rgba(29,32,41,.8);
+  box-shadow:0 0 9px 2px rgba(255,210,74,.6);
+  animation:clueBob 1.6s ease-in-out infinite;pointer-events:none;z-index:2;
+}
+@keyframes clueBob{
+  0%,100%{transform:translate(-50%,0) scale(1)}
+  50%    {transform:translate(-50%,-4px) scale(1.08)}
+}
+/* 화면 맨 위에 붙은 자리는 표시등을 아래쪽에 (소품에 가려지지 않게) */
+.hotspot.dot-in .clue-dot{top:auto;bottom:-9px;left:22%}
+.hotspot.solved .clue-dot{display:none}
+@media (prefers-reduced-motion:reduce){ .clue-dot{animation:none} }
+@media (prefers-reduced-motion:reduce){
+  .hotspot.clue:not(.solved):not(.gate-sub)::after{animation:none;border-color:rgba(255,214,90,.55)}
+}
 .hotspot.solved{pointer-events:none}
 .hotspot.solved::after{border-color:rgba(46,139,79,.9);background:rgba(46,139,79,.18)}
 .hotspot.is-lit::after{border-color:#8ef08e;background:rgba(142,240,142,.22)}
@@ -313,24 +344,13 @@ button,input,select{font-family:inherit}
 .ov.dragging{cursor:grabbing;z-index:40;filter:drop-shadow(0 8px 6px rgba(0,0,0,.55))}
 .ov.gone{opacity:0;transform:translateY(24px) rotate(14deg);pointer-events:none;
   transition:opacity .4s, transform .4s}
-.ov-postit{
-  background:repeating-linear-gradient(135deg,#ffe680 0 12px,#ffdf5e 12px 24px);
-  border:2px solid #c9a92a;box-shadow:2px 3px 0 rgba(0,0,0,.35);transform:rotate(-3deg);
+.ov-postit,.ov-papers,.ov-poster{
+  background:none;border:0;box-shadow:none;
+  filter:drop-shadow(2px 3px 3px rgba(15,18,26,.45));
 }
-.ov-postit::after{content:'📝';position:absolute;inset:0;display:flex;align-items:center;
-  justify-content:center;font-size:clamp(12px,2.4vw,20px)}
-.ov-papers{
-  background:linear-gradient(#fdfdf8 0 70%,#e6e4d8 100%);
-  border:2px solid #a9a69b;box-shadow:3px 4px 0 rgba(0,0,0,.3), inset 0 6px 0 #fff;
-}
-.ov-papers::after{content:'📄';position:absolute;inset:0;display:flex;align-items:center;
-  justify-content:center;font-size:clamp(12px,2.4vw,20px)}
-.ov-poster{
-  background:linear-gradient(160deg,#3b2f6e,#7a4a9e);
-  border:3px solid #241a3a;box-shadow:3px 4px 0 rgba(0,0,0,.4);
-}
-.ov-poster::after{content:'🖼️';position:absolute;inset:0;display:flex;align-items:center;
-  justify-content:center;font-size:clamp(14px,3vw,26px)}
+.ov svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.ov-postit{transform:rotate(-2deg)}
+.ov-poster{filter:drop-shadow(3px 5px 4px rgba(15,18,26,.5))}
 .ov-power{
   cursor:default;pointer-events:none;border-radius:6px;
   background:radial-gradient(circle at 50% 45%, rgba(160,225,255,.85), rgba(60,140,220,.35) 60%, transparent 75%);
