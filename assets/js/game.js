@@ -886,9 +886,12 @@
       '<span>배점 <b>' + q.score.toLocaleString() + '점</b></span>' +
       '<span>⚡속도 <b>+' + speedBonus(roomRemain()).toLocaleString() + '</b></span>' +
       '<span>오답 <b>-' + CONFIG.WRONG_PENALTY.toLocaleString() + '</b></span>' + tier + '</div>';
-    const siteTag = q.loc
-      ? '<div class="quiz-site">🏢 <b>' + esc(q.loc) + '</b> 근무자만 아는 문제입니다 — 팀의 ' + esc(q.loc) + ' 멤버에게 물어보세요!</div>'
-      : '';
+    /* both:true 는 두 사이트 사무실에 똑같이 있는 것을 묻는 문제 —
+       한쪽 근무자만 아는 게 아니므로 안내 문구를 달리한다. */
+    const siteTag = !q.loc ? ''
+      : q.both
+        ? '<div class="quiz-site">🏢 <b>사무실에 다녀와야</b> 푸는 문제입니다 — SR3·S1L 어느 쪽 사무실에서든 확인할 수 있습니다!</div>'
+        : '<div class="quiz-site">🏢 <b>' + esc(q.loc) + '</b> 근무자만 아는 문제입니다 — 팀의 ' + esc(q.loc) + ' 멤버에게 물어보세요!</div>';
     const docBtns = (q.docs && q.docs.length)
       ? '<div class="quiz-docs">' + g.DOCVIEW.buttonsHTML(q.docs) + '</div>' : '';
 
