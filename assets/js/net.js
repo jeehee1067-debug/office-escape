@@ -171,6 +171,15 @@
       }), 8000, 'join');
       armPresence();
     },
+    /** 다른 기기·브라우저로 다시 들어올 때 이전에 쓰던 참가자 ID 를 이어받는다.
+        점수(runs)와 팀 명단이 ID 에 묶여 있어서, 새 ID 로 들어오면 기록이 끊긴다.
+        반드시 joinPlayer / GAME.boot 보다 먼저 불러야 한다. */
+    useUid(u) {
+      if (!u || u === uid) return false;
+      uid = u; this.uid = u;
+      try { localStorage.setItem('s1fa.uid', u); } catch (e) { }
+      return true;
+    },
     updatePlayer(patch) { return ref('players/' + uid).update(patch); },
     /** 관리자가 다른 참가자의 정보를 고친다 (uid 는 그대로 두어야 규칙을 통과한다) */
     updatePlayerOf(targetUid, patch) {
