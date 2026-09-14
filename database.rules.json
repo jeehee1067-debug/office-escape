@@ -69,7 +69,7 @@
               "solves": {
                 "$slot": {
                   ".write": "!data.exists()",
-                  ".validate": "newData.hasChildren(['qid', 'points', 'at', 'uid']) && newData.child('uid').val() === $uid && newData.child('qid').isString() && newData.child('qid').val().matches(/^r[1-4][a-z0-9]{1,8}$/) && newData.child('points').isNumber() && newData.child('points').val() === root.child('v2/bank/scores/' + newData.child('qid').val()).val() && newData.child('at').val() === now"
+                  ".validate": "newData.hasChildren(['qid', 'points', 'at', 'uid']) && newData.child('uid').val() === $uid && newData.child('qid').isString() && newData.child('qid').val().matches(/^r[1-4][a-z0-9]{1,8}$/) && newData.child('points').isNumber() && newData.child('points').val() === root.child('v2/bank/scores/' + newData.child('qid').val()).val() && (!newData.hasChild('speed') || (newData.child('speed').isNumber() && newData.child('speed').val() >= 0 && newData.child('speed').val() <= 1500)) && newData.child('at').val() === now"
                 }
               },
               "done": {

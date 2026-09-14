@@ -388,7 +388,13 @@
       let rs = 0;
       if (r.solves) Object.keys(r.solves).forEach(s => {
         const v = r.solves[s];
-        if (v && typeof v.points === 'number') { rs += Math.max(0, Math.min(20000, v.points)); solved++; }
+        if (v && typeof v.points === 'number') {
+          /* points 는 문제 배점(서버 배점표와 대조되는 값), speed 는 그 위에 얹는 속도 점수.
+             둘을 나눠 적는 이유는 규칙이 points 를 배점표와 정확히 대조하기 때문이다. */
+          rs += Math.max(0, Math.min(20000, v.points));
+          rs += Math.max(0, Math.min(CFG.SPEED_PER_SEC * CFG.ROOM_SECONDS, v.speed || 0));
+          solved++;
+        }
       });
       if (r.wrong) Object.keys(r.wrong).forEach(s => {
         const n = r.wrong[s] || 0; wrong += n; rs -= CFG.WRONG_PENALTY * n;

@@ -160,7 +160,8 @@ button,input,select{font-family:inherit}
   background:#fff;overflow:hidden;text-overflow:ellipsis;display:inline-block;
   line-height:calc(var(--chip-h) - 4px);max-width:min(44cqw,200px);
 }
-.hud-clues{background:#fff;letter-spacing:2px}
+.hud-clues{background:#fff;letter-spacing:1px;white-space:nowrap}
+.hud-clues.is-done{background:var(--gold);}
 .hud-time{gap:4px;background:#fff}
 .t-label{color:var(--ink-soft);font-size:13px}
 .t-room{color:var(--red);font-size:15px}

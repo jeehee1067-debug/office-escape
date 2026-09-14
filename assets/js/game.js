@@ -255,9 +255,12 @@
     $('#hud-score').textContent = sc.score.toLocaleString() + ' P';
     $('#hud-player').textContent = (admin ? '👑 ' : '') + S.me.name +
       (S.me.loc ? ' · ' + S.me.loc : '') + (S.myTeam != null ? ' · ' + S.myTeam + '팀' : '');
+    /* 단서 진행 — 점만 찍어두면 "뭐가 남아 있는 건가" 싶어서 숫자를 함께 보여준다 */
+    const done = solvedCount(S.room), need = CONFIG.CLUES_PER_ROOM;
     const dots = [];
-    for (let i = 0; i < CONFIG.CLUES_PER_ROOM; i++) dots.push(i < solvedCount(S.room) ? '●' : '○');
-    $('#hud-clues').textContent = S.room ? dots.join('') : '- - -';
+    for (let i = 0; i < need; i++) dots.push(i < done ? '●' : '○');
+    $('#hud-clues').textContent = S.room ? '단서 ' + dots.join('') + ' ' + done + '/' + need : '';
+    $('#hud-clues').classList.toggle('is-done', S.room && done >= need);
     // 좁은 화면에서는 짧은 방 이름이 보이도록 두 벌을 함께 채운다 (CSS 가 골라 보여준다)
     const RM = S.room ? ROOMS[S.room] : null;
     $('#hud-room .rm-full').textContent  = RM ? (RM.full || RM.title || '') : '대기실';
@@ -265,7 +268,7 @@
     $('#btn-admin').classList.toggle('hidden', !admin);
     // 관리자는 점수를 얻지 않으므로 개인 점수·단서 표시를 숨긴다
     $('#hud-score').classList.toggle('hidden', admin);
-    $('#hud-clues').classList.toggle('hidden', admin);
+    $('#hud-clues').classList.toggle('hidden', admin || !S.room);
   }
 
   /* ---------- 씬 렌더 ---------- */
@@ -935,8 +938,11 @@
     const rem = roomRemain();
     const speed = speedBonus(rem);
     const total = q.score + speed;
+    /* points 에는 문제 배점만 적는다 — 서버 규칙이 배점표와 정확히 대조하기 때문에
+       속도 점수를 더해 보내면 기록 자체가 거부된다 (점수·단서 수·다음 방 버튼이 전부 멈춘다).
+       속도 점수는 speed 로 따로 적고, 합계는 NET.scoreOf 가 더한다. */
     const fresh = await NET.recordSolve(S.room, slot, {
-      qid: q.id, points: total, room: S.room, left: Math.round(rem)
+      qid: q.id, points: q.score, speed: speed, room: S.room, left: Math.round(rem)
     });
     const who = boss || (BOSSES[ROOMS[S.room].boss] || {}).name || '';
     if (fresh) {
