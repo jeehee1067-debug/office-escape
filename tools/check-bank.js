@@ -65,6 +65,13 @@ const [todaySeat, todayCell] = seatOf(nightOf(today));
 eq('r1h1', todaySeat + todayCell.no, q(1, 'r1h1').ans[0]);
 eq('r1h2', seatOf(nightOf('월'))[1].no + seatOf(nightOf('금'))[1].no, q(1, 'r1h2').ans[0]);
 
+// 1관 일반 : 야간 당직을 두 번 서는 사람 (배정표에서 다시 계산)
+const nightCount = {};
+shift.rows.forEach(r => { nightCount[r[2]] = (nightCount[r[2]] || 0) + 1; });
+const twice = Object.keys(nightCount).filter(n => nightCount[n] >= 2);
+ok(twice.length === 1, 'r1e1  야간 당직을 두 번 서는 사람이 딱 한 명 (' + twice.join(', ') + ')');
+eq('r1e1', twice[0], q(1, 'r1e1').ans[0]);
+
 // 2관 : 예약 대장 (UV 로 취소 표시)
 const book = DOCS.d2_book;
 const first = book.rows[0];
@@ -73,6 +80,12 @@ const cancelled = (book.uv[0].text.match(/^([0-9:]+)/) || [])[1];
 const alive = book.rows.filter(r => r[0] !== cancelled);
 const last = alive[alive.length - 1];
 eq('r2h2', last[0].slice(0, 2) + pad(last[3]), q(2, 'r2h2').ans[0]);
+
+// 2관 일반 : 인원이 가장 많은 회의의 회의실 (대장에서 다시 계산)
+const most = Math.max.apply(null, book.rows.map(r => Number(r[3])));
+const biggest = book.rows.filter(r => Number(r[3]) === most);
+ok(biggest.length === 1, 'r2e1  인원이 가장 많은 회의가 딱 하나 (' + most + '명 ' + biggest.length + '건)');
+eq('r2e1', biggest[0][1], q(2, 'r2e1').ans[0]);
 
 // 3관 : 기동 수칙 + 점검 기록부 + 라벨 대장 + 트레이
 const log = DOCS.d3_log, lastLog = log.rows[log.rows.length - 1];
@@ -83,6 +96,9 @@ const person = (log.rows.filter(r => r[3] === '재점검').pop() || [])[2];
 const spec = (DOCS.d3_tag.items.find(i => i.v.indexOf(person) >= 0) || {}).k;
 const cell = (Object.entries(DOCS.d3_tray.cells).find(([, c]) => c.name === spec) || ['??'])[0];
 eq('r3h2', cell, q(3, 'r3h2').ans[0]);
+
+// 3관 일반 : 가장 최근에 점검한 장비 (기록부 마지막 줄)
+eq('r3e1', lastLog[1], q(3, 'r3e1').ans[0]);
 
 // 3관 일반 : 트레이 빈칸 수 (배치도에서 다시 계산)
 const tray = DOCS.d3_tray;
@@ -96,6 +112,11 @@ const uvParts = plan.uv[0].text.split('—').map(s => s.trim());
 eq('r4h1', uvParts[0].split(':')[0] + color(uvParts[2]), q(4, 'r4h1').ans[0]);
 const at = h => plan.rows.find(r => r[0].indexOf(h) === 0) || [];
 eq('r4h2', color(at('00')[3]) + color(at('02')[3]), q(4, 'r4h2').ans[0]);
+
+// 4관 일반 : 모니터 대수(3) 번째 줄의 담당자
+const MONITORS = 3;                       // 4관 배경 그림 속 책상 위 모니터 수
+ok(plan.rows.length >= MONITORS, 'r4e1  계획표에 ' + MONITORS + '번째 줄이 있음 (' + plan.rows.length + '줄)');
+eq('r4e1', (plan.rows[MONITORS - 1] || [])[2], q(4, 'r4e1').ans[0]);
 
 console.log(fail ? '\n❌ 어긋난 항목 ' + fail + '개 — 위 ❌ 줄을 확인하세요.\n'
   : '\n✅ 문제은행과 자료가 모두 맞아떨어집니다.\n');
