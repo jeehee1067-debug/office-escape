@@ -3,7 +3,7 @@
    ============================================================ */
 (function (g) {
   'use strict';
-  const { $, $$, el, esc, toast, confirmBox, SFX } = g.UI;
+  const { $, $$, el, esc, toast, modal, confirmBox, SFX } = g.UI;
   const { AVATARS, CONFIG } = g.DATA;
 
   let chosen = { avatar: 0, loc: 'SR3' };
@@ -62,9 +62,66 @@
   function bindLoc() {
     $$('#loc-picker .chip').forEach(b => {
       b.onclick = () => {
+        if (lockedLoc && b.dataset.loc !== lockedLoc) {
+          toast('팀 배정이 끝나 근무지를 바꿀 수 없습니다.', 'bad', 2600);
+          return;
+        }
         chosen.loc = b.dataset.loc; SFX.select();
         $$('#loc-picker .chip').forEach(x => x.classList.toggle('is-on', x === b));
       };
+    });
+  }
+
+  /* ---------- 근무지 잠금 ----------
+     팀이 이미 짜인 뒤에 근무지를 바꿔서 들어오면 팀 구성(SR3·S1L 균형)이 깨지고
+     그 팀은 전용 문제를 풀 수 없게 된다. 그래서 배정된 뒤에는 바꾸지 못하게 막는다. */
+  let lockedLoc = null;          // 팀에 배정되어 고정된 근무지
+
+  /** 팀 명단에서 내 기록을 찾는다 */
+  function myTeamEntry(teams) {
+    const list = (teams && teams.list) || [];
+    for (const t of list) {
+      const m = (t.members || []).find(x => x && x.uid === NET.uid);
+      if (m) return { team: t.id, loc: m.loc };
+    }
+    return null;
+  }
+
+  /** 근무지 선택을 잠그고 화면에 알린다 */
+  function applyLocLock(loc, teamId) {
+    lockedLoc = loc;
+    chosen.loc = loc;
+    const box = $('#loc-picker');
+    if (box) {
+      $$('#loc-picker .chip').forEach(b => {
+        const on = b.dataset.loc === loc;
+        b.classList.toggle('is-on', on);
+        b.classList.toggle('is-locked', !on);
+        b.disabled = !on;
+        b.title = on ? '' : '팀 배정이 끝나 근무지를 바꿀 수 없습니다';
+      });
+      if (!box.parentNode.querySelector('.loc-lock-note')) {
+        const n = el('p', 'loc-lock-note',
+          '🔒 ' + teamId + '팀에 배정되어 근무지는 ' + loc + ' 로 고정되었습니다. ' +
+          '바꿔야 하면 관리자에게 말씀해주세요.');
+        box.parentNode.insertBefore(n, box.nextSibling);
+      }
+    }
+  }
+
+  /** 근무지를 바꿔서 들어오려 했을 때 알린다 */
+  function warnLocLocked(mine) {
+    modal({
+      title: '🔒 근무지는 바꿀 수 없습니다',
+      closable: true,
+      html: '<p style="font-size:13px;line-height:1.9">이미 <b>' + esc(String(mine.team)) + '팀</b> 에 ' +
+        '<b>' + esc(mine.loc) + '</b> 근무자로 배정되어 있습니다.<br>' +
+        '그래서 근무지는 <b>' + esc(mine.loc) + '</b> 로 되돌렸습니다. (이름은 바꾼 대로 유지됩니다)</p>' +
+        '<p style="font-size:12px;line-height:1.8;color:#5c6272;margin-top:8px">' +
+        '방마다 <b>SR3 전용 · S1L 전용 문제</b>가 번갈아 나옵니다. 팀에 두 근무지가 모두 있어야 탈출할 수 있어서, ' +
+        '팀이 짜인 뒤에 근무지를 바꾸면 그 팀이 문제를 풀 수 없게 됩니다.<br>' +
+        '정말 바꿔야 한다면 <b>관리자에게 말씀해 주세요.</b> 관리자 패널에서 고칠 수 있습니다.</p>',
+      buttons: [{ label: esc(mine.loc) + ' 로 계속하기', cls: 'pk-btn-main', close: true }]
     });
   }
 
@@ -91,6 +148,18 @@
         console.warn('[S1FA] 이름 중복 확인 실패:', e);
       }
 
+      /* 팀 배정이 끝난 뒤라면 근무지는 바꿀 수 없다 */
+      let locBlocked = null;
+      try {
+        const teams = await NET.getTeams();
+        const mine = myTeamEntry(teams);
+        if (mine && mine.loc && mine.loc !== chosen.loc) {
+          applyLocLock(mine.loc, mine.team);
+          locBlocked = mine;
+          chosen.loc = mine.loc;
+        }
+      } catch (e) { console.warn('[S1FA] 팀 확인 실패:', e); }
+
       const me = { name, loc: chosen.loc, avatar: chosen.avatar, isAdmin: false };
       localStorage.setItem('s1fa.me', JSON.stringify(me));
       localStorage.removeItem('s1fa.resetToken');     // 새 입장 — 이전 판의 초기화 토큰은 잊는다
@@ -103,6 +172,8 @@
         showConnError();
       }
       g.GAME.boot(me);
+      // 입장 화면이 다 그려진 뒤에 알린다 (boot 이 열려 있던 창을 닫기 때문)
+      if (locBlocked) setTimeout(() => warnLocLocked(locBlocked), 600);
     } finally {
       joining = false;
       btn.textContent = label;
@@ -204,6 +275,15 @@
       NET.getRun().catch(() => null),
       NET.getTeams().catch(() => null)
     ]);
+
+    /* 팀에 이미 배정돼 있으면 그 근무지를 따른다 (임의 변경 방지) */
+    const mine = myTeamEntry(teams);
+    if (mine && mine.loc && mine.loc !== me.loc) {
+      me.loc = mine.loc;
+      chosen.loc = mine.loc;
+      localStorage.setItem('s1fa.me', JSON.stringify(me));
+      setTimeout(() => warnLocLocked(mine), 800);
+    }
 
     // 접속 표시는 화면을 막지 않는다 (뒤에서 기록된다)
     NET.joinPlayer(me).catch(e => console.warn('[S1FA] 재접속 등록 실패:', e));

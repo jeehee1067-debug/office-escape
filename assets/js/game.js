@@ -55,6 +55,28 @@
     return (odd !== flip) ? 'SR3' : 'S1L';
   }
 
+  /** 우리 팀에 실제로 있는 근무지 목록 (팀이 없으면 내 근무지만) */
+  function teamSites() {
+    const list = (S.teams && S.teams.list) || [];
+    const t = list.find(x => (x.members || []).some(m => m && m.uid === NET.uid));
+    if (!t) return [(S.me && S.me.loc) || 'SR3'];
+    const set = {};
+    (t.members || []).forEach(m => {
+      const p = (S.players || {})[m.uid] || m;
+      if (p && p.loc) set[p.loc] = 1;
+    });
+    const arr = Object.keys(set);
+    return arr.length ? arr : [(S.me && S.me.loc) || 'SR3'];
+  }
+
+  /** 팀이 답할 수 있는 근무지로 바꿔 준다.
+      인원이 한쪽으로 크게 쏠려 한 근무지만 있는 팀이 생겨도
+      그 팀이 못 푸는 전용 문제가 나오지 않게 한다. */
+  function solvableSite(site) {
+    const have = teamSites();
+    return have.indexOf(site) >= 0 ? site : have[0];
+  }
+
   function assignQuizzes(seed) {
     S.seed = seed;
     const out = {}, sites = {};
@@ -62,7 +84,7 @@
       const rand = lcg(seed * 7919 + r * 104729);
       const take = arr => arr.splice(Math.floor(rand() * arr.length), 1)[0];
       const bank = (BANK[r] || []).slice();
-      const site = siteForRoom(r, seed);
+      const site = solvableSite(siteForRoom(r, seed));
       const pools = {
         site: bank.filter(q => q.loc === site),
         hard: bank.filter(q => !q.loc && q.tier === 'hard'),
@@ -144,6 +166,12 @@
     return Math.max(0, CONFIG.ROOM_SECONDS * CONFIG.ROOM_COUNT - used);
   }
 
+  /** 방을 새로 시작하면 '늦은 도움' 표시를 끈다 */
+  function resetClueHint() {
+    S.clueHintOn = false;
+    document.body.classList.remove('clue-hint');
+  }
+
   function startTicker() {
     clearInterval(S.timer);
     S.timer = setInterval(tick, 250);
@@ -164,6 +192,14 @@
       if (S.phase === 'playing') {
         if (rem <= 30 && rem > 29.5) SFX.warn();
         if (rem <= 0 && !S.ended) finishRoom('timeout');
+        /* 한참 헤매면 그제야 남은 단서 자리를 금색으로 알려 준다 */
+        const at = CONFIG.CLUE_HINT_AT || 0;
+        const late = at > 0 && roomElapsed() >= at;
+        if (late !== S.clueHintOn) {
+          S.clueHintOn = late;
+          document.body.classList.toggle('clue-hint', late);
+          if (late) toast('⏳ 아직 못 찾은 단서 자리를 금색으로 표시했습니다.', 'info', 3200);
+        }
       }
     }
     updateWaitPanel(live);
@@ -274,10 +310,87 @@
     $('#actor-layer').appendChild(a);
     return a;
   }
-  /** 배경 그림 위에 얹는 오버레이 소품 (포스트잇 · 서류 · 포스터) */
+  /* ============================================================
+     배경 그림 위에 얹는 소품 (포스트잇 · 서류 더미 · 벽 공지문)
+     ------------------------------------------------------------
+     방 배경이 사진처럼 그려진 그림이라, 예전처럼 색칠한 네모에 이모지를
+     얹으면 겉돈다. 그래서 배경 그림결에 맞춰 SVG 로 그린다.
+     (칸 크기에 맞춰 늘어나도록 preserveAspectRatio="none")
+     ============================================================ */
+  const PROP_ART = {
+    /* 모니터에 덕지덕지 붙은 메모지 — 색이 다른 네 장이 겹쳐 있다 */
+    postit:
+      '<svg viewBox="0 0 100 72" preserveAspectRatio="none">' +
+      '<g stroke-linecap="round">' +
+      '<g transform="rotate(-7 26 30)">' +
+      '<rect x="4" y="10" width="38" height="38" fill="#ffe27a"/>' +
+      '<path d="M4 10h38v5H4z" fill="#f6cf58"/>' +
+      '<path d="M10 24h24M10 30h20M10 36h26" stroke="#a98a2e" stroke-width="2" fill="none"/>' +
+      '</g>' +
+      '<g transform="rotate(5 62 26)">' +
+      '<rect x="44" y="4" width="36" height="36" fill="#ffc4d6"/>' +
+      '<path d="M44 4h36v5H44z" fill="#f0a8bf"/>' +
+      '<path d="M50 18h22M50 24h16M50 30h20" stroke="#b76e88" stroke-width="2" fill="none"/>' +
+      '</g>' +
+      '<g transform="rotate(-3 72 52)">' +
+      '<rect x="54" y="32" width="38" height="36" fill="#bfe4ff"/>' +
+      '<path d="M54 32h38v5H54z" fill="#9ecdf0"/>' +
+      '<path d="M60 46h24M60 52h18" stroke="#5b87a8" stroke-width="2" fill="none"/>' +
+      '</g>' +
+      '<g transform="rotate(9 26 58)">' +
+      '<rect x="8" y="40" width="34" height="30" fill="#d8f3c4"/>' +
+      '<path d="M8 40h34v4H8z" fill="#b9dfa1"/>' +
+      '<path d="M14 52h20M14 58h14" stroke="#6d8f56" stroke-width="2" fill="none"/>' +
+      '</g>' +
+      '</g></svg>',
+
+    /* 책상 위에 쌓인 서류 — 비스듬히 내려다본 종이 더미와 파란 파일 */
+    papers:
+      '<svg viewBox="0 0 100 62" preserveAspectRatio="none">' +
+      '<ellipse cx="52" cy="56" rx="44" ry="6" fill="rgba(20,24,32,.28)"/>' +
+      '' +
+      '<path d="M12 44 L34 34 L96 38 L74 50 Z" fill="#3f6fa8"/>' +
+      '<path d="M12 44 L34 34 L96 38 L74 50 Z" fill="none" stroke="#28497a" stroke-width="1.5"/>' +
+      '<path d="M10 36 L32 26 L94 30 L72 42 Z" fill="#f7f6f0" stroke="#b9b6a8" stroke-width="1.5"/>' +
+      '<path d="M9 30 L31 20 L93 24 L71 36 Z" fill="#fdfdf8" stroke="#c4c1b3" stroke-width="1.5"/>' +
+      '<path d="M8 24 L30 14 L92 18 L70 30 Z" fill="#ffffff" stroke="#c9c6b8" stroke-width="1.5"/>' +
+      '<path d="M26 21 L74 24 M24 25 L72 28 M22 29 L60 31" stroke="#b0ada0" stroke-width="1.6" fill="none"/>' +
+      '<path d="M54 14 L86 16 L74 24 L46 22 Z" fill="#e9edf5" stroke="#b7bfcd" stroke-width="1.2"/>' +
+      '</svg>',
+
+    /* 벽에 붙은 공지문 — 배경 그림의 다른 벽 게시물과 같은 결로 그린다.
+       특징 : ① 연보라 종이 두 장이 살짝 어긋나게 겹쳐 있다
+              ② 글자는 회보라 블록으로 뭉뚱그려 표현한다
+              ③ 오른쪽 위에 빨간 압정 자국이 콕 찍혀 있다
+       (색은 room4.png 에서 그대로 뽑았다 — 종이 #e3e3ef · 블록 #a5a8c7 / #7e82a8) */
+    poster:
+      '<svg viewBox="0 0 100 108" preserveAspectRatio="none">' +
+      '<rect x="11" y="11" width="85" height="94" fill="#d3d4e4"/>' +
+      '<rect x="7" y="7" width="85" height="94" fill="#dcdce9"/>' +
+      '<rect x="3" y="3" width="85" height="94" fill="#e6e6f1" stroke="#a5a8c7" stroke-width="1.2"/>' +
+      '<g fill="#7e82a8">' +
+      '<rect x="10" y="11" width="46" height="6"/>' +
+      '<rect x="10" y="21" width="26" height="4"/>' +
+      '</g>' +
+      '<g fill="#a8abcc">' +
+      '<rect x="10" y="31" width="68" height="3.4"/>' +
+      '<rect x="10" y="38" width="68" height="3.4"/>' +
+      '<rect x="10" y="45" width="44" height="3.4"/>' +
+      '</g>' +
+      '<rect x="10" y="55" width="68" height="27" fill="#dbdcea" stroke="#b3b8d5" stroke-width="1"/>' +
+      '<polyline points="15,76 27,64 38,70 50,58 62,67 73,60" fill="none" stroke="#7e82a8" stroke-width="2.2"/>' +
+      '<g fill="#a8abcc">' +
+      '<rect x="10" y="87" width="52" height="3.4"/>' +
+      '<rect x="10" y="94" width="34" height="3.4"/>' +
+      '</g>' +
+      '<rect x="79" y="7" width="5" height="5" fill="#c0392b"/>' +
+      '</svg>'
+  };
+
   function addOverlay(kind, rect, label) {
     const d = el('div', 'ov ov-' + kind);
     placePct(d, rect);
+    if (PROP_ART[kind]) d.innerHTML = PROP_ART[kind];
     if (label) d.appendChild(el('span', 'ov-label', esc(label)));
     $('#prop-layer').appendChild(d);
     return d;
@@ -285,6 +398,14 @@
   function addHotspot(rect, onClick, title, cls) {
     const h = el('div', 'hotspot ' + (cls || ''));
     placePct(h, rect);
+    /* 눌러볼 수 있는 자리에 작은 점을 찍는다.
+       단서·낚시·자료를 모두 같은 모양으로 표시하므로, 어디가 진짜 단서인지는
+       여전히 직접 눌러 보며 찾아야 한다. (기믹 안 선택지 칸에는 찍지 않는다) */
+    const c = cls || '';
+    if (CONFIG.SPOT_DOTS !== false && c.indexOf('gate-sub') < 0) {
+      if (rect[1] < 3) h.classList.add('dot-in');   // 맨 위는 점이 잘려서 아래쪽에
+      h.appendChild(el('i', 'spot-dot'));
+    }
     if (title) { h.title = title; h.dataset.label = title; }
     h.addEventListener('click', e => { e.stopPropagation(); onClick(h); });
     $('#prop-layer').appendChild(h);
@@ -482,6 +603,7 @@
     R.__n = n;
     S.room = n; S.phase = 'playing'; S.ended = false;
     S.gate = {};
+    resetClueHint();
     S.clueApi = {}; S.bossEl = null;
     g.UI.closeAll();
     S.waitModal = null;
@@ -510,9 +632,11 @@
         SFX.trap();
         say(t.msg, '🎣 …');
         if (t.cost) {
-          NET.addTrap(S.room);
+          NET.addTrap(S.room);          // 몇 번 걸렸는지는 기록해 둔다 (감점은 없음)
           g.QKIT.shake($('#stage'));
-          toast('함정! -' + CONFIG.TRAP_PENALTY + '점', 'bad');
+          toast(CONFIG.TRAP_PENALTY > 0
+            ? '함정! -' + CONFIG.TRAP_PENALTY.toLocaleString() + '점'
+            : '🎣 낚였다! 시간만 버렸습니다 (감점은 없음)', 'bad', 2600);
         }
       }, t.label || '???', 'look');
     });
@@ -757,6 +881,7 @@
       ? '<span class="quiz-tier">\u2605 고난도</span>' : '';
     const meta = '<div class="quiz-meta"><span>단서 <b>' + (idx + 1) + '/' + CONFIG.CLUES_PER_ROOM + '</b></span>' +
       '<span>배점 <b>' + q.score.toLocaleString() + '점</b></span>' +
+      '<span>⚡속도 <b>+' + speedBonus(roomRemain()).toLocaleString() + '</b></span>' +
       '<span>오답 <b>-' + CONFIG.WRONG_PENALTY.toLocaleString() + '</b></span>' + tier + '</div>';
     const siteTag = q.loc
       ? '<div class="quiz-site">🏢 <b>' + esc(q.loc) + '</b> 근무자만 아는 문제입니다 — 팀의 ' + esc(q.loc) + ' 멤버에게 물어보세요!</div>'
@@ -800,15 +925,24 @@
   }
   function norm(s) { return String(s).trim().toLowerCase().replace(/\s+/g, ''); }
 
+  /** 정답을 맞힌 순간의 남은 시간에 비례하는 속도 점수 (초 단위) */
+  function speedBonus(remSec) {
+    const per = CONFIG.SPEED_PER_SEC || 0;
+    return Math.max(0, Math.min(CONFIG.ROOM_SECONDS, Math.round(remSec))) * per;
+  }
+
   async function onCorrect(q, slot, boss) {
     const rem = roomRemain();
+    const speed = speedBonus(rem);
+    const total = q.score + speed;
     const fresh = await NET.recordSolve(S.room, slot, {
-      qid: q.id, points: q.score, room: S.room, left: Math.round(rem)
+      qid: q.id, points: total, room: S.room, left: Math.round(rem)
     });
     const who = boss || (BOSSES[ROOMS[S.room].boss] || {}).name || '';
     if (fresh) {
-      toast('✅ 정답! +' + q.score.toLocaleString() + '점', 'good');
-      say((q.ok || '정답!') + '\n(+' + q.score.toLocaleString() + '점)', who);
+      toast('✅ 정답! +' + total.toLocaleString() + '점 (배점 ' + q.score.toLocaleString() +
+        ' + 속도 ' + speed.toLocaleString() + ')', 'good', 3200);
+      say((q.ok || '정답!') + '\n(+' + q.score.toLocaleString() + '점  ⚡속도 +' + speed.toLocaleString() + ')', who);
     } else {
       // 이미 서버에 기록된 단서 — 점수는 다시 오르지 않는다
       toast('이미 해결한 단서입니다. 점수는 추가되지 않습니다.', 'info', 3000);
@@ -884,30 +1018,187 @@
     });
   }
 
-  /* ---------- 순위표 ---------- */
+  /* ============================================================
+     순위표 — 팀 / 개인 · 점수순 / 최단 시간순
+     ------------------------------------------------------------
+     팀전이므로 기본은 팀 순위. 개인 순위는 탭으로 넘겨 본다.
+     ============================================================ */
+  function teamListNow() {
+    const t = S.teams;
+    return (t && t.list) ? t.list : [];
+  }
+
+  /** 개인 기록 */
   function computeBoard() {
     const runs = S.allRuns || {};
+    const list = teamListNow();
+    const teamOf = {};
+    list.forEach(t => (t.members || []).forEach(m => { teamOf[m.uid] = t.id; }));
     const rows = [];
     Object.keys(S.players || {}).forEach(u => {
       const p = S.players[u];
       if (!p || !p.uid || p.isAdmin) return;
       const sc = NET.scoreOf(runs[u]);
-      rows.push({ uid: u, name: p.name, loc: p.loc, score: sc.score, time: sc.time, solved: sc.solved, online: !!p.online });
+      rows.push({
+        uid: u, name: p.name, loc: p.loc, team: teamOf[u] || null,
+        score: sc.score, time: sc.time, solved: sc.solved, wrong: sc.wrong || 0,
+        online: !!p.online
+      });
     });
-    rows.sort((a, b) => b.score - a.score || a.time - b.time);
-    return rows;
+    return sortSolo(rows, 'score');
   }
+
+  /** 팀 합산 기록 — 팀원 점수를 모두 더한다 */
+  function computeTeamBoard() {
+    const runs = S.allRuns || {};
+    const players = S.players || {};
+    return sortTeams(teamListNow().map(t => {
+      const mem = (t.members || []).filter(m => m && m.uid);
+      let score = 0, time = 0, solved = 0, wrong = 0, sr3 = 0, s1l = 0, on = 0;
+      const names = [];
+      mem.forEach(m => {
+        const sc = NET.scoreOf(runs[m.uid]);
+        const p = players[m.uid] || m;
+        score += sc.score; time += sc.time; solved += sc.solved; wrong += sc.wrong || 0;
+        if ((p.loc || m.loc) === 'SR3') sr3++; else s1l++;
+        if (p.online) on++;
+        names.push(p.name || m.name);
+      });
+      const n = mem.length || 1;
+      return {
+        id: t.id, n: mem.length, names, score, time, solved, wrong, sr3, s1l, online: on,
+        avg: Math.round(score / n), avgTime: Math.round(time / n)
+      };
+    }), 'score');
+  }
+
+  /* 정렬 — 동점이면 시간 → 단서 → 오답 순으로 가른다 */
+  function sortSolo(rows, mode) {
+    const byTime = mode === 'time';
+    return rows.slice().sort((a, b) =>
+      byTime
+        ? (a.time - b.time) || (b.score - a.score) || (b.solved - a.solved) || a.name.localeCompare(b.name)
+        : (b.score - a.score) || (a.time - b.time) || (b.solved - a.solved) || (a.wrong - b.wrong) ||
+          a.name.localeCompare(b.name));
+  }
+  function sortTeams(rows, mode) {
+    if (mode === 'time') return rows.slice().sort((a, b) =>
+      (a.avgTime - b.avgTime) || (b.score - a.score) || (b.solved - a.solved) || (a.id - b.id));
+    if (mode === 'avg') return rows.slice().sort((a, b) =>
+      (b.avg - a.avg) || (a.avgTime - b.avgTime) || (b.solved - a.solved) || (a.id - b.id));
+    return rows.slice().sort((a, b) =>
+      (b.score - a.score) || (a.avgTime - b.avgTime) || (b.solved - a.solved) || (a.wrong - b.wrong) || (a.id - b.id));
+  }
+
+  /* ---------- 표 ---------- */
+  function soloTableHTML(rows) {
+    if (!rows.length) return '<p class="board-empty">아직 기록이 없습니다.</p>';
+    let h = '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
+      '<th>#</th><th>이름</th><th>팀</th><th class="col-opt">근무지</th><th>점수</th>' +
+      '<th>시간</th><th class="col-opt">단서</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach((r, i) => {
+      const cls = (r.uid === NET.uid ? 'me-row' : (i < 3 ? 'rank-' + (i + 1) : ''));
+      h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td><td>' + esc(r.name) + '</td>' +
+        '<td>' + (r.team ? r.team + '팀' : '-') + '</td>' +
+        '<td class="col-opt">' + esc(r.loc || '-') + '</td>' +
+        '<td><b>' + r.score.toLocaleString() + '</b></td><td>' + mmss(r.time) + '</td>' +
+        '<td class="col-opt">' + r.solved + '</td></tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+  function teamTableHTML(rows) {
+    if (!rows.length) return '<p class="board-empty">아직 팀이 구성되지 않았습니다.<br>관리자가 팀을 만들면 여기에 팀 순위가 나옵니다.</p>';
+    const mine = S.myTeam;
+    let h = '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
+      '<th>#</th><th>팀</th><th class="col-opt">인원</th><th>합계</th>' +
+      '<th class="col-opt">1인 평균</th><th>평균 시간</th><th class="col-opt">단서</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach((r, i) => {
+      const cls = (r.id === mine ? 'me-row' : (i < 3 ? 'rank-' + (i + 1) : ''));
+      h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td>' +
+        '<td><b>' + r.id + '팀</b><span class="board-mem">' + esc(r.names.join(', ')) + '</span></td>' +
+        '<td class="col-opt">' + r.n + '명<span class="board-mem">SR3 ' + r.sr3 + '·S1L ' + r.s1l + '</span></td>' +
+        '<td><b>' + r.score.toLocaleString() + '</b></td>' +
+        '<td class="col-opt">' + r.avg.toLocaleString() + '</td>' +
+        '<td>' + mmss(r.avgTime) + '</td><td class="col-opt">' + r.solved + '</td></tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+
+  /* ---------- 탭이 붙은 순위판 ---------- */
+  const BOARD_KEY = 's1fa.board';
+  function boardPref() {
+    try { return JSON.parse(localStorage.getItem(BOARD_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function saveBoardPref(v) { try { localStorage.setItem(BOARD_KEY, JSON.stringify(v)); } catch (e) { } }
+
+  /** node 안에 순위판을 그린다(탭·정렬 상태 유지) */
+  function mountBoard(node, opts) {
+    if (!node) return;
+    opts = opts || {};
+    const pref = boardPref();
+    const hasTeams = teamListNow().length > 0;
+    let view = node.dataset.view || pref.view || (hasTeams ? 'team' : 'solo');
+    if (view === 'team' && !hasTeams && !opts.keepTeamTab) view = 'solo';
+    let sort = node.dataset.sort || pref.sort || 'score';
+    if (view === 'solo' && sort === 'avg') sort = 'score';
+
+    const sorts = view === 'team'
+      ? [['score', '🏆 합계 점수'], ['avg', '👤 1인 평균'], ['time', '⏱ 최단 시간']]
+      : [['score', '🏆 점수순'], ['time', '⏱ 최단 시간순']];
+
+    node.innerHTML =
+      '<div class="board-head">' +
+      '  <div class="board-tabs">' +
+      '    <button class="board-tab' + (view === 'team' ? ' on' : '') + '" data-view="team">🏅 팀 순위</button>' +
+      '    <button class="board-tab' + (view === 'solo' ? ' on' : '') + '" data-view="solo">👤 개인 순위</button>' +
+      '  </div>' +
+      '  <div class="board-sorts">' +
+      sorts.map(x => '<button class="board-sort' + (sort === x[0] ? ' on' : '') + '" data-sort="' + x[0] + '">' +
+        x[1] + '</button>').join('') +
+      '  </div>' +
+      '</div>' +
+      '<div class="board-body">' +
+      (view === 'team' ? teamTableHTML(sortTeams(computeTeamBoard(), sort))
+                       : soloTableHTML(sortSolo(computeBoard(), sort))) +
+      '</div>' +
+      (view === 'team'
+        ? '<p class="board-note">팀 점수는 <b>팀원 점수의 합</b>입니다. 인원이 다른 팀끼리는 <b>1인 평균</b>으로도 볼 수 있습니다.</p>'
+        : '<p class="board-note">같은 점수면 <b>총 소요 시간이 짧은 사람</b>이 앞섭니다.</p>');
+
+    node.dataset.view = view; node.dataset.sort = sort;
+    node.querySelectorAll('.board-tab').forEach(b => b.onclick = () => {
+      SFX.select();
+      node.dataset.view = b.dataset.view;
+      saveBoardPref({ view: b.dataset.view, sort: node.dataset.sort });
+      mountBoard(node, opts);
+    });
+    node.querySelectorAll('.board-sort').forEach(b => b.onclick = () => {
+      SFX.select();
+      node.dataset.sort = b.dataset.sort;
+      saveBoardPref({ view: node.dataset.view, sort: b.dataset.sort });
+      mountBoard(node, opts);
+    });
+  }
+
   function renderBoardInto(node) {
     if (!node) return;
-    node.innerHTML = '<h4 style="font-size:12px;color:#274a75;margin:8px 0 4px">🏆 실시간 순위</h4>' +
-      g.UI.leaderboardHTML(computeBoard(), NET.uid);
+    if (!node.dataset.built) {
+      node.innerHTML = '<h4 class="board-title">🏆 실시간 순위</h4><div class="board-host"></div>';
+      node.dataset.built = '1';
+    }
+    mountBoard(node.querySelector('.board-host'));
   }
   function openBoard() {
     const m = modal({ title: '🏆 실시간 순위표', html: '<div id="bd"></div>', wide: true, closable: true });
-    renderBoardInto(m.body.querySelector('#bd'));
+    const host = m.body.querySelector('#bd');
+    mountBoard(host);
     m.body._timer = setInterval(() => {
       if (!document.body.contains(m.body)) return clearInterval(m.body._timer);
-      renderBoardInto(m.body.querySelector('#bd'));
+      if (document.activeElement && document.activeElement.classList &&
+          document.activeElement.classList.contains('board-tab')) return;
+      mountBoard(host);
     }, 3000);
   }
 
@@ -920,34 +1211,56 @@
     g.UI.closeAll();
     clearLayers(); usePixelScene('hall'); showTitle('결과 발표');
     g.UI.bgmDown(2500);
-    const rows = computeBoard();
-    const me = rows.findIndex(r => r.uid === NET.uid);
+
+    const solo = computeBoard();
+    const teams = computeTeamBoard();
+    const myRank = solo.findIndex(r => r.uid === NET.uid);
+    const myTeamRank = teams.findIndex(t => t.id === S.myTeam);
     const sc = NET.scoreOf(S.run);
-    say('모든 방의 탈출이 끝났다!\n최종 순위를 확인하자.');
+    say('모든 방의 탈출이 끝났다!\n팀 순위를 확인하자.');
     SFX.great();
 
-    // 무대 위 시상대 캐릭터
+    /* 무대 위 — 상위 세 팀의 최고 득점자를 시상대에 세운다 */
     const podPos = [[120, 132], [82, 138], [158, 138]];
-    rows.slice(0, 3).forEach((r, i) => {
-      const p = S.players[r.uid] || {};
-      addActor(AVATARS[p.avatar] || AVATARS[0], podPos[i][0], podPos[i][1], ['🥇', '🥈', '🥉'][i] + ' ' + r.name, i === 0 ? 'me' : '', 3);
+    const topOf = (t) => solo.filter(r => r.team === t.id)[0];
+    (teams.length ? teams : []).slice(0, 3).forEach((t, i) => {
+      const best = topOf(t); if (!best) return;
+      const p = S.players[best.uid] || {};
+      addActor(AVATARS[p.avatar] || AVATARS[0], podPos[i][0], podPos[i][1],
+        ['🥇', '🥈', '🥉'][i] + ' ' + t.id + '팀', t.id === S.myTeam ? 'me' : '', 3);
     });
+    if (!teams.length) {
+      solo.slice(0, 3).forEach((r, i) => {
+        const p = S.players[r.uid] || {};
+        addActor(AVATARS[p.avatar] || AVATARS[0], podPos[i][0], podPos[i][1],
+          ['🥇', '🥈', '🥉'][i] + ' ' + r.name, i === 0 ? 'me' : '', 3);
+      });
+    }
 
+    /* 시상대 — 팀이 있으면 팀, 없으면 개인 */
+    const pod = teams.length
+      ? teams.slice(0, 3).map(t => ({ label: t.id + '팀', sub: t.names.join(', '), score: t.score }))
+      : solo.slice(0, 3).map(r => ({ label: r.name, sub: r.loc || '', score: r.score }));
     let podium = '<div class="podium">';
     [1, 0, 2].forEach(i => {
-      const r = rows[i]; if (!r) return;
+      const r = pod[i]; if (!r) return;
       const hgt = [64, 46, 36][i === 0 ? 0 : (i === 1 ? 1 : 2)];
       const col = ['#e8b83b', '#b9c0cc', '#c9925b'][i];
-      podium += '<div class="podium-col"><div class="podium-name">' + esc(r.name) + '</div>' +
+      podium += '<div class="podium-col"><div class="podium-name">' + esc(r.label) + '</div>' +
         '<div class="podium-score">' + r.score.toLocaleString() + 'P</div>' +
         '<div class="podium-bar" style="height:' + hgt + 'px;background:' + col + '">' + (i + 1) + '</div></div>';
     });
     podium += '</div>';
 
+    const myTeamRow = myTeamRank >= 0 ? teams[myTeamRank] : null;
     const mine = '<div class="result-sum">' +
-      '<div class="result-cell"><span>내 순위</span><b>' + (me < 0 ? '-' : (me + 1) + '위') + '</b></div>' +
-      '<div class="result-cell"><span>총 점수</span><b>' + sc.score.toLocaleString() + '</b></div>' +
-      '<div class="result-cell"><span>총 소요 시간</span><b>' + mmss(sc.time) + '</b></div>' +
+      '<div class="result-cell"><span>우리 팀 순위</span><b>' +
+        (myTeamRow ? (myTeamRank + 1) + '위 (' + myTeamRow.id + '팀)' : '-') + '</b></div>' +
+      '<div class="result-cell"><span>팀 합계 점수</span><b>' +
+        (myTeamRow ? myTeamRow.score.toLocaleString() : '-') + '</b></div>' +
+      '<div class="result-cell"><span>내 순위</span><b>' + (myRank < 0 ? '-' : (myRank + 1) + '위') + '</b></div>' +
+      '<div class="result-cell"><span>내 점수</span><b>' + sc.score.toLocaleString() + '</b></div>' +
+      '<div class="result-cell"><span>내 소요 시간</span><b>' + mmss(sc.time) + '</b></div>' +
       '<div class="result-cell"><span>맞춘 단서</span><b>' + sc.solved + '개</b></div></div>';
 
     let per = '<table class="pk-table"><thead><tr><th>방</th><th>점수</th><th>시간</th><th>단서</th></tr></thead><tbody>';
@@ -958,15 +1271,22 @@
     }
     per += '</tbody></table>';
 
-    modal({
+    const m = modal({
       title: '🏁 최종 결과', wide: true, closable: true,
-      html: podium + mine + '<h4 style="font-size:12px;color:#274a75;margin:10px 0 2px">📖 내 방별 기록</h4>' + per +
-        '<h4 style="font-size:12px;color:#274a75;margin:10px 0 2px">🏆 전체 순위</h4>' + g.UI.leaderboardHTML(rows, NET.uid),
+      html: podium + mine +
+        '<div id="final-board"></div>' +
+        '<h4 class="board-title">📖 내 방별 기록</h4>' + per,
+      onMount: (body) => mountBoard(body.querySelector('#final-board'), { keepTeamTab: true }),
       buttons: (S.me.isAdmin
         ? [{ label: '👑 관리자 패널', cls: 'pk-btn-gold', close: false, onClick: () => g.ADMIN.open() }]
         : []
       ).concat([{ label: '💬 채팅 열기', cls: 'pk-btn-main', close: false, onClick: () => g.CHAT && g.CHAT.setOpen(true) }])
     });
+    // 뒤늦게 도착하는 기록을 따라 갱신
+    const iv = setInterval(() => {
+      if (!document.body.contains(m.body)) return clearInterval(iv);
+      mountBoard(m.body.querySelector('#final-board'), { keepTeamTab: true });
+    }, 4000);
   }
 
   /* ============================================================
@@ -1093,6 +1413,7 @@
   g.GAME = {
     S, boot, enterRoom, renderLobby, showResults, openBoard, computeBoard,
     applyGlobal, finishRoom, assignQuizzes, siteForRoom, answersOf, teamCode, updateHUD,
+    computeTeamBoard, mountBoard, teamSites,
     myTeamNo, teamSeedFor, placeExit
   };
 })(window);

@@ -48,7 +48,7 @@ body{
 button,input,select{font-family:inherit}
 .hidden{display:none !important}
 
-#app{width:100%;max-width:900px}
+#app{width:100%;max-width:1060px}
 .screen{width:100%}
 
 /* ---------- 공통 패널 ---------- */
@@ -60,7 +60,7 @@ button,input,select{font-family:inherit}
   padding:14px;
 }
 .panel-label{
-  font-size:12px;color:var(--blue-dark);font-weight:700;
+  font-size:14px;color:var(--blue-dark);font-weight:700;
   margin:10px 0 6px;letter-spacing:.5px;
 }
 .panel-label:first-child{margin-top:0}
@@ -68,15 +68,15 @@ button,input,select{font-family:inherit}
 /* ---------- 로그인 ---------- */
 .login-box{max-width:440px;margin:0 auto;padding:10px 0 24px}
 .logo-plate{text-align:center;margin-bottom:14px}
-.logo-sub{font-size:11px;color:#9fb4d4;letter-spacing:2px;margin-bottom:4px}
+.logo-sub{font-size:13px;color:#9fb4d4;letter-spacing:2px;margin-bottom:4px}
 .logo-title{
-  font-size:clamp(30px,9vw,46px);line-height:1.1;color:#fff;
+  font-size:clamp(36px,10.35vw,55.2px);line-height:1.1;color:#fff;
   -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
   text-shadow:0 5px 0 rgba(0,0,0,.5);
   letter-spacing:1px;
 }
 .logo-tag{
-  display:inline-block;margin-top:8px;font-size:12px;color:#0f1420;
+  display:inline-block;margin-top:8px;font-size:14px;color:#0f1420;
   background:var(--gold);border:2px solid var(--ink);border-radius:20px;padding:3px 12px;
 }
 .avatar-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -86,26 +86,26 @@ button,input,select{font-family:inherit}
   transition:transform .08s;
 }
 .avatar-cell canvas{width:44px;height:auto;image-rendering:pixelated}
-.avatar-cell span{font-size:9px;color:var(--ink-soft)}
+.avatar-cell span{font-size:12px;color:var(--ink-soft)}
 .avatar-cell.is-on{background:#dcecff;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-light) inset}
 .avatar-cell:active{transform:translateY(2px)}
 
 .chip-row{display:flex;gap:8px}
 .chip{
   flex:1;background:var(--paper-2);border:2px solid #c3bfae;border-radius:8px;
-  padding:9px 0;font-size:13px;font-weight:700;color:var(--ink-soft);cursor:pointer;
+  padding:9px 0;font-size:15px;font-weight:700;color:var(--ink-soft);cursor:pointer;
 }
 .chip.is-on{background:var(--blue);border-color:var(--blue-dark);color:#fff}
 
 .pk-input{
-  width:100%;padding:11px 12px;font-size:14px;color:var(--ink);
+  width:100%;padding:11px 12px;font-size:16px;color:var(--ink);
   background:#fff;border:2px solid var(--ink);border-radius:8px;
   box-shadow:inset 0 2px 0 rgba(0,0,0,.08);
 }
 .pk-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-light)}
 
 .pk-btn{
-  width:100%;margin-top:10px;padding:12px;font-size:15px;font-weight:700;
+  width:100%;margin-top:10px;padding:12px;font-size:18px;font-weight:700;
   border:3px solid var(--ink);border-radius:10px;cursor:pointer;
   background:var(--paper-2);color:var(--ink);box-shadow:var(--shadow);
   transition:transform .06s, box-shadow .06s;
@@ -117,11 +117,18 @@ button,input,select{font-family:inherit}
 .pk-btn-red{background:var(--red);color:#fff}
 .pk-btn-green{background:var(--green);color:#fff}
 .pk-btn-purple{background:var(--purple);color:#fff}
-.pk-btn-sm{padding:9px;font-size:12px;margin-top:6px}
-.login-note{margin-top:12px;text-align:center;font-size:10px;color:#93a4c0;line-height:1.7}
+.pk-btn-sm{padding:9px;font-size:14px;margin-top:6px}
+.login-note{margin-top:12px;text-align:center;font-size:13px;color:#93a4c0;line-height:1.7}
 
 /* ---------- HUD ---------- */
-#game-screen{display:flex;flex-direction:column;gap:6px}
+/* 세로가 짧은 화면(노트북)에서는 게임 화면 전체를 줄여 한 화면에 다 들어오게 한다.
+   HUD · 방 그림 · 대사창이 같은 폭을 쓰도록 여기서 한 번에 제한한다.
+   --chrome-h = HUD + 대사창 + 여백,  --stage-ar = 배경 그림 비율(기본 3:2) */
+#game-screen{
+  display:flex;flex-direction:column;gap:6px;
+  width:100%;margin-inline:auto;
+  max-width:min(100%, calc((100dvh - var(--chrome-h, 244px)) * var(--stage-ar, 1.5)));
+}
 #hud{
   background:var(--paper);border:3px solid var(--ink);border-radius:10px;
   box-shadow:0 4px 0 rgba(0,0,0,.45);padding:6px 8px;
@@ -137,7 +144,7 @@ button,input,select{font-family:inherit}
 .hud-chip{
   display:inline-flex;align-items:center;justify-content:center;
   height:var(--chip-h);box-sizing:border-box;
-  font-size:11px;font-weight:700;padding:0 8px;border:2px solid var(--ink);
+  font-size:13px;font-weight:700;padding:0 8px;border:2px solid var(--ink);
   border-radius:6px;background:var(--paper-2);white-space:nowrap;
 }
 .hud-room{
@@ -155,9 +162,9 @@ button,input,select{font-family:inherit}
 }
 .hud-clues{background:#fff;letter-spacing:2px}
 .hud-time{gap:4px;background:#fff}
-.t-label{color:var(--ink-soft);font-size:10px}
-.t-room{color:var(--red);font-size:13px}
-.t-total{color:var(--purple);font-size:12px}
+.t-label{color:var(--ink-soft);font-size:13px}
+.t-room{color:var(--red);font-size:15px}
+.t-total{color:var(--purple);font-size:14px}
 .t-div{color:#c9c6ba}
 .t-room.is-warn{animation:blink .6s steps(2,end) infinite}
 @keyframes blink{50%{opacity:.25}}
@@ -181,6 +188,7 @@ button,input,select{font-family:inherit}
 #stage-wrap{
   border:4px solid var(--ink);border-radius:12px;overflow:hidden;
   box-shadow:0 6px 0 rgba(0,0,0,.5);background:#000;
+  width:100%;align-self:center;
 }
 #stage{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;touch-action:none}
 #bg-canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
@@ -196,7 +204,7 @@ button,input,select{font-family:inherit}
 
 .scene-title{
   position:absolute;top:6%;left:0;right:0;text-align:center;
-  font-size:clamp(20px,5.2vw,38px);color:#fff;
+  font-size:clamp(24px,5.98vw,45.6px);color:#fff;
   -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
   letter-spacing:2px;pointer-events:none;z-index:5;
   transition:opacity .5s;
@@ -208,7 +216,7 @@ button,input,select{font-family:inherit}
   display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;
 }
 #stage-overlay-text{
-  color:#fff;font-size:clamp(14px,3.4vw,20px);line-height:1.8;
+  color:#fff;font-size:clamp(16.8px,3.91vw,24px);line-height:1.8;
   -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;
 }
 
@@ -239,10 +247,38 @@ button,input,select{font-family:inherit}
 /* 이름표 */
 .hotspot::before{
   content:attr(data-label);position:absolute;left:50%;bottom:100%;transform:translateX(-50%);
-  background:var(--ink);color:#fff;font-size:10px;padding:2px 7px;border-radius:5px;
+  background:var(--ink);color:#fff;font-size:13px;padding:2px 7px;border-radius:5px;
   white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;margin-bottom:3px;
 }
 .hotspot:hover::before{opacity:1}
+/* 눌러볼 수 있는 자리 표시 —
+   단서·낚시·자료를 모두 같은 모양으로 찍어, 위치만 알리고 정답은 알리지 않는다. */
+.spot-dot{
+  position:absolute;left:50%;top:-9px;width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, #ffffff, #dfe4ec 55%, #9aa3b2);
+  border:2px solid rgba(29,32,41,.7);
+  box-shadow:0 1px 3px rgba(0,0,0,.5);
+  transform:translate(-50%,0);opacity:.72;pointer-events:none;z-index:2;
+  transition:opacity .2s, background .3s, box-shadow .3s;
+}
+.hotspot:hover .spot-dot{opacity:1}
+.hotspot.dot-in .spot-dot{top:auto;bottom:-9px;left:22%}
+.hotspot.solved .spot-dot{
+  background:radial-gradient(circle at 38% 32%, #d8f5df, #6cc98a 60%, #2e8b4f);
+  opacity:.55;
+}
+/* 한참 헤맸을 때(CLUE_HINT_AT 초 경과) 남은 단서만 금색으로 */
+body.clue-hint .hotspot.clue:not(.solved):not(.gate-sub) .spot-dot{
+  background:radial-gradient(circle at 38% 32%, #fff8d2, #ffd24a 58%, #d99b12);
+  box-shadow:0 0 9px 2px rgba(255,210,74,.6);
+  opacity:1;animation:clueBob 1.6s ease-in-out infinite;
+}
+@keyframes clueBob{
+  0%,100%{transform:translate(-50%,0) scale(1)}
+  50%    {transform:translate(-50%,-4px) scale(1.1)}
+}
+body.clue-hint .hotspot.dot-in .spot-dot{animation:none}
+@media (prefers-reduced-motion:reduce){ .spot-dot{animation:none!important} }
 .hotspot.solved{pointer-events:none}
 .hotspot.solved::after{border-color:rgba(46,139,79,.9);background:rgba(46,139,79,.18)}
 .hotspot.is-lit::after{border-color:#8ef08e;background:rgba(142,240,142,.22)}
@@ -262,13 +298,13 @@ button,input,select{font-family:inherit}
 }
 .npc-tag{
   position:absolute;bottom:-19px;left:50%;transform:translateX(-50%);
-  font-size:10px;background:var(--blue);color:#fff;border:2px solid var(--ink);
+  font-size:13px;background:var(--blue);color:#fff;border:2px solid var(--ink);
   border-radius:6px;padding:1px 7px;white-space:nowrap;
 }
 .npc.is-done::before{
   content:'!';position:absolute;top:-16px;left:50%;transform:translateX(-50%);
   width:20px;height:20px;border-radius:50%;background:var(--gold);
-  border:2px solid var(--ink);color:var(--ink);font-size:13px;font-weight:700;
+  border:2px solid var(--ink);color:var(--ink);font-size:15px;font-weight:700;
   display:flex;align-items:center;justify-content:center;
   animation:markerFloat 1.4s ease-in-out infinite;
 }
@@ -282,11 +318,11 @@ button,input,select{font-family:inherit}
 .check i{
   width:26px;height:26px;border-radius:50%;background:var(--green);
   border:3px solid var(--ink);color:#fff;font-style:normal;font-weight:700;
-  font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;
+  font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;
   box-shadow:0 3px 0 rgba(0,0,0,.45);
 }
 .check b{
-  font-size:9px;font-weight:400;background:rgba(46,139,79,.92);color:#fff;
+  font-size:12px;font-weight:400;background:rgba(46,139,79,.92);color:#fff;
   padding:1px 6px;border-radius:5px;white-space:nowrap;
 }
 @keyframes checkPop{
@@ -300,30 +336,20 @@ button,input,select{font-family:inherit}
 .ov{position:absolute;z-index:22;cursor:grab;touch-action:none;border-radius:3px}
 .ov-label{
   position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);
-  font-size:9px;background:rgba(29,32,41,.85);color:#fff;padding:1px 6px;
+  font-size:12px;background:rgba(29,32,41,.85);color:#fff;padding:1px 6px;
   border-radius:4px;white-space:nowrap;pointer-events:none;
 }
 .ov.dragging{cursor:grabbing;z-index:40;filter:drop-shadow(0 8px 6px rgba(0,0,0,.55))}
 .ov.gone{opacity:0;transform:translateY(24px) rotate(14deg);pointer-events:none;
   transition:opacity .4s, transform .4s}
-.ov-postit{
-  background:repeating-linear-gradient(135deg,#ffe680 0 12px,#ffdf5e 12px 24px);
-  border:2px solid #c9a92a;box-shadow:2px 3px 0 rgba(0,0,0,.35);transform:rotate(-3deg);
+.ov-postit,.ov-papers,.ov-poster{
+  background:none;border:0;box-shadow:none;
+  filter:drop-shadow(2px 3px 3px rgba(15,18,26,.45));
 }
-.ov-postit::after{content:'📝';position:absolute;inset:0;display:flex;align-items:center;
-  justify-content:center;font-size:clamp(12px,2.4vw,20px)}
-.ov-papers{
-  background:linear-gradient(#fdfdf8 0 70%,#e6e4d8 100%);
-  border:2px solid #a9a69b;box-shadow:3px 4px 0 rgba(0,0,0,.3), inset 0 6px 0 #fff;
-}
-.ov-papers::after{content:'📄';position:absolute;inset:0;display:flex;align-items:center;
-  justify-content:center;font-size:clamp(12px,2.4vw,20px)}
-.ov-poster{
-  background:linear-gradient(160deg,#3b2f6e,#7a4a9e);
-  border:3px solid #241a3a;box-shadow:3px 4px 0 rgba(0,0,0,.4);
-}
-.ov-poster::after{content:'🖼️';position:absolute;inset:0;display:flex;align-items:center;
-  justify-content:center;font-size:clamp(14px,3vw,26px)}
+.ov svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.ov-postit{transform:rotate(-2deg)}
+/* 벽에 붙은 종이라 그림자는 아주 얕게 (배경의 다른 게시물과 같은 정도) */
+.ov-poster{filter:drop-shadow(2px 3px 2px rgba(60,62,90,.28))}
 .ov-power{
   cursor:default;pointer-events:none;border-radius:6px;
   background:radial-gradient(circle at 50% 45%, rgba(160,225,255,.85), rgba(60,140,220,.35) 60%, transparent 75%);
@@ -334,7 +360,7 @@ button,input,select{font-family:inherit}
 /* 나가는 문 버튼 */
 .exit-btn{
   position:absolute;right:2.5%;bottom:4%;z-index:30;pointer-events:auto;
-  font-family:inherit;font-size:clamp(11px,2.1vw,14px);font-weight:700;
+  font-family:inherit;font-size:clamp(13.2px,2.42vw,16.8px);font-weight:700;
   padding:9px 14px;border:3px solid var(--ink);border-radius:10px;
   background:rgba(251,251,247,.94);color:var(--ink);cursor:pointer;
   box-shadow:0 4px 0 rgba(0,0,0,.45);white-space:nowrap;
@@ -352,7 +378,7 @@ body.chat-open .dialogue{padding-right:16px}
   50%{box-shadow:0 4px 0 rgba(0,0,0,.45), 0 0 0 6px rgba(46,139,79,.35)}}
 
 .sparkle{
-  position:absolute;z-index:30;pointer-events:none;font-size:12px;
+  position:absolute;z-index:30;pointer-events:none;font-size:14px;
   animation:sparkle 1.4s ease-in-out infinite;
 }
 @keyframes sparkle{0%,100%{opacity:.25;transform:translateY(0) scale(.9)}50%{opacity:1;transform:translateY(-4px) scale(1.1)}}
@@ -360,13 +386,13 @@ body.chat-open .dialogue{padding-right:16px}
 .actor{position:absolute;display:flex;flex-direction:column;align-items:center;z-index:25}
 .actor canvas{image-rendering:pixelated;display:block}
 .actor-tag{
-  margin-top:2px;font-size:9px;background:var(--paper);border:2px solid var(--ink);
+  margin-top:2px;font-size:12px;background:var(--paper);border:2px solid var(--ink);
   border-radius:6px;padding:1px 5px;white-space:nowrap;color:var(--ink);
 }
 /* 대기실 : 닉네임은 캐릭터보다 위 레이어에 따로 그려 항상 보이게 */
 .crowd-name{
   position:absolute;transform:translate(-50%,-100%);
-  font-size:9px;line-height:1.3;white-space:nowrap;
+  font-size:12px;line-height:1.3;white-space:nowrap;
   background:rgba(251,251,247,.97);color:var(--ink);
   border:2px solid var(--ink);border-radius:6px;padding:0 5px;
   box-shadow:0 2px 0 rgba(0,0,0,.4);pointer-events:none;
@@ -374,7 +400,7 @@ body.chat-open .dialogue{padding-right:16px}
 }
 .crowd-name.is-me{background:var(--gold);font-weight:700}
 .crowd-badge{
-  position:absolute;left:2.5%;top:4%;z-index:300;font-size:11px;font-weight:700;
+  position:absolute;left:2.5%;top:4%;z-index:300;font-size:13px;font-weight:700;
   background:var(--paper);border:3px solid var(--ink);border-radius:8px;
   padding:3px 9px;color:var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.4);
 }
@@ -383,7 +409,7 @@ body.chat-open .dialogue{padding-right:16px}
 .actor-bubble{
   position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
   background:#fff;border:2px solid var(--ink);border-radius:8px;padding:2px 6px;
-  font-size:10px;white-space:nowrap;margin-bottom:4px;
+  font-size:13px;white-space:nowrap;margin-bottom:4px;
 }
 
 /* ---------- 대사창 ---------- */
@@ -392,14 +418,15 @@ body.chat-open .dialogue{padding-right:16px}
   border:4px solid var(--ink);border-radius:10px;
   box-shadow:0 5px 0 rgba(0,0,0,.45), inset 0 0 0 3px #fff, inset 0 0 0 5px var(--blue-light);
   padding:14px 34px 14px 16px;min-height:74px;
+  max-height:22dvh;overflow-y:auto;
 }
-#dialogue-text{font-size:clamp(12px,2.6vw,15px);line-height:1.7;white-space:pre-line;word-break:keep-all}
+#dialogue-text{font-size:clamp(14.4px,2.99vw,18px);line-height:1.7;white-space:pre-line;word-break:keep-all}
 .dialogue-speaker{
   position:absolute;top:-14px;left:12px;background:var(--blue);color:#fff;
-  border:3px solid var(--ink);border-radius:8px;padding:2px 10px;font-size:11px;
+  border:3px solid var(--ink);border-radius:8px;padding:2px 10px;font-size:13px;
 }
 .dialogue-arrow{
-  position:absolute;right:12px;bottom:8px;color:var(--blue);font-size:14px;
+  position:absolute;right:12px;bottom:8px;color:var(--blue);font-size:16px;
   animation:bounce .8s ease-in-out infinite;
 }
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
@@ -422,34 +449,34 @@ body.chat-open .dialogue{padding-right:16px}
 .modal.wide{max-width:680px}
 @keyframes pop{from{transform:scale(.9);opacity:.4}}
 .modal-title{
-  font-size:15px;color:#fff;background:var(--blue);border:3px solid var(--ink);
+  font-size:18px;color:#fff;background:var(--blue);border:3px solid var(--ink);
   border-radius:8px;padding:7px 44px 7px 12px;margin:0 0 12px;
   min-height:34px;display:flex;align-items:center;
 }
 .modal-close{
   position:absolute;top:16px;right:16px;width:30px;height:30px;
   background:var(--red);color:#fff;border:3px solid var(--ink);border-radius:7px;
-  cursor:pointer;font-size:13px;line-height:1;z-index:3;
+  cursor:pointer;font-size:15px;line-height:1;z-index:3;
   display:flex;align-items:center;justify-content:center;padding:0;
   box-shadow:0 2px 0 rgba(0,0,0,.4);
 }
 .modal-close:active{transform:translateY(2px);box-shadow:none}
 /* 제목이 없는 모달은 본문 위쪽에 여유를 둔다 */
 .modal > .modal-body:first-of-type{padding-top:6px}
-.modal-body{font-size:13px;line-height:1.7}
+.modal-body{font-size:15px;line-height:1.7}
 .modal-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .modal-actions .pk-btn{margin-top:0;flex:1;min-width:120px}
 
 /* ---------- 퀴즈 ---------- */
-.quiz-q{font-size:14px;line-height:1.7;margin-bottom:10px;word-break:keep-all}
+.quiz-q{font-size:16px;line-height:1.7;margin-bottom:10px;word-break:keep-all}
 .quiz-hint{
   display:inline-block;background:#fff7d6;border:2px solid var(--gold);
-  border-radius:6px;padding:4px 8px;font-size:11px;margin-bottom:10px;
+  border-radius:6px;padding:4px 8px;font-size:13px;margin-bottom:10px;
 }
 .quiz-choices{display:flex;flex-direction:column;gap:7px}
 .quiz-choice{
   background:#fff;border:2px solid var(--ink);border-radius:8px;
-  padding:10px 12px;font-size:13px;cursor:pointer;text-align:left;
+  padding:10px 12px;font-size:15px;cursor:pointer;text-align:left;
   box-shadow:0 3px 0 rgba(0,0,0,.3);
 }
 .quiz-choice:hover{background:#dcecff}
@@ -459,11 +486,11 @@ body.chat-open .dialogue{padding-right:16px}
 .quiz-input-row{display:flex;gap:8px}
 .quiz-input-row .pk-input{flex:1}
 .quiz-input-row .pk-btn{width:auto;margin-top:0;padding:0 16px;white-space:nowrap}
-.quiz-meta{display:flex;gap:6px;font-size:10px;color:var(--ink-soft);margin-bottom:8px}
+.quiz-meta{display:flex;gap:6px;font-size:13px;color:var(--ink-soft);margin-bottom:8px}
 .quiz-meta b{color:var(--blue-dark)}
 
 /* ---------- 표 ---------- */
-.pk-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.pk-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
 .pk-table th,.pk-table td{border:2px solid var(--ink);padding:5px 4px;text-align:center}
 .pk-table th{background:var(--blue);color:#fff}
 .pk-table tbody tr:nth-child(even){background:var(--paper-2)}
@@ -491,16 +518,16 @@ body.chat-open .dialogue{padding-right:16px}
 .wire-svg{position:absolute;inset:0;pointer-events:none}
 .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:220px;margin:10px auto}
 .keypad button{
-  padding:14px 0;font-size:17px;background:var(--paper-2);border:3px solid var(--ink);
+  padding:14px 0;font-size:20px;background:var(--paper-2);border:3px solid var(--ink);
   border-radius:8px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.35);
 }
 .keypad button:active{transform:translateY(3px);box-shadow:none}
 .keypad-display{
-  text-align:center;font-size:26px;letter-spacing:10px;background:#1b2b1b;color:#8ef08e;
+  text-align:center;font-size:30px;letter-spacing:10px;background:#1b2b1b;color:#8ef08e;
   border:3px solid var(--ink);border-radius:8px;padding:8px;margin:0 auto;max-width:220px;
 }
 .dial-wrap{text-align:center;padding:10px}
-.dial-val{font-size:26px;color:var(--blue-dark)}
+.dial-val{font-size:30px;color:var(--blue-dark)}
 .dial-wrap input[type=range]{width:100%;margin:12px 0}
 
 /* ---------- 채팅 ---------- */
@@ -508,14 +535,14 @@ body.chat-open .dialogue{padding-right:16px}
 .hud-btn-chat.has-new::after{
   content:attr(data-n);position:absolute;top:-6px;right:-6px;
   min-width:16px;height:16px;padding:0 3px;border-radius:9px;
-  background:var(--red);color:#fff;font-size:9px;line-height:16px;
+  background:var(--red);color:#fff;font-size:12px;line-height:16px;
   border:2px solid var(--ink);
 }
 .chat-panel{
   /* 위치·크기는 chat.js 가 inline 으로 넣는다 (끌어서 옮기기 / 크기 조절) */
   position:fixed;right:12px;bottom:12px;z-index:940;
   /* 아래 값은 chat.js 가 인라인 크기를 넣기 전까지만 쓰인다 */
-  width:330px;max-width:calc(100vw - 24px);height:var(--chat-h);
+  width:360px;max-width:calc(100vw - 24px);height:var(--chat-h);
   background:var(--paper);border:4px solid var(--ink);border-radius:12px;
   box-shadow:0 8px 0 rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;
 }
@@ -528,7 +555,7 @@ body.chat-open .dialogue{padding-right:16px}
 }
 /* 끌기 손잡이 */
 .chat-grip{
-  flex:0 0 auto;color:rgba(255,255,255,.75);font-size:14px;line-height:1;
+  flex:0 0 auto;color:rgba(255,255,255,.75);font-size:16px;line-height:1;
   letter-spacing:-2px;padding:0 2px;cursor:move;
 }
 .chat-max{background:var(--blue-dark)}
@@ -544,54 +571,54 @@ body.chat-open .dialogue{padding-right:16px}
 .chat-panel.is-max .chat-grip{display:none}
 .chat-tabs{display:flex;gap:5px;flex:1;min-width:0}
 .chat-tab{
-  position:relative;font-family:inherit;font-size:11px;font-weight:700;
+  position:relative;font-family:inherit;font-size:13px;font-weight:700;
   padding:4px 10px;border:2px solid var(--ink);border-radius:7px;
   background:rgba(255,255,255,.75);color:var(--ink);cursor:pointer;white-space:nowrap;
 }
 .chat-tab.on{background:var(--gold)}
 .chat-dot{
   position:absolute;top:-7px;right:-6px;min-width:15px;height:15px;padding:0 3px;
-  border-radius:8px;background:var(--red);color:#fff;font-size:9px;line-height:15px;
+  border-radius:8px;background:var(--red);color:#fff;font-size:12px;line-height:15px;
   font-style:normal;border:2px solid var(--ink);
 }
 .chat-team-pick{
-  font-family:inherit;font-size:11px;font-weight:700;padding:4px 6px;
+  font-family:inherit;font-size:13px;font-weight:700;padding:4px 6px;
   flex:1;min-width:0;max-width:none;
   border:2px solid var(--ink);border-radius:7px;background:var(--gold);color:var(--ink);
 }
 .chat-x{
   width:26px;height:26px;flex:0 0 auto;background:var(--red);color:#fff;
-  border:2px solid var(--ink);border-radius:6px;cursor:pointer;font-size:12px;line-height:1;
+  border:2px solid var(--ink);border-radius:6px;cursor:pointer;font-size:14px;line-height:1;
 }
 .chat-log{
   flex:1;overflow-y:auto;padding:8px;background:#f2f0e6;
   display:flex;flex-direction:column;gap:6px;
 }
-.chat-empty{text-align:center;color:#8a8f9c;font-size:11px;padding:24px 8px;line-height:1.8}
+.chat-empty{text-align:center;color:#8a8f9c;font-size:13px;padding:24px 8px;line-height:1.8}
 .chat-msg{display:flex;flex-direction:column;align-items:flex-start;max-width:88%}
 .chat-msg.mine{align-self:flex-end;align-items:flex-end}
-.chat-name{font-size:9px;color:var(--ink-soft);margin-bottom:2px;padding:0 2px}
-.chat-name b{color:var(--blue-dark);font-weight:700}
+.chat-name{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px;padding:0 2px;line-height:1.5}
+.chat-name b{color:var(--blue-dark);font-weight:800}
 .chat-name em{font-style:normal;color:#a8802a}
 .chat-bubble{
-  font-size:12px;line-height:1.6;padding:5px 9px;border-radius:9px;
+  font-size:15px;line-height:1.65;padding:7px 11px;border-radius:10px;
   background:#fff;border:2px solid var(--ink);word-break:break-word;
   box-shadow:0 2px 0 rgba(0,0,0,.25);
 }
 .chat-msg.mine .chat-bubble{background:var(--gold)}
-.chat-time{font-size:8px;color:#9aa0ad;margin-top:1px;padding:0 2px}
+.chat-time{font-size:12px;color:#8f95a3;margin-top:2px;padding:0 2px}
 .chat-note{
-  font-size:10px;line-height:1.6;color:#8a5a12;background:#fff7d6;
+  font-size:13px;line-height:1.6;color:#8a5a12;background:#fff7d6;
   border-top:2px solid var(--gold);padding:5px 8px;
 }
 .chat-row{display:flex;gap:6px;padding:7px;border-top:3px solid var(--ink);background:var(--paper)}
 .chat-input{
-  flex:1;min-width:0;font-family:inherit;font-size:12px;padding:7px 9px;
+  flex:1;min-width:0;font-family:inherit;font-size:14px;padding:7px 9px;
   border:2px solid var(--ink);border-radius:7px;background:#fff;color:var(--ink);
 }
 .chat-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-light)}
 .chat-send{
-  font-family:inherit;font-size:12px;font-weight:700;padding:0 12px;
+  font-family:inherit;font-size:14px;font-weight:700;padding:0 12px;
   border:2px solid var(--ink);border-radius:7px;background:var(--blue);color:#fff;cursor:pointer;
 }
 .chat-send:active{transform:translateY(2px)}
@@ -599,7 +626,7 @@ body.chat-open .dialogue{padding-right:16px}
   .chat-panel{
     left:6px;right:6px;bottom:6px;width:auto;height:var(--chat-h);
   }
-  .chat-tab{padding:4px 8px;font-size:10px}
+  .chat-tab{padding:4px 8px;font-size:13px}
   .chat-resize{width:30px;height:30px}
 }
 
@@ -608,7 +635,7 @@ body.chat-open .dialogue{padding-right:16px}
   display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:92%;max-width:420px}
 .toast{
   background:var(--paper);border:3px solid var(--ink);border-radius:8px;
-  padding:8px 14px;font-size:12px;box-shadow:0 4px 0 rgba(0,0,0,.45);
+  padding:8px 14px;font-size:14px;box-shadow:0 4px 0 rgba(0,0,0,.45);
   animation:toastin .2s;text-align:center;
 }
 .toast.good{background:#cdf0d6}
@@ -618,7 +645,7 @@ body.chat-open .dialogue{padding-right:16px}
 
 /* 팀 편집 드롭다운 */
 .team-sel{
-  font-family:inherit;font-size:11px;padding:2px 4px;
+  font-family:inherit;font-size:13px;padding:2px 4px;
   border:2px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink);
 }
 
@@ -628,10 +655,10 @@ body.chat-open .dialogue{padding-right:16px}
   padding:10px 12px;margin:10px 0;text-align:center;color:#dfe6ec;
 }
 .wait-timer{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px}
-.wait-timer span{font-size:11px;color:#9fb4d4}
-.wait-timer b{font-size:26px;color:#8ef08e;letter-spacing:1px}
+.wait-timer span{font-size:13px;color:#9fb4d4}
+.wait-timer b{font-size:30px;color:#8ef08e;letter-spacing:1px}
 .wait-timer.is-warn b{color:#ff8a80;animation:blink .6s steps(2,end) infinite}
-.wait-line{font-size:11px;line-height:1.9;color:#cbd5e1}
+.wait-line{font-size:13px;line-height:1.9;color:#cbd5e1}
 .wait-line b{color:var(--gold)}
 
 /* ---------- 결과 ---------- */
@@ -640,34 +667,34 @@ body.chat-open .dialogue{padding-right:16px}
 .podium-col canvas{image-rendering:pixelated;width:52px;height:auto}
 .podium-bar{
   width:100%;border:3px solid var(--ink);border-radius:6px 6px 0 0;
-  display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;
 }
-.podium-name{font-size:11px;text-align:center;word-break:keep-all}
-.podium-score{font-size:11px;color:var(--blue-dark)}
+.podium-name{font-size:13px;text-align:center;word-break:keep-all}
+.podium-score{font-size:13px;color:var(--blue-dark)}
 .result-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .result-cell{background:#fff;border:2px solid var(--ink);border-radius:8px;padding:8px;text-align:center}
-.result-cell b{display:block;font-size:17px;color:var(--blue-dark);margin-top:3px}
-.result-cell span{font-size:10px;color:var(--ink-soft)}
+.result-cell b{display:block;font-size:20px;color:var(--blue-dark);margin-top:3px}
+.result-cell span{font-size:13px;color:var(--ink-soft)}
 
 /* ---------- 관리자 ---------- */
 .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .admin-grid .pk-btn{margin-top:0}
 .admin-h{
-  font-size:11px;color:var(--blue-dark);margin:12px 0 6px;
+  font-size:13px;color:var(--blue-dark);margin:12px 0 6px;
   padding-bottom:3px;border-bottom:2px solid #d8d4c4;letter-spacing:.5px;
 }
 .admin-h:first-of-type{margin-top:4px}
 .admin-hint{
-  font-size:11px;color:#8a5a12;background:#fff7d6;border:2px solid var(--gold);
+  font-size:13px;color:#8a5a12;background:#fff7d6;border:2px solid var(--gold);
   border-radius:6px;padding:6px 8px;margin-top:8px;line-height:1.7;
 }
 .admin-state{
   background:#20242e;color:#8ef08e;border:3px solid var(--ink);border-radius:8px;
-  padding:8px 10px;font-size:11px;line-height:1.7;margin-bottom:10px;
+  padding:8px 10px;font-size:13px;line-height:1.7;margin-bottom:10px;
 }
 .admin-state b{color:var(--gold)}
 .admin-sec{margin-top:12px;border-top:3px dashed #c3bfae;padding-top:10px}
-.admin-sec h4{font-size:12px;color:var(--blue-dark);margin-bottom:6px}
+.admin-sec h4{font-size:14px;color:var(--blue-dark);margin-bottom:6px}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px}
 .dot.on{background:var(--green)}
 .dot.off{background:#bdb9ab}
@@ -680,21 +707,26 @@ body.chat-open .dialogue{padding-right:16px}
 /* 좁은 화면에서는 관리자 버튼을 한 줄에 하나씩 — 글자가 어중간하게 잘리지 않게 */
 @media (max-width:520px){
   .admin-grid{grid-template-columns:1fr}
-  .admin-grid .pk-btn{font-size:14px;padding:11px 10px;text-align:center}
+  .admin-grid .pk-btn{font-size:16px;padding:11px 10px;text-align:center}
   .modal-actions .pk-btn{min-width:0}
+}
+/* 좁은 화면에서 채팅을 열면 게임을 위로 붙여 아래쪽에 대화창 자리를 만든다 */
+@media (max-width:700px){
+  body.chat-open{align-items:flex-start}
 }
 
 /* ---------- HUD 반응형: 화면 폭이 아니라 '게임 화면의 실제 폭' 기준 ----------
    채팅창이 오른쪽 자리를 차지하면 게임 화면만 좁아지므로, 뷰포트가 아니라
-   컨테이너(#game-screen) 폭으로 판단해야 겹침이 생기지 않는다. */
+   컨테이너(#game-screen) 폭으로 판단해야 겹침이 생기지 않는다.
+   글자 크기는 40~50대 참가자를 위해 한 단계 키운 값이다. */
 #game-screen{container-type:inline-size;container-name:game}
 
 /* 넓을 때: 한 줄 */
 @container game (min-width:700px){
   #hud,.hud-zone{flex-wrap:nowrap}
-  .hud-chip{font-size:12px;padding:0 10px}
-  .t-room{font-size:15px}
-  .t-total{font-size:13px}
+  .hud-chip{font-size:14px;padding:0 10px}
+  .t-room{font-size:18px}
+  .t-total{font-size:15px}
 }
 /* 긴 방 이름은 아주 넓을 때만 */
 @container game (max-width:899px){
@@ -714,14 +746,14 @@ body.chat-open .dialogue{padding-right:16px}
 @container game (max-width:360px){
   #hud{--btn-w:32px;--btn-h:32px;--btn-f:15px;--chip-h:28px}
   .hud-btns{gap:4px}
-  .t-room{font-size:12px}
-  .t-total{font-size:11px}
+  .t-room{font-size:14px}
+  .t-total{font-size:13px}
 }
 
 /* 근무지 전용 문제 표시 */
 .quiz-site{
   display:block;background:#e8f0ff;border:2px solid var(--blue-dark,#2b4a7d);
-  border-radius:6px;padding:5px 8px;font-size:11px;margin-bottom:9px;line-height:1.5;
+  border-radius:6px;padding:5px 8px;font-size:13px;margin-bottom:9px;line-height:1.5;
 }
 .quiz-site b{color:#c0392b}
 
@@ -732,7 +764,7 @@ body.chat-open .dialogue{padding-right:16px}
 .doc-tabs{display:flex;gap:5px;flex-wrap:wrap}
 .doc-tab{
   background:var(--paper-2);border:2px solid var(--ink);border-radius:7px;
-  padding:5px 9px;font-size:11px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
+  padding:5px 9px;font-size:13px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
 }
 .doc-tab.on{background:var(--blue);color:#fff}
 .doc-tab:active{transform:translateY(2px);box-shadow:none}
@@ -757,7 +789,7 @@ body.chat-open .dialogue{padding-right:16px}
 .doc-uvlayer{position:absolute;inset:0;pointer-events:none}
 .doc-uvtext{
   position:absolute;transform:translate(-50%,-50%);
-  font-size:15px;color:#c9a3ff;opacity:0;letter-spacing:1px;
+  font-size:18px;color:#c9a3ff;opacity:0;letter-spacing:1px;
   text-shadow:0 0 8px #8a4bff,0 0 16px #6a2bd0;white-space:nowrap;
 }
 .doc-stage.uv-on .doc-uvtext{opacity:1}
@@ -765,23 +797,23 @@ body.chat-open .dialogue{padding-right:16px}
 .doc-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .doc-btn{
   background:var(--paper-2);border:2px solid var(--ink);border-radius:7px;
-  padding:5px 9px;font-size:11px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
+  padding:5px 9px;font-size:13px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
 }
 .doc-btn:active{transform:translateY(2px);box-shadow:none}
 .doc-uvbtn.on{background:var(--purple);color:#fff}
-.doc-zoomval{font-size:11px;color:var(--ink-soft);min-width:44px;text-align:center}
-.doc-tip{font-size:10px;color:var(--ink-soft);line-height:1.6}
+.doc-zoomval{font-size:13px;color:var(--ink-soft);min-width:44px;text-align:center}
+.doc-tip{font-size:13px;color:var(--ink-soft);line-height:1.6}
 
 /* ---------- 자료 종이 ---------- */
 .doc-paper{
   position:relative;width:330px;padding:16px 18px;background:var(--doc-tint,#fdfcf3);
   border:3px solid #2a2a24;border-radius:4px;color:#20232b;
-  box-shadow:0 10px 24px rgba(0,0,0,.5);font-size:12px;line-height:1.75;
+  box-shadow:0 10px 24px rgba(0,0,0,.5);font-size:14px;line-height:1.75;
 }
-.doc-head{font-size:9px;letter-spacing:2px;color:#7a725f;margin-bottom:4px}
-.doc-title{font-size:14px;font-weight:700;border-bottom:2px solid #2a2a24;padding-bottom:6px;margin-bottom:8px}
-.doc-sub{font-size:10px;color:#6d6552;margin:-4px 0 8px}
-.doc-foot{margin-top:10px;padding-top:6px;border-top:1px dashed #b9b19a;font-size:10px;color:#6d6552}
+.doc-head{font-size:12px;letter-spacing:2px;color:#7a725f;margin-bottom:4px}
+.doc-title{font-size:16px;font-weight:700;border-bottom:2px solid #2a2a24;padding-bottom:6px;margin-bottom:8px}
+.doc-sub{font-size:13px;color:#6d6552;margin:-4px 0 8px}
+.doc-foot{margin-top:10px;padding-top:6px;border-top:1px dashed #b9b19a;font-size:13px;color:#6d6552}
 .doc-lines{margin:0;padding-left:20px}
 .doc-lines li{margin-bottom:5px}
 .doc-note p{margin-bottom:6px}
@@ -789,36 +821,36 @@ body.chat-open .dialogue{padding-right:16px}
 .doc-paper.doc-frame{background:#fffdf0;border:8px double #8a6a2b}
 .doc-paper.doc-note{background:#fff7d6;transform:rotate(-.6deg)}
 
-.doc-table{width:100%;border-collapse:collapse;font-size:11px}
+.doc-table{width:100%;border-collapse:collapse;font-size:13px}
 .doc-table th,.doc-table td{border:2px solid #3a3a32;padding:4px 5px;text-align:center}
 .doc-table thead th{background:#3a3a32;color:#fdfcf3}
 .doc-table tbody th{background:#eae4cf}
 
 .doc-seatmap{text-align:center}
 .doc-screenbar{
-  background:#3a4a63;color:#dfe8f5;font-size:9px;letter-spacing:3px;
+  background:#3a4a63;color:#dfe8f5;font-size:12px;letter-spacing:3px;
   padding:3px;border-radius:3px;margin-bottom:8px;
 }
 .doc-seats{width:100%;border-collapse:separate;border-spacing:4px}
-.doc-seats th{font-size:10px;color:#6d6552}
+.doc-seats th{font-size:13px;color:#6d6552}
 .doc-seats td{
   border:2px solid #3a3a32;border-radius:4px;background:#eef1e6;
   padding:4px 2px;min-width:52px;line-height:1.35;
 }
 .doc-seats td.empty{background:transparent;border:2px dashed #c3bda8;color:#c3bda8}
-.doc-seats td b{display:block;font-size:11px}
-.doc-seats td span{display:block;font-size:10px}
-.doc-seats td i{display:block;font-size:9px;color:#7a725f;font-style:normal}
+.doc-seats td b{display:block;font-size:13px}
+.doc-seats td span{display:block;font-size:13px}
+.doc-seats td i{display:block;font-size:12px;color:#7a725f;font-style:normal}
 
 .doc-labels{display:flex;flex-direction:column;gap:5px}
 .doc-label{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted #b9b19a;padding-bottom:3px}
-.doc-label b{font-size:11px}
-.doc-label span{font-size:11px;color:#4b4a42}
+.doc-label b{font-size:13px}
+.doc-label span{font-size:13px;color:#4b4a42}
 
 /* 문제·대사창에 붙는 "자료 열기" 버튼 */
 .doc-open{
   display:inline-block;background:#fff3c4;border:2px solid var(--ink);border-radius:7px;
-  padding:5px 9px;font-size:11px;cursor:pointer;margin:0 5px 5px 0;
+  padding:5px 9px;font-size:13px;cursor:pointer;margin:0 5px 5px 0;
   box-shadow:0 2px 0 rgba(29,32,41,.3);
 }
 .doc-open:active{transform:translateY(2px);box-shadow:none}
@@ -826,24 +858,24 @@ body.chat-open .dialogue{padding-right:16px}
 /* ============================================================
    문제 입력 위젯
    ============================================================ */
-.quiz-sub{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
+.quiz-sub{font-size:13px;color:var(--ink-soft);margin-bottom:7px}
 .quiz-docs{margin-bottom:9px}
 
 .quiz-slots{display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap;margin-bottom:9px}
 .quiz-slot{display:flex;flex-direction:column;gap:3px}
-.quiz-slot label{font-size:10px;color:var(--ink-soft)}
+.quiz-slot label{font-size:13px;color:var(--ink-soft)}
 .quiz-slot .pk-input{text-align:center;letter-spacing:2px}
-.quiz-slot-plus{font-size:16px;color:var(--ink-soft);padding-bottom:8px}
+.quiz-slot-plus{font-size:19px;color:var(--ink-soft);padding-bottom:8px}
 
 .quiz-order{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}
 .ord-item{
   display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--ink);
-  border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;text-align:left;
+  border-radius:8px;padding:8px 10px;font-size:14px;cursor:pointer;text-align:left;
   box-shadow:0 3px 0 rgba(29,32,41,.3);
 }
 .ord-item i{
   width:20px;height:20px;border-radius:50%;background:var(--paper-2);
-  border:2px solid var(--ink);font-style:normal;font-size:10px;
+  border:2px solid var(--ink);font-style:normal;font-size:13px;
   display:flex;align-items:center;justify-content:center;flex:none;
 }
 .ord-item.on{background:#dff0e2;border-color:var(--green)}
@@ -851,20 +883,20 @@ body.chat-open .dialogue{padding-right:16px}
 .ord-item:active{transform:translateY(2px);box-shadow:none}
 
 .quiz-grid{border-collapse:separate;border-spacing:4px;margin:0 auto 9px}
-.quiz-grid th{font-size:10px;color:var(--ink-soft)}
+.quiz-grid th{font-size:13px;color:var(--ink-soft)}
 .grid-cell{
   width:46px;height:34px;background:#fff;border:2px solid var(--ink);border-radius:6px;
-  font-size:11px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
+  font-size:13px;cursor:pointer;box-shadow:0 2px 0 rgba(29,32,41,.3);
 }
 .grid-cell.on{background:var(--blue);color:#fff}
 .grid-cell:active{transform:translateY(2px);box-shadow:none}
-.quiz-pick{font-size:11px;color:var(--ink-soft);margin-right:auto}
+.quiz-pick{font-size:13px;color:var(--ink-soft);margin-right:auto}
 
 .lock-row{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
 .lock-dial{display:flex;flex-direction:column;align-items:center;gap:3px}
 .lock-dial button{
   width:38px;height:22px;background:var(--paper-2);border:2px solid var(--ink);
-  border-radius:5px;cursor:pointer;font-size:10px;padding:0;
+  border-radius:5px;cursor:pointer;font-size:13px;padding:0;
 }
 .lock-dial button:active{transform:translateY(1px)}
 .lock-win{
@@ -872,8 +904,8 @@ body.chat-open .dialogue{padding-right:16px}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   color:#8ef08e;overflow:hidden;
 }
-.lock-win span{font-size:11px;opacity:.35}
-.lock-win b{font-size:22px;line-height:1.2}
+.lock-win span{font-size:13px;opacity:.35}
+.lock-win b{font-size:26px;line-height:1.2}
 .lock-win.spin{animation:lockspin .18s}
 @keyframes lockspin{from{transform:translateY(-8px);opacity:.4}}
 
@@ -900,14 +932,14 @@ body.chat-open .dialogue{padding-right:16px}
 .fx-stamp{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-14deg);
   border:5px solid var(--red);color:var(--red);border-radius:10px;
-  padding:6px 16px;font-size:22px;letter-spacing:3px;opacity:.9;
+  padding:6px 16px;font-size:26px;letter-spacing:3px;opacity:.9;
   background:rgba(255,255,255,.6);z-index:5;pointer-events:none;
   animation:stampin .3s cubic-bezier(.2,1.6,.4,1);
 }
 @keyframes stampin{from{transform:translate(-50%,-50%) rotate(-14deg) scale(2.4);opacity:0}}
 .quiz-tier{
   background:var(--red);color:#fff;border-radius:4px;padding:1px 6px;
-  font-size:10px;margin-left:auto;
+  font-size:13px;margin-left:auto;
 }
 
 /* ============================================================
@@ -921,7 +953,7 @@ body.chat-open .dialogue{padding-right:16px}
 :root{--chat-h:min(62vh,460px)}
 @media (max-width:760px){ :root{--chat-h:min(36vh,260px)} }
 body.modal-up{--chat-h:min(36vh,260px)}   /* 창이 떠 있으면 조금 낮춘다 */
-body.chat-min{--chat-h:104px}             /* 접으면 입력칸만 */
+body.chat-min{--chat-h:118px}             /* 접으면 입력칸만 */
 
 /* 접힌 채팅 : 머리말 + 입력칸만 남긴다 */
 .chat-panel.min .chat-log,
@@ -934,7 +966,7 @@ body.chat-min{--chat-h:104px}             /* 접으면 입력칸만 */
    단, 사용자가 창을 직접 옮기거나 크기를 바꾸면(body.chat-free) 비켜 주지 않는다.
    그때부터는 채팅창 위치를 사용자가 정하기 때문이다. */
 @media (min-width:761px){
-  body.chat-open:not(.chat-free){padding-right:var(--chat-reserve,342px)}
+  body.chat-open:not(.chat-free){padding-right:var(--chat-reserve,384px)}
 }
 @media (max-width:760px){
   body.chat-open:not(.chat-free){align-items:flex-start;padding-bottom:calc(var(--chat-h) + 20px)}
@@ -948,7 +980,7 @@ body.chat-min{--chat-h:104px}             /* 접으면 입력칸만 */
 /* 창(모달)은 게임과 같은 자리 기준으로 가운데 — 게임이 비켜 준 만큼만 함께 비켜 준다.
    (--chat-reserve 가 0 이면 창도 화면 한가운데, 즉 게임 위에 그대로 뜬다) */
 body.chat-open:not(.chat-free).modal-up .modal-back{
-  padding-right:calc(12px + var(--chat-reserve,354px));
+  padding-right:calc(12px + var(--chat-reserve,384px));
 }
 @media (max-width:760px){
   body.chat-open:not(.chat-free).modal-up .modal-back{
@@ -961,3 +993,52 @@ body.chat-open:not(.chat-free).modal-up .modal-back{
   /* 자료 창은 종이를 줄여서 확대·UV 버튼이 화면 밖으로 밀리지 않게 한다 */
   body.chat-open:not(.chat-free).modal-up .doc-stage{height:clamp(150px,26dvh,240px)}
 }
+
+
+/* ============================================================
+   순위판 — 팀 / 개인 탭 · 정렬
+   ============================================================ */
+.board-title{font-size:14px;color:#274a75;margin:10px 0 4px}
+.board-head{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin:6px 0 8px}
+.board-tabs{display:flex;gap:4px}
+.board-tab{
+  font:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  background:#e7e3d6;color:#5c6272;border:2px solid var(--ink);border-radius:7px 7px 0 0;
+  padding:5px 11px;border-bottom-width:2px;
+}
+.board-tab.on{background:var(--blue);color:#fff}
+.board-sorts{display:flex;gap:4px;flex-wrap:wrap}
+.board-sort{
+  font:inherit;font-size:13px;cursor:pointer;
+  background:var(--paper);color:#5c6272;border:2px solid #c9c3b2;border-radius:999px;padding:3px 9px;
+}
+.board-sort.on{background:var(--gold);color:#3f3204;border-color:var(--ink);font-weight:700}
+.board-tab:focus-visible,.board-sort:focus-visible{outline:2px solid var(--blue-dark);outline-offset:2px}
+.board-body{border-top:2px solid var(--ink);padding-top:6px}
+.board-mem{display:block;font-size:12px;color:#8a8f9c;font-weight:400;line-height:1.4;
+  max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-note{font-size:13px;color:#6b7280;margin-top:6px;line-height:1.7}
+.board-empty{text-align:center;padding:20px;color:#8a8f9c;font-size:14px;line-height:1.8}
+/* 좁은 화면에서는 부차적인 열을 접어 글자가 눌리지 않게 한다 */
+@media (max-width:620px){
+  .board-body .col-opt{display:none}
+  .board-body th,.board-body td{white-space:nowrap}
+}
+@media (max-width:520px){
+  .board-head{flex-direction:column;align-items:stretch}
+  .board-tab{flex:1}
+  .board-mem{max-width:96px}
+}
+
+/* 팀 배정 뒤 잠긴 근무지 선택 */
+.chip.is-locked{opacity:.4;cursor:not-allowed;filter:grayscale(.6)}
+.loc-lock-note{
+  font-size:13px;line-height:1.7;color:#8a5a12;background:#fff7d6;
+  border:2px solid var(--gold);border-radius:7px;padding:6px 9px;margin-top:6px;
+}
+
+/* 참가자 정보 수정 */
+.pl-edit{display:flex;flex-direction:column;gap:4px}
+.pl-lab{font-size:13px;font-weight:700;color:#5c6272;margin-top:6px}
+.pl-edit .chip-row{display:flex;gap:6px}
+.pk-btn-sm{padding:3px 8px;font-size:13px;min-width:0}

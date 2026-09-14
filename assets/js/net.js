@@ -172,6 +172,11 @@
       armPresence();
     },
     updatePlayer(patch) { return ref('players/' + uid).update(patch); },
+    /** 관리자가 다른 참가자의 정보를 고친다 (uid 는 그대로 두어야 규칙을 통과한다) */
+    updatePlayerOf(targetUid, patch) {
+      return ref('players/' + targetUid).update(Object.assign({ uid: targetUid }, patch));
+    },
+    removePlayerOf(targetUid) { return ref('players/' + targetUid).remove(); },
     removePlayer() { return ref('players/' + uid).remove(); },
 
     /* ----- 기록(덮어쓰기 불가) ----- */
@@ -367,8 +372,8 @@
 
   /* ---------- 점수 계산 (서버 기록으로부터 재계산) ---------- */
   NET.scoreOf = function (run) {
-    let score = 0, time = 0, solved = 0, rooms = {};
-    if (!run || !run.rooms) return { score, time, solved, rooms };
+    let score = 0, time = 0, solved = 0, wrong = 0, rooms = {};
+    if (!run || !run.rooms) return { score, time, solved, wrong, rooms };
     Object.keys(run.rooms).forEach(k => {
       const r = run.rooms[k]; if (!r) return;
       let rs = 0;
@@ -376,7 +381,9 @@
         const v = r.solves[s];
         if (v && typeof v.points === 'number') { rs += Math.max(0, Math.min(20000, v.points)); solved++; }
       });
-      if (r.wrong) Object.keys(r.wrong).forEach(s => { rs -= CFG.WRONG_PENALTY * (r.wrong[s] || 0); });
+      if (r.wrong) Object.keys(r.wrong).forEach(s => {
+        const n = r.wrong[s] || 0; wrong += n; rs -= CFG.WRONG_PENALTY * n;
+      });
       if (r.traps) rs -= CFG.TRAP_PENALTY * r.traps;
       if (r.done) {
         rs += Math.max(0, Math.min(CFG.TIME_BONUS_MAX, r.done.bonus || 0));
@@ -386,7 +393,7 @@
       rooms[k] = rs;
       score += rs;
     });
-    return { score, time, solved, rooms };
+    return { score, time, solved, wrong, rooms };
   };
 
   /* 진행 상태를 항상 최신으로 (관리자 setGlobal 의 바탕) */

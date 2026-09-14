@@ -569,25 +569,91 @@
       plant(x, 118, 130);
     },
 
-    /* 결과 발표 홀 */
+    /* 결과 발표 홀 — 어두운 금빛 시상식 무대 (트로피 + 금가루) */
     hall(x) {
-      ceiling(x);
-      wall(x, 12, FLOOR, '#26304a', '#141a2b');
-      x.fillStyle = '#3d6ea8';
-      for (let i = 0; i < 6; i++) x.fillRect(10 + i * 40, 16, 22, 3);
-      whiteboard(x, 62, 20, 116, 42, 91);
-      text(x, 'HALL OF FAME', 78, 34, '#1f4e9c', 2);
-      floorTiles(x, FLOOR, '#3a2f52', '#332a48', '#2a2340');
-      plant(x, 6, 108); plant(x, 220, 108);
-      // 시상대
-      box(x, 104, 128, 32, 26, '#e8b83b', OUT);
-      box(x, 68, 136, 32, 18, '#b9c0cc', OUT);
-      box(x, 140, 140, 32, 14, '#c9925b', OUT);
-      text(x, '1', 118, 136, '#5c4708'); text(x, '2', 82, 142, '#4b5563'); text(x, '3', 154, 144, '#6b4a24');
-      x.fillStyle = '#e8b83b';
-      for (let i = 0; i < 24; i++) x.fillRect((i * 41) % 236, 80 + (i * 17) % 46, 2, 2);
+      // 배경 : 가운데가 밝은 갈금색, 가장자리로 갈수록 검게
+      const gr = x.createRadialGradient(W / 2, 62, 8, W / 2, 78, 168);
+      gr.addColorStop(0, '#7a5514');
+      gr.addColorStop(0.42, '#43300c');
+      gr.addColorStop(1, '#100b05');
+      x.fillStyle = gr; x.fillRect(0, 0, W, H);
+
+      // 위쪽 금가루 — 성기게 흩뿌린 점
+      const r1 = rnd(20301);
+      for (let i = 0; i < 190; i++) {
+        const px = Math.floor(r1() * W), py = Math.floor(r1() * 108);
+        const d = Math.abs(px - W / 2) / (W / 2);
+        if (r1() > 0.72 - d * 0.35) continue;
+        const s2 = r1() > 0.86 ? 2 : 1;
+        x.fillStyle = ['#f4d07a', '#e8b83b', '#c9922b', '#fff0c0'][Math.floor(r1() * 4)];
+        x.globalAlpha = 0.35 + r1() * 0.65;
+        x.fillRect(px, py, s2, s2);
+      }
+      x.globalAlpha = 1;
+
+      // 바닥 : 검은 유리판 + 금가루가 깔린 반사면
+      x.fillStyle = '#0b0803'; x.fillRect(0, 118, W, H - 118);
+      const gf = x.createLinearGradient(0, 118, 0, H);
+      gf.addColorStop(0, 'rgba(232,184,59,.20)');
+      gf.addColorStop(1, 'rgba(232,184,59,0)');
+      x.fillStyle = gf; x.fillRect(0, 118, W, H - 118);
+      const r2 = rnd(7717);
+      for (let i = 0; i < 150; i++) {
+        const px = Math.floor(r2() * W), py = 118 + Math.floor(r2() * (H - 118));
+        x.fillStyle = ['#e8b83b', '#f6dd9a', '#a9761c'][Math.floor(r2() * 3)];
+        x.globalAlpha = 0.3 + r2() * 0.7;
+        x.fillRect(px, py, r2() > 0.9 ? 2 : 1, 1);
+      }
+      x.globalAlpha = 1;
+
+      trophy(x, 106, 20);      // 가운데 큰 트로피 (제목 글씨와 캐릭터 사이)
+
+      // 시상대 — 금빛 무대에 맞춰 어둡게 깔고 금테를 두른다
+      podiumBox(x, 104, 128, 32, 26, '#e8b83b', '#7a5514');
+      podiumBox(x, 68, 136, 32, 18, '#cfd4dd', '#5d6470');
+      podiumBox(x, 140, 140, 32, 14, '#d09a5e', '#6b4a24');
+      text(x, '1', 118, 136, '#5c4708');
+      text(x, '2', 82, 142, '#3b414c');
+      text(x, '3', 154, 144, '#4a3218');
     }
   };
+
+  /** 금빛 트로피 (좌상단 기준, 28x58) */
+  function trophy(x, ax, ay) {
+    const G = '#e8b83b', GL = '#ffe9a8', GD = '#a9761c', GO = '#6b4a10';
+    // 손잡이
+    x.fillStyle = GD;
+    x.fillRect(ax - 6, ay + 8, 4, 16); x.fillRect(ax - 8, ay + 11, 3, 9);
+    x.fillRect(ax + 30, ay + 8, 4, 16); x.fillRect(ax + 33, ay + 11, 3, 9);
+    // 컵
+    x.fillStyle = GO; x.fillRect(ax - 1, ay + 3, 30, 5);
+    x.fillStyle = G;  x.fillRect(ax, ay + 4, 28, 4);
+    x.fillStyle = GO; x.fillRect(ax + 1, ay + 8, 26, 22);
+    x.fillStyle = G;  x.fillRect(ax + 2, ay + 8, 24, 21);
+    x.fillStyle = GD; x.fillRect(ax + 4, ay + 26, 20, 6);
+    x.fillStyle = G;  x.fillRect(ax + 6, ay + 30, 16, 4);
+    x.fillStyle = GL; x.fillRect(ax + 5, ay + 10, 4, 15); x.fillRect(ax + 11, ay + 11, 2, 9);
+    // 기둥 · 받침
+    x.fillStyle = GD; x.fillRect(ax + 11, ay + 34, 6, 8);
+    x.fillStyle = G;  x.fillRect(ax + 12, ay + 34, 3, 8);
+    x.fillStyle = GD; x.fillRect(ax + 6, ay + 42, 16, 4);
+    x.fillStyle = G;  x.fillRect(ax + 7, ay + 42, 14, 3);
+    // 나무 받침
+    x.fillStyle = '#4a1f14'; x.fillRect(ax + 3, ay + 46, 22, 8);
+    x.fillStyle = '#6b2c1c'; x.fillRect(ax + 4, ay + 47, 20, 5);
+    x.fillStyle = '#8a3b25'; x.fillRect(ax + 5, ay + 48, 18, 1);
+    // 반짝임
+    x.fillStyle = '#fff6d8';
+    x.fillRect(ax + 24, ay + 1, 1, 5); x.fillRect(ax + 22, ay + 3, 5, 1);
+    x.fillRect(ax - 4, ay + 30, 1, 3); x.fillRect(ax - 5, ay + 31, 3, 1);
+  }
+  /** 어두운 무대용 시상대 상자 */
+  function podiumBox(x, a, b, w, h, top, side) {
+    x.fillStyle = '#241906'; x.fillRect(a - 1, b - 1, w + 2, h + 2);
+    x.fillStyle = side; x.fillRect(a, b, w, h);
+    x.fillStyle = top;  x.fillRect(a, b, w, 3);
+    x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(a + 1, b + 4, 2, h - 5);
+  }
 
   /** 씬을 캔버스에 렌더 */
   function renderScene(canvas, name) {

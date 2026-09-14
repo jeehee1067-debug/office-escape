@@ -84,6 +84,11 @@ const spec = (DOCS.d3_tag.items.find(i => i.v.indexOf(person) >= 0) || {}).k;
 const cell = (Object.entries(DOCS.d3_tray.cells).find(([, c]) => c.name === spec) || ['??'])[0];
 eq('r3h2', cell, q(3, 'r3h2').ans[0]);
 
+// 3관 일반 : 트레이 빈칸 수 (배치도에서 다시 계산)
+const tray = DOCS.d3_tray;
+const slots = (tray.rows || []).length * (tray.cols || []).length;
+eq('r3e2', slots - Object.keys(tray.cells || {}).length, q(3, 'r3e2').ans[0]);
+
 // 4관 : 계획표(UV 추가 작업) + 색상 코드표
 const plan = DOCS.d4_plan;
 const color = k => (DOCS.d4_color.items.find(i => i.k === k) || {}).v;
