@@ -1294,13 +1294,15 @@
      ============================================================ */
   function applyGlobal(gs) {
     S.global = gs;
-    if (!gs) { renderLobby(); return; }
 
-    // 전체 초기화 감지
+    /* 전체 초기화 감지.
+       처음 본 값(토큰이 아직 없으면 'none')을 기억해 두고, 이후 달라지면 초기화된 것으로 본다.
+       — 관리자가 아직 아무 조작도 하기 전에 들어온 참가자도 첫 초기화에 반응하게 하려는 것. */
+    const cur = gs && gs.resetToken ? String(gs.resetToken) : 'none';
     const tk = localStorage.getItem('s1fa.resetToken');
-    if (gs.resetToken && String(gs.resetToken) !== tk) {
-      localStorage.setItem('s1fa.resetToken', String(gs.resetToken));
-      if (tk !== null) {           // 최초 접속이 아니면 = 관리자가 초기화한 것
+    if (cur !== tk) {
+      localStorage.setItem('s1fa.resetToken', cur);
+      if (tk !== null && cur !== 'none') {     // 보고 있던 판이 초기화됐다
         S.run = null;
         if (!S.me.isAdmin) {
           g.UI.closeAll();
@@ -1310,6 +1312,7 @@
         }
       }
     }
+    if (!gs) { renderLobby(); return; }
 
     if (gs.phase === 'results') { if (S.phase !== 'results') showResults(); return; }
     if (gs.phase === 'lobby') {

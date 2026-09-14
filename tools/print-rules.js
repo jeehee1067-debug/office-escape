@@ -4,9 +4,8 @@
      node tools/print-rules.js            화면에 출력 (복사해서 붙여넣기)
      node tools/print-rules.js > rules.txt  파일로 저장
 
-   database.rules.json 에는 설명용 "_comment" 가 들어 있는데,
-   Firebase 규칙 탭은 최상위에 "rules" 만 있어야 합니다.
-   이 도구는 설명을 걷어내고 붙여넣기용 JSON 만 만들어 줍니다.
+   database.rules.json 은 순수 JSON 이라 파일을 그대로 붙여넣어도 됩니다.
+   이 도구는 같은 내용을 보기 좋게 출력하고, 들어 있는 경로를 확인해 줍니다.
    ============================================================ */
 'use strict';
 const fs = require('fs');

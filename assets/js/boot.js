@@ -162,6 +162,7 @@
 
       const me = { name, loc: chosen.loc, avatar: chosen.avatar, isAdmin: false };
       localStorage.setItem('s1fa.me', JSON.stringify(me));
+      localStorage.removeItem('s1fa.resetToken');     // 새 입장 — 이전 판의 초기화 토큰은 잊는다
       try {
         await NET.joinPlayer(me);
         toast('대기실에 입장했습니다!', 'good');
@@ -239,12 +240,15 @@
 
       const me = { name: '관리자', loc: '', avatar: 0, isAdmin: true };
       localStorage.setItem('s1fa.me', JSON.stringify(me));
+      localStorage.removeItem('s1fa.resetToken');
       localStorage.setItem('s1fa.admin', NET.adminKey);
       try { await NET.joinPlayer(me); } catch (e) { console.warn('[S1FA] 관리자 등록 실패:', e); }
       g.GAME.boot(me);
       SFX.great();
       toast('관리자로 로그인했습니다.', 'good');
       setTimeout(() => g.ADMIN.open(), 500);
+      // 규칙 게시·배점표 등록이 빠지지 않았는지 조용히 확인한다 (문제가 있을 때만 알림)
+      setTimeout(() => g.ADMIN.autoCheck(), 2200);
     }, { password: true, max: 24 });
   }
 
@@ -291,6 +295,7 @@
 
   function backToLogin() {
     localStorage.removeItem('s1fa.me');
+    localStorage.removeItem('s1fa.resetToken');
     location.reload();
   }
 
@@ -354,12 +359,7 @@
 
     const session = (async () => {
       try {
-        const restored = await restore();
-        if (!restored) {
-          const gs2 = await NET.getGlobal().catch(() => null);
-          if (gs2 && gs2.resetToken) localStorage.setItem('s1fa.resetToken', String(gs2.resetToken));
-        }
-        return restored;
+        return await restore();
       } catch (e) {
         console.warn('[S1FA] 세션 복구 실패:', e);
         return false;

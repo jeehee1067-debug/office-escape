@@ -26,10 +26,7 @@
 @media (pointer:coarse){
   :root{--btn-w:40px;--btn-h:38px;--btn-f:17px;--chip-h:32px}
 }
-/* 아주 좁은 화면 (아이폰 SE, 폴드 커버 등) */
-@media (max-width:360px){
-  :root{--btn-w:32px;--btn-h:32px;--btn-f:15px;--chip-h:28px}
-}
+/* 아주 좁은 화면(아이폰 SE, 폴드 커버) 의 치수는 아래 HUD 컨테이너 쿼리에서 정한다 */
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -154,29 +151,14 @@ button,input,select{font-family:inherit}
   background:var(--blue);color:#fff;
   flex:0 1 auto;min-width:0;
   overflow:hidden;text-overflow:ellipsis;display:inline-block;
-  line-height:calc(var(--chip-h) - 4px);max-width:min(46vw,260px);
+  line-height:calc(var(--chip-h) - 4px);max-width:min(46cqw,260px);
 }
-/* 방 이름은 자리가 넉넉할 때만 긴 이름을 쓴다.
-   창 너비가 아니라 HUD(=게임 화면) 너비를 기준으로 판단한다. */
-#hud{container-type:inline-size;container-name:hud}
+/* 방 이름은 HUD 가 충분히 넓을 때만 긴 이름을 쓴다 (아래 컨테이너 쿼리) */
 .rm-short{display:none}
-@media (max-width:899px){
-  .rm-full{display:none}
-  .rm-short{display:inline}
-}
-@container hud (max-width:900px){
-  .rm-full{display:none}
-  .rm-short{display:inline}
-  .hud-player{max-width:min(30cqw,150px)}
-}
-@container hud (max-width:700px){
-  .hud-time .t-label{display:none}
-  .hud-chip{padding:0 7px}
-}
 .hud-score{background:var(--gold)}
 .hud-player{
   background:#fff;overflow:hidden;text-overflow:ellipsis;display:inline-block;
-  line-height:calc(var(--chip-h) - 4px);max-width:min(44vw,200px);
+  line-height:calc(var(--chip-h) - 4px);max-width:min(44cqw,200px);
 }
 .hud-clues{background:#fff;letter-spacing:2px}
 .hud-time{gap:4px;background:#fff}
@@ -719,7 +701,6 @@ body.chat-open .dialogue{padding-right:16px}
 
 @media (max-width:560px){
   body{padding:4px}
-  #hud{padding:5px 6px;gap:5px 6px}
   .modal{padding:12px}
   .avatar-picker{grid-template-columns:repeat(4,1fr)}
 }
@@ -733,23 +714,40 @@ body.chat-open .dialogue{padding-right:16px}
 @media (max-width:700px){
   body.chat-open{align-items:flex-start}
 }
-/* 좁은 화면에서는 타이머의 '방/전체' 글자를 빼서 자리를 만든다 */
-@media (max-width:430px){
-  .hud-time .t-label{display:none}
-  .hud-time{gap:3px;padding:0 6px}
-  .hud-room,.hud-player{max-width:min(52vw,180px)}
-}
-@media (max-width:360px){
-  .hud-btns{gap:4px}
-  .t-room{font-size:14px}
-  .t-total{font-size:13px}
-}
-/* 넓은 화면에서는 HUD 를 한 줄로 유지한다 */
-@media (min-width:720px){
+
+/* ---------- HUD 반응형: 화면 폭이 아니라 '게임 화면의 실제 폭' 기준 ----------
+   채팅창이 오른쪽 자리를 차지하면 게임 화면만 좁아지므로, 뷰포트가 아니라
+   컨테이너(#game-screen) 폭으로 판단해야 겹침이 생기지 않는다.
+   글자 크기는 40~50대 참가자를 위해 한 단계 키운 값이다. */
+#game-screen{container-type:inline-size;container-name:game}
+
+/* 넓을 때: 한 줄 */
+@container game (min-width:700px){
   #hud,.hud-zone{flex-wrap:nowrap}
   .hud-chip{font-size:14px;padding:0 10px}
   .t-room{font-size:18px}
   .t-total{font-size:15px}
+}
+/* 긴 방 이름은 아주 넓을 때만 */
+@container game (max-width:899px){
+  .rm-full{display:none}
+  .rm-short{display:inline}
+}
+@container game (max-width:560px){
+  #hud{padding:5px 6px;gap:5px 6px}
+}
+/* 좁을 때: 타이머의 '방/전체' 글자를 빼서 자리를 만든다 */
+@container game (max-width:430px){
+  .hud-time .t-label{display:none}
+  .hud-time{gap:3px;padding:0 6px}
+  .hud-room,.hud-player{max-width:min(52cqw,180px)}
+}
+/* 아주 좁을 때 (아이폰 SE, 폴드 커버) */
+@container game (max-width:360px){
+  #hud{--btn-w:32px;--btn-h:32px;--btn-f:15px;--chip-h:28px}
+  .hud-btns{gap:4px}
+  .t-room{font-size:14px}
+  .t-total{font-size:13px}
 }
 
 /* 근무지 전용 문제 표시 */
