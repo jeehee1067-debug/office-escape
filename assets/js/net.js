@@ -197,7 +197,10 @@
       const r = ref('runs/' + uid + '/rooms/' + room + '/solves/' + slot);
       const snap = await r.get();
       if (snap.exists()) return false;                   // 이미 기록됨 → 재기록 불가
-      await r.set(Object.assign({ at: TS, uid }, payload)).catch(() => { });
+      /* 서버 규칙이 거부하면 'denied' 를 돌려준다. 조용히 삼키면 화면은 "정답!" 인데
+         점수는 0 인 채로 남아, 원인을 찾기 어렵다 (실제로 있었던 일). */
+      try { await r.set(Object.assign({ at: TS, uid }, payload)); }
+      catch (e) { console.error('[S1FA] 정답 기록 거부:', e && e.message); return 'denied'; }
       return true;
     },
     /** 방 종료 기록 — 최초 1회만 */
@@ -205,7 +208,8 @@
       const r = ref('runs/' + uid + '/rooms/' + room + '/done');
       const snap = await r.get();
       if (snap.exists()) return false;
-      await r.set(Object.assign({ at: TS }, payload)).catch(() => { });
+      try { await r.set(Object.assign({ at: TS }, payload)); }
+      catch (e) { console.error('[S1FA] 방 종료 기록 거부:', e && e.message); return 'denied'; }
       return true;
     },
     /** 오답 카운트(감점 근거) — 누적만 가능 */
