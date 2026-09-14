@@ -77,12 +77,20 @@
      그 팀은 전용 문제를 풀 수 없게 된다. 그래서 배정된 뒤에는 바꾸지 못하게 막는다. */
   let lockedLoc = null;          // 팀에 배정되어 고정된 근무지
 
-  /** 팀 명단에서 내 기록을 찾는다 */
-  function myTeamEntry(teams) {
+  /** 팀 명단에서 내 기록을 찾는다.
+      기기(브라우저)를 바꾸면 uid 가 달라지므로, uid 로 못 찾으면 이름으로 한 번 더 찾는다.
+      — 회사 PC 로 들어왔다가 휴대폰으로 다시 들어오는 경우가 실제로 생긴다. */
+  function myTeamEntry(teams, name) {
     const list = (teams && teams.list) || [];
     for (const t of list) {
       const m = (t.members || []).find(x => x && x.uid === NET.uid);
-      if (m) return { team: t.id, loc: m.loc };
+      if (m) return { team: t.id, loc: m.loc, uid: m.uid, name: m.name, by: 'uid' };
+    }
+    const nm = String(name || '').trim();
+    if (!nm) return null;
+    for (const t of list) {
+      const m = (t.members || []).find(x => x && String(x.name || '').trim() === nm);
+      if (m) return { team: t.id, loc: m.loc, uid: m.uid, name: m.name, by: 'name' };
     }
     return null;
   }
@@ -107,6 +115,29 @@
         box.parentNode.insertBefore(n, box.nextSibling);
       }
     }
+  }
+
+  /** 다른 기기에서 같은 이름으로 들어왔을 때 — 같은 사람인지 확인한다.
+      점수와 팀이 참가자 ID 에 묶여 있어서, 이어받지 않으면 그동안의 기록이 사라진다. */
+  function askSamePerson(name, mine) {
+    return new Promise(resolve => {
+      let answered = false;
+      const done = v => { if (!answered) { answered = true; resolve(v); } };
+      modal({
+        title: '🔄 이어서 하시겠습니까?',
+        closable: false,
+        html: '<p style="font-size:13px;line-height:1.9"><b>' + esc(name) + '</b> 님은 이미 ' +
+          '<b>' + esc(String(mine.team)) + '팀</b>(' + esc(mine.loc) + ')으로 참가 중입니다.<br>' +
+          '다른 기기나 브라우저에서 다시 들어오신 건가요?</p>' +
+          '<p style="font-size:12px;line-height:1.8;color:#5c6272;margin-top:8px">' +
+          '「네」 를 누르면 지금까지의 <b>점수와 팀 배정을 그대로 이어서</b> 진행합니다.<br>' +
+          '다른 분이라면 「아니요」 를 누르고 <b>다른 이름</b>으로 들어와 주세요.</p>',
+        buttons: [
+          { label: '네, 저입니다 (이어서 하기)', cls: 'pk-btn-main', onClick: () => done(true) },
+          { label: '아니요, 다른 사람입니다', cls: 'pk-btn-ghost', onClick: () => done(false) }
+        ]
+      });
+    });
   }
 
   /** 근무지를 바꿔서 들어오려 했을 때 알린다 */
@@ -139,6 +170,22 @@
     btn.textContent = '접속 중...';
     btn.disabled = true;
     try {
+      /* 팀 명단부터 확인한다 — 기기를 바꿔 들어온 사람은
+         이름 중복으로 막아버리면 안 되고, 이전 기록을 이어줘야 한다. */
+      let mine = null;
+      try { mine = myTeamEntry(await NET.getTeams(), name); }
+      catch (e) { console.warn('[S1FA] 팀 확인 실패:', e); }
+
+      /* 기기를 바꿔 들어온 경우 — 같은 사람이면 이전 ID(=점수·팀)를 이어받는다 */
+      if (mine && mine.by === 'name' && mine.uid) {
+        if (!await askSamePerson(name, mine)) {
+          toast('이미 쓰고 있는 이름입니다. 다른 이름으로 들어와 주세요.', 'bad', 4000);
+          $('#name-input').focus();
+          return;
+        }
+        NET.useUid(mine.uid);
+      }
+
       // 이름 중복 확인 — 서버에 못 붙어도 입장은 막지 않는다
       try {
         const players = await NET.listPlayers();
@@ -150,15 +197,11 @@
 
       /* 팀 배정이 끝난 뒤라면 근무지는 바꿀 수 없다 */
       let locBlocked = null;
-      try {
-        const teams = await NET.getTeams();
-        const mine = myTeamEntry(teams);
-        if (mine && mine.loc && mine.loc !== chosen.loc) {
-          applyLocLock(mine.loc, mine.team);
-          locBlocked = mine;
-          chosen.loc = mine.loc;
-        }
-      } catch (e) { console.warn('[S1FA] 팀 확인 실패:', e); }
+      if (mine && mine.loc && mine.loc !== chosen.loc) {
+        applyLocLock(mine.loc, mine.team);
+        locBlocked = mine;
+        chosen.loc = mine.loc;
+      }
 
       const me = { name, loc: chosen.loc, avatar: chosen.avatar, isAdmin: false };
       localStorage.setItem('s1fa.me', JSON.stringify(me));
@@ -277,7 +320,7 @@
     ]);
 
     /* 팀에 이미 배정돼 있으면 그 근무지를 따른다 (임의 변경 방지) */
-    const mine = myTeamEntry(teams);
+    const mine = myTeamEntry(teams, me.name);
     if (mine && mine.loc && mine.loc !== me.loc) {
       me.loc = mine.loc;
       chosen.loc = mine.loc;
