@@ -948,6 +948,12 @@
       qid: q.id, points: q.score, speed: speed, room: S.room, left: Math.round(rem)
     });
     const who = boss || (BOSSES[ROOMS[S.room].boss] || {}).name || '';
+    if (fresh === 'denied') {
+      // 정답은 맞았지만 서버가 기록을 받지 않았다 — 규칙·배점표 문제. 진행자가 바로 알아야 한다.
+      toast('⚠️ 정답이지만 서버가 기록을 거부했습니다. 진행자에게 알려주세요! (관리자 패널 → 행사 준비 점검)', 'bad', 8000);
+      say('정답인데 서버에 기록되지 않았다… 진행자에게 알리자!', who);
+      return;
+    }
     if (fresh) {
       toast('✅ 정답! +' + total.toLocaleString() + '점 (배점 ' + q.score.toLocaleString() +
         ' + 속도 ' + speed.toLocaleString() + ')', 'good', 3200);
