@@ -342,6 +342,213 @@
     x.fillRect(px + 7, py + 1, 5, 4); x.fillRect(px + 2, py, 4, 4); x.fillRect(px + 8, py + 6, 4, 3);
     x.fillStyle = '#3fae66'; x.fillRect(px + 3, py + 1, 2, 2); x.fillRect(px + 9, py + 7, 2, 2);
   }
+  /* ============================================================
+     대기실 전용 소품 — 사무실 셀(1~4관)과 달리 「카페 라운지」 결.
+     밝은 나무 바닥 + 세이지 허리벽 + 작은 소품들로 아기자기하게 꾸민다.
+     ※ 대기실 바닥(y 86~150)에는 참가자 캐릭터가 최대 48명까지 서므로,
+       가구는 좌우 가장자리에 낮게 두고 가운데는 러그 정도만 깐다.
+     ============================================================ */
+
+  /** 나무 마루 — 원근에 따라 널 높이가 늘어난다 */
+  function woodFloor(x, y0, c1, c2, seam) {
+    let y = y0, i = 0;
+    while (y < H) {
+      const hh = Math.max(5, Math.round(5 + i * 1.35));
+      x.fillStyle = (i % 2) ? c1 : c2;
+      x.fillRect(0, y, W, hh);
+      /* 나뭇결 — 널 안쪽에 옅은 가로줄 */
+      x.fillStyle = 'rgba(150,118,78,.10)';
+      x.fillRect(0, y + Math.floor(hh / 2), W, 1);
+      /* 널 이음매 — 줄마다 어긋나게, 또렷이 */
+      x.fillStyle = 'rgba(126,96,58,.45)';
+      for (let px = -20 + (i % 2) * 31, j = 0; px < W + 20; px += 62, j++) x.fillRect(px, y + 1, 1, hh - 1);
+      x.fillStyle = seam; x.fillRect(0, y, W, 1);
+      y += hh; i++;
+    }
+  }
+
+  /** 허리벽(웨인스코팅) + 몰딩 — 밋밋한 벽에 결을 준다 */
+  function wainscot(x, y0, y1, c, rail) {
+    x.fillStyle = c; x.fillRect(0, y0, W, y1 - y0);
+    x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(0, y0 + 2, W, 1);
+    /* 세로 홈 */
+    x.fillStyle = 'rgba(0,0,0,.08)';
+    for (let px = 6; px < W; px += 16) x.fillRect(px, y0 + 4, 1, y1 - y0 - 6);
+    x.fillStyle = rail; x.fillRect(0, y0 - 3, W, 3);
+    x.fillStyle = 'rgba(255,255,255,.45)'; x.fillRect(0, y0 - 3, W, 1);
+    x.fillStyle = OUT; x.fillRect(0, y0 - 4, W, 1);
+  }
+
+  /** 천장에 매단 펜던트 조명 — 형광등 대신 */
+  function pendantLamp(x, px, py, len, shade) {
+    x.fillStyle = '#3c414c'; x.fillRect(px, py, 1, len);          // 코드
+    const w = 13;
+    box(x, px - Math.floor(w / 2), py + len, w, 6, shade, '#6f6a58');
+    x.fillStyle = 'rgba(255,255,255,.35)'; x.fillRect(px - 4, py + len + 1, 6, 1);
+    x.fillStyle = '#ffe9a0'; x.fillRect(px - 4, py + len + 5, 8, 1);   // 전구 빛
+    x.fillStyle = 'rgba(255,240,180,.26)';                              // 빛 번짐
+    x.beginPath();
+    x.moveTo(px - 6, py + len + 6); x.lineTo(px + 6, py + len + 6);
+    x.lineTo(px + 13, py + len + 26); x.lineTo(px - 13, py + len + 26);
+    x.closePath(); x.fill();
+  }
+
+  /** 위가 둥근 창 — 각진 창보다 부드럽다. 창턱에 화분 하나. */
+  function archWindow(x, px, py, w, h) {
+    const r = Math.floor(w / 2);
+    x.fillStyle = '#8e8b80';
+    x.beginPath(); x.arc(px + r, py + r, r, Math.PI, 0); x.closePath(); x.fill();
+    x.fillRect(px, py + r, w, h - r);
+    x.fillStyle = '#cfe9f7';
+    x.beginPath(); x.arc(px + r, py + r, r - 2, Math.PI, 0); x.closePath(); x.fill();
+    x.fillRect(px + 2, py + r, w - 4, h - r - 2);
+    x.fillStyle = '#a9d6ee'; x.fillRect(px + 2, py + Math.floor(h * .55), w - 4, h - Math.floor(h * .55) - 2);
+    x.fillStyle = '#8fc46f'; x.fillRect(px + 2, py + h - 9, w - 4, 7);     // 바깥 잔디
+    x.fillStyle = '#6ea854'; x.fillRect(px + 5, py + h - 12, 7, 4); x.fillRect(px + w - 13, py + h - 11, 6, 3);
+    x.fillStyle = '#ffffff66'; x.fillRect(px + 5, py + 6, 5, 2);           // 유리 반사
+    x.fillStyle = '#8e8b80';                                                // 창살
+    x.fillRect(px + r - 1, py + 3, 2, h - 5);
+    x.fillRect(px + 2, py + Math.floor(h * .55) - 1, w - 4, 2);
+    box(x, px - 3, py + h, w + 6, 4, '#efe7d6', '#9c957f');                 // 창턱
+    plantTiny(x, px + w - 13, py + h - 4, '#e08fa8');                       // 창턱 화분
+  }
+
+  /** 작은 화분 — 창턱·탁자용 */
+  function plantTiny(x, px, py, potc) {
+    box(x, px, py, 8, 5, potc || '#d98f6a', '#8a5a3f');
+    x.fillStyle = '#4fa86a';
+    x.fillRect(px + 3, py - 4, 2, 5); x.fillRect(px + 1, py - 2, 2, 2); x.fillRect(px + 5, py - 3, 2, 3);
+    x.fillStyle = '#6fc98a'; x.fillRect(px + 3, py - 5, 1, 1);
+  }
+
+  /** 삼각 깃발 가랜드 — 행사 느낌을 내는 가장 값싼 장식 */
+  function bunting(x, px, py, w) {
+    const cols = ['#f2a6b8', '#ffd98e', '#9fd8c2', '#a8c4ec'];
+    x.fillStyle = '#b9b3a0';
+    for (let i = 0; i < w; i++) x.fillRect(px + i, py + Math.round(Math.sin(i / w * Math.PI) * 3), 1, 1);
+    for (let i = 0, k = 0; i < w - 8; i += 11, k++) {
+      const yy = py + Math.round(Math.sin((i + 5) / w * Math.PI) * 3);
+      x.fillStyle = cols[k % cols.length];
+      for (let d = 0; d < 6; d++) x.fillRect(px + i + 1 + d, yy + 1 + d, 9 - d * 2, 1);
+    }
+  }
+
+  /** 동그란 벽시계 */
+  function wallClock(x, cx, cy, r) {
+    x.fillStyle = OUT; x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#fbf6ec'; x.beginPath(); x.arc(cx, cy, r - 1, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#c8c2b2';
+    x.fillRect(cx - 1, cy - r + 2, 2, 2); x.fillRect(cx - 1, cy + r - 4, 2, 2);
+    x.fillRect(cx - r + 2, cy - 1, 2, 2); x.fillRect(cx + r - 4, cy - 1, 2, 2);
+    x.fillStyle = '#4a505c'; x.fillRect(cx - 1, cy - 4, 2, 5); x.fillRect(cx, cy, 4, 2);
+    x.fillStyle = '#e07a5f'; x.fillRect(cx - 1, cy - 1, 2, 2);
+  }
+
+  /** 액자 세 개 — 크기를 달리해 붙인다 */
+  function frameCluster(x, px, py) {
+    const set = [[0, 4, 16, 14, '#f2a6b8'], [19, 0, 13, 11, '#9fd8c2'], [19, 13, 13, 9, '#ffd98e']];
+    set.forEach(f => {
+      box(x, px + f[0], py + f[1], f[2], f[3], '#fbf6ec', '#8a7f6a');
+      x.fillStyle = f[4]; x.fillRect(px + f[0] + 2, py + f[1] + 2, f[2] - 4, f[3] - 4);
+      x.fillStyle = 'rgba(255,255,255,.5)'; x.fillRect(px + f[0] + 2, py + f[1] + 2, f[2] - 4, 1);
+    });
+  }
+
+  /** 줄에 매단 나무 간판 */
+  function hangSign(x, px, py, w, label) {
+    x.fillStyle = '#8a7f6a';
+    x.fillRect(px + 3, py, 1, 4); x.fillRect(px + w - 4, py, 1, 4);
+    box(x, px, py + 4, w, 12, '#d8b98a', '#8a6a41');
+    x.fillStyle = 'rgba(255,255,255,.35)'; x.fillRect(px + 1, py + 5, w - 2, 1);
+    text(x, label, px + Math.floor(w / 2) - Math.floor(textW(label) / 2), py + 8, '#5a4326');
+  }
+
+  /** 천장에서 늘어뜨린 화분 */
+  function hangingPlant(x, px, py, len) {
+    x.fillStyle = '#8a7f6a'; x.fillRect(px, py, 1, len);
+    box(x, px - 5, py + len, 11, 7, '#e0dcd0', '#9c957f');
+    x.fillStyle = '#4fa86a';
+    x.fillRect(px - 4, py + len + 6, 2, 7); x.fillRect(px + 1, py + len + 6, 2, 10); x.fillRect(px + 4, py + len + 6, 1, 5);
+    x.fillStyle = '#6fc98a'; x.fillRect(px - 4, py + len + 11, 2, 2); x.fillRect(px + 1, py + len + 14, 2, 2);
+  }
+
+  /** 타원 러그 — 가운데 바닥에 색을 깐다 (캐릭터가 위에 선다) */
+  function rug(x, cx, cy, rw, rh) {
+    const ell = (w0, h0, c) => { x.fillStyle = c; x.beginPath(); x.ellipse(cx, cy, w0, h0, 0, 0, Math.PI * 2); x.fill(); };
+    ell(rw, rh, '#c9a3ad');
+    ell(rw - 2, rh - 2, '#e6c7cd');
+    ell(rw - 6, rh - 4, '#f4e0e3');
+    ell(rw - 9, rh - 6, '#e6c7cd');
+  }
+
+  /** 쿠션 놓인 소파 */
+  function cushionSofa(x, px, py, w) {
+    box(x, px, py, w, 11, '#e4d3b6', '#8a7455');            // 등받이
+    box(x, px, py + 9, w, 9, '#f2e6cd', '#8a7455');         // 좌석
+    x.fillStyle = 'rgba(255,255,255,.45)'; x.fillRect(px + 2, py + 2, w - 4, 2);
+    box(x, px + 3, py + 3, 11, 8, '#f2a6b8', '#b76d80');    // 쿠션
+    box(x, px + w - 15, py + 3, 11, 8, '#9fd8c2', '#5f9d87');
+    x.fillStyle = '#6f5c42'; x.fillRect(px + 2, py + 17, 3, 4); x.fillRect(px + w - 5, py + 17, 3, 4);
+  }
+
+  /** 소파에서 자는 고양이 */
+  function cat(x, px, py) {
+    x.fillStyle = '#b98d60';
+    x.fillRect(px + 2, py + 3, 12, 5);                       // 몸
+    x.fillRect(px + 11, py, 6, 5);                           // 머리
+    x.fillRect(px, py + 5, 4, 2);                            // 꼬리
+    x.fillStyle = '#93693f'; x.fillRect(px + 4, py + 3, 3, 2); x.fillRect(px + 9, py + 4, 2, 2);
+    x.fillStyle = '#b98d60'; x.fillRect(px + 11, py - 1, 2, 2); x.fillRect(px + 15, py - 1, 2, 2);  // 귀
+    x.fillStyle = OUT; x.fillRect(px + 12, py + 2, 2, 1); x.fillRect(px + 15, py + 2, 1, 1);        // 감은 눈
+    x.fillStyle = '#f2a6b8'; x.fillRect(px + 14, py + 3, 1, 1);                                     // 코
+  }
+
+  /** 커피 코너 — 자판기 대신 두는 작은 바 */
+  function cafeCounter(x, px, py, w) {
+    box(x, px - 2, py - 3, w + 4, 5, '#d8b98a', '#8a6a41');   // 상판
+    x.fillStyle = 'rgba(255,255,255,.4)'; x.fillRect(px, py - 2, w, 1);
+    box(x, px, py + 2, w, 20, '#9fd8c2', '#5f9d87');          // 앞면
+    x.fillStyle = 'rgba(255,255,255,.3)'; x.fillRect(px + 2, py + 4, w - 4, 1);
+    x.fillStyle = '#5f9d87'; x.fillRect(px + 2, py + 11, w - 4, 1);
+    /* 상판 위 : 커피머신 · 컵 · 화분 */
+    box(x, px + 2, py - 14, 12, 12, '#6f6a58', OUT);
+    x.fillStyle = '#3c414c'; x.fillRect(px + 4, py - 7, 8, 5);
+    x.fillStyle = '#ffd98e'; x.fillRect(px + 4, py - 12, 3, 2);
+    x.fillStyle = '#e07a5f'; x.fillRect(px + 9, py - 12, 3, 2);
+    x.fillStyle = '#fbf6ec'; x.fillRect(px + 16, py - 7, 4, 5); x.fillRect(px + 22, py - 7, 4, 5);
+    x.fillStyle = '#d9c9a8'; x.fillRect(px + 16, py - 7, 4, 1); x.fillRect(px + 22, py - 7, 4, 1);
+    plantTiny(x, px + w - 11, py - 4, '#9fd8c2');
+  }
+
+  /** 낮은 책장 — 색색 책만 보이게 */
+  function bookNook(x, px, py, w, h, seed) {
+    box(x, px, py, w, h, '#e6dcc6', '#a08c6d');
+    const r = rnd(seed || 5);
+    const cols = ['#f2a6b8', '#9fd8c2', '#ffd98e', '#a8c4ec', '#e0a3d8'];
+    const rows = 2, rh = Math.floor(h / rows);
+    for (let i = 0; i < rows; i++) {
+      const yy = py + i * rh;
+      x.fillStyle = '#a08c6d'; x.fillRect(px + 1, yy + rh - 1, w - 2, 1);
+      for (let bx = px + 3; bx < px + w - 5; bx += 5) {
+        const bh = rh - 4 - Math.floor(r() * 2);
+        x.fillStyle = cols[Math.floor(r() * cols.length)];
+        x.fillRect(bx, yy + rh - 1 - bh, 4, bh);
+      }
+    }
+  }
+
+  /** 유리창 달린 밝은 문 — 빨간 EXIT 대신 */
+  function cuteDoor(x, px, py, w, h) {
+    box(x, px - 3, py - 4, w + 6, h + 4, '#efe7d6', '#9c957f');
+    box(x, px, py, w, h, '#a8c4ec', '#5f7aa8');
+    x.fillStyle = '#c3d8f4'; x.fillRect(px + 2, py + 2, w - 4, h - 4);
+    box(x, px + 4, py + 4, w - 8, 14, '#cfe9f7', '#5f7aa8');       // 유리
+    x.fillStyle = '#ffffff66'; x.fillRect(px + 6, py + 6, 5, 2);
+    x.fillStyle = '#5f7aa8'; x.fillRect(px + 4, py + 22, w - 8, 1);
+    x.fillStyle = '#e8b83b'; x.fillRect(px + w - 7, py + Math.floor(h / 2) + 2, 3, 3);
+    hangSign(x, px + 2, py - 16, w - 4, 'OPEN');
+  }
+
   function doorway(x, px, py, w, h, open) {
     box(x, px - 3, py - 4, w + 6, h + 4, '#cfc9b8', '#8e8b80');   // 문틀
     box(x, px, py, w, h, '#8b5e34', '#4a3320');
@@ -466,21 +673,46 @@
   const FLOOR = 76;
   const scenes = {
     /* 대기실 / 라운지 */
+    /* 대기실 — 사무실이 아니라 「라운지」. 밝은 나무 바닥에 세이지 허리벽,
+       펜던트 조명과 가랜드로 행사 분위기를 낸다.
+       가운데(y 86~150)는 참가자 캐릭터 자리라 러그만 깔고 비워 둔다. */
     lobby(x) {
-      ceiling(x);
-      wall(x, 12, FLOOR, '#e9e4d6', '#b9b3a0');
-      windowPane(x, 4, 18, 62, 42);
-      noticeBoard(x, 74, 16, 50, 32);
-      poster(x, 130, 16, 24, 26, '#f7f7f2', '#3d6ea8', 'S1FA');
-      doorway(x, 196, 32, 30, 44, false);
-      floorTiles(x, FLOOR, '#d9cfae', '#cfc4a0', '#bfb491');
-      vending(x, 164, 72);
-      cooler(x, 148, 92);
-      sofa(x, 8, 92, 56);
-      roundTable(x, 74, 104, 36);
-      plant(x, 126, 112);
-      trashBins(x, 196, 128);
-      shelfUnit(x, 0, 128, 36, 32, 77);
+      /* --- 천장 --- */
+      x.fillStyle = '#efe7d6'; x.fillRect(0, 0, W, 12);
+      x.fillStyle = '#ded3bd'; x.fillRect(0, 10, W, 2);
+      x.fillStyle = OUT; x.fillRect(0, 12, W, 1);
+
+      /* --- 벽 --- */
+      x.fillStyle = '#f7f2e8'; x.fillRect(0, 13, W, FLOOR - 13);
+      x.fillStyle = 'rgba(255,255,255,.35)'; x.fillRect(0, 13, W, 3);
+      wainscot(x, 60, FLOOR, '#b9d2c2', '#efe7d6');
+
+      /* --- 벽 장식 --- */
+      archWindow(x, 8, 20, 46, 34);
+      bunting(x, 74, 18, 70);
+      frameCluster(x, 84, 32);
+      wallClock(x, 134, 40, 9);
+      hangSign(x, 152, 24, 36, 'S1FA');
+      cuteDoor(x, 198, 30, 30, 46);
+
+      /* --- 매단 것들 (벽 위에 겹쳐 그린다) --- */
+      pendantLamp(x, 66, 13, 10, '#f2a6b8');
+      pendantLamp(x, 134, 13, 7, '#ffd98e');
+      pendantLamp(x, 190, 13, 10, '#9fd8c2');
+
+      /* --- 바닥 --- */
+      woodFloor(x, FLOOR, '#e9d7b8', '#e2cfad', 'rgba(150,118,78,.22)');
+      rug(x, 122, 119, 36, 15);
+
+      /* --- 가구는 좌우 가장자리에 낮게 --- */
+      cushionSofa(x, 4, 88, 58);
+      cat(x, 30, 90);
+      roundTable(x, 70, 102, 30);
+      plantTiny(x, 80, 101, '#d98f6a');
+      cafeCounter(x, 168, 92, 46);
+      plant(x, 152, 120);
+      bookNook(x, 0, 126, 38, 30, 77);
+      plantSmallBig(x, 214, 126);
     },
 
     /* 1관 — EFA1 파트 (사무실 셀) */
@@ -715,6 +947,8 @@
     drawChibi, characterCanvas, CH_W, CH_H, tint, setCharImage, hasCharImage,
     markSpritesSettled, areSpritesSettled,
     renderScene, scenes, props, propCanvas,
-    prims: { floorTiles, wall, ceiling, plantSmallBig, windowPane, whiteboard, deskLong, monitor, keyboard, tower, shelfUnit, serverRack, plant, doorway, poster, cooler, coffeeMachine, vending, sofa, roundTable, noticeBoard, semMachine, gasCylinder, fumeHood, fridge, microwave, trashBins, drawers, ceilingLights }
+    prims: { floorTiles, wall, ceiling, plantSmallBig, windowPane, whiteboard, deskLong, monitor, keyboard, tower, shelfUnit, serverRack, plant, doorway, poster, cooler, coffeeMachine, vending, sofa, roundTable, noticeBoard, semMachine, gasCylinder, fumeHood, fridge, microwave, trashBins, drawers, ceilingLights,
+      /* 대기실 라운지 소품 */
+      woodFloor, wainscot, pendantLamp, archWindow, plantTiny, bunting, wallClock, frameCluster, hangSign, hangingPlant, rug, cushionSofa, cat, cafeCounter, bookNook, cuteDoor }
   };
 })(window);
