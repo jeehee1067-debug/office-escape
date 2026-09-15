@@ -482,6 +482,8 @@ body.chat-open .dialogue{padding-right:16px}
 .quiz-hint{
   display:inline-block;background:#fff7d6;border:2px solid var(--gold);
   border-radius:6px;padding:4px 8px;font-size:13px;margin-bottom:10px;
+  /* 힌트는 data.js 에서 \n 으로 줄을 나눠 적는다. pre-line 이 없으면 한 줄로 뭉친다 */
+  white-space:pre-line;word-break:keep-all;
 }
 .quiz-choices{display:flex;flex-direction:column;gap:7px}
 .quiz-choice{
