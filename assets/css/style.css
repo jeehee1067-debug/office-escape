@@ -137,7 +137,9 @@ button,input,select{font-family:inherit}
 /* 왼쪽(정보) 구역은 줄어들고, 오른쪽(상태·조작) 구역은 항상 오른쪽에 붙는다 */
 .hud-zone{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
 .hud-zone-a{flex:1 1 auto;min-width:0}
-.hud-zone-b{flex:0 1 auto;margin-left:auto;justify-content:flex-end}
+/* 오른쪽 구역(시간·버튼)은 줄일 수 없는 내용이라 절대 눌리지 않게 한다.
+   0 1 auto 로 두면 왼쪽이 넓어졌을 때 제 칸을 넘겨 점수 칩 위로 겹쳐 그려진다. */
+.hud-zone-b{flex:0 0 auto;margin-left:auto;justify-content:flex-end}
 /* 단서·점수는 같은 줄 오른쪽 끝에 붙는다 (관리자는 둘 다 숨겨져 폭 0) */
 .hud-stat{display:flex;align-items:center;gap:6px;flex:0 0 auto;margin-left:auto}
 
@@ -159,6 +161,9 @@ button,input,select{font-family:inherit}
 .hud-player{
   background:#fff;overflow:hidden;text-overflow:ellipsis;display:inline-block;
   line-height:calc(var(--chip-h) - 4px);max-width:min(44cqw,200px);
+  /* 이름이 길면 말줄임으로 줄어들게 한다. min-width 가 auto 면 줄지 못해
+     오른쪽 구역을 밀어내고, 그 구역이 넘쳐 점수 칩과 겹친다. */
+  min-width:0;flex:0 1 auto;
 }
 .hud-clues{background:#fff;letter-spacing:1px;white-space:nowrap}
 .hud-clues.is-done{background:var(--gold);}
@@ -419,9 +424,13 @@ body.chat-open .dialogue{padding-right:16px}
   border:4px solid var(--ink);border-radius:10px;
   box-shadow:0 5px 0 rgba(0,0,0,.45), inset 0 0 0 3px #fff, inset 0 0 0 5px var(--blue-light);
   padding:14px 34px 14px 16px;min-height:74px;
-  max-height:22dvh;overflow-y:auto;
 }
-#dialogue-text{font-size:clamp(14.4px,2.99vw,18px);line-height:1.7;white-space:pre-line;word-break:keep-all}
+/* 긴 대사는 글 상자 안에서만 스크롤한다.
+   .dialogue 에 overflow 를 걸면 위로 튀어나온 이름표(.dialogue-speaker)가 잘린다. */
+#dialogue-text{
+  font-size:clamp(14.4px,2.99vw,18px);line-height:1.7;white-space:pre-line;word-break:keep-all;
+  max-height:calc(22dvh - 30px);overflow-y:auto;margin:0;
+}
 .dialogue-speaker{
   position:absolute;top:-14px;left:12px;background:var(--blue);color:#fff;
   border:3px solid var(--ink);border-radius:8px;padding:2px 10px;font-size:13px;
@@ -473,6 +482,8 @@ body.chat-open .dialogue{padding-right:16px}
 .quiz-hint{
   display:inline-block;background:#fff7d6;border:2px solid var(--gold);
   border-radius:6px;padding:4px 8px;font-size:13px;margin-bottom:10px;
+  /* 힌트는 data.js 에서 \n 으로 줄을 나눠 적는다. pre-line 이 없으면 한 줄로 뭉친다 */
+  white-space:pre-line;word-break:keep-all;
 }
 .quiz-choices{display:flex;flex-direction:column;gap:7px}
 .quiz-choice{
@@ -722,15 +733,18 @@ body.chat-open .dialogue{padding-right:16px}
    글자 크기는 40~50대 참가자를 위해 한 단계 키운 값이다. */
 #game-screen{container-type:inline-size;container-name:game}
 
-/* 넓을 때: 한 줄 */
-@container game (min-width:700px){
+/* 넓을 때: 한 줄.
+   기준이 너무 낮으면(700px) 게임 화면이 786px 쯤일 때 오른쪽 구역이 제 칸을 넘겨
+   점수 칩 위로 겹쳐 그려진다. 한 줄에 필요한 실제 폭(약 800px)보다 넉넉하게 잡는다. */
+@container game (min-width:820px){
   #hud,.hud-zone{flex-wrap:nowrap}
   .hud-chip{font-size:14px;padding:0 10px}
   .t-room{font-size:18px}
   .t-total{font-size:15px}
 }
-/* 긴 방 이름은 아주 넓을 때만 */
-@container game (max-width:899px){
+/* 긴 방 이름은 아주 넓을 때만.
+   900px 쯤에서 긴 이름을 쓰면 칩 하나가 200px 을 먹어 옆 칩들이 조금씩 눌린다. */
+@container game (max-width:999px){
   .rm-full{display:none}
   .rm-short{display:inline}
 }
@@ -790,8 +804,13 @@ body.chat-open .dialogue{padding-right:16px}
 .doc-uvlayer{position:absolute;inset:0;pointer-events:none}
 .doc-uvtext{
   position:absolute;transform:translate(-50%,-50%);
-  font-size:18px;color:#c9a3ff;opacity:0;letter-spacing:1px;
+  font-size:18px;color:#e9dcff;opacity:0;letter-spacing:1px;
   text-shadow:0 0 8px #8a4bff,0 0 16px #6a2bd0;white-space:nowrap;
+  /* 종이의 인쇄 글씨 위에 겹쳐도 읽히도록 어두운 바탕을 깐다.
+     이게 없으면 머리글·표 위에 놓인 글씨가 뭉개져 보인다
+     (r2h2 의 「취소됨」 처럼 10,000점이 걸린 글씨도 있다). */
+  background:rgba(10,8,24,.86);padding:3px 11px;border-radius:7px;
+  box-shadow:0 0 14px rgba(138,75,255,.45);
 }
 .doc-stage.uv-on .doc-uvtext{opacity:1}
 

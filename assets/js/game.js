@@ -890,7 +890,7 @@
        한쪽 근무자만 아는 게 아니므로 안내 문구를 달리한다. */
     const siteTag = !q.loc ? ''
       : q.both
-        ? '<div class="quiz-site">🏢 <b>사무실에 다녀와야</b> 푸는 문제입니다 — SR3·S1L 어느 쪽 사무실에서든 확인할 수 있습니다!</div>'
+        ? '<div class="quiz-site">🏢 <b>사무실을 살펴봐야</b> 푸는 문제입니다 — SR3·S1L 어느 쪽 사무실에서든 확인할 수 있습니다!</div>'
         : '<div class="quiz-site">🏢 <b>' + esc(q.loc) + '</b> 근무자만 아는 문제입니다 — 팀의 ' + esc(q.loc) + ' 멤버에게 물어보세요!</div>';
     const docBtns = (q.docs && q.docs.length)
       ? '<div class="quiz-docs">' + g.DOCVIEW.buttonsHTML(q.docs) + '</div>' : '';
