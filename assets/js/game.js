@@ -1106,8 +1106,8 @@
   function sortTeams(rows, mode) {
     if (mode === 'time') return rows.slice().sort((a, b) =>
       (a.avgTime - b.avgTime) || (b.score - a.score) || (b.solved - a.solved) || (a.id - b.id));
-    if (mode === 'avg') return rows.slice().sort((a, b) =>
-      (b.avg - a.avg) || (a.avgTime - b.avgTime) || (b.solved - a.solved) || (a.id - b.id));
+    /* 'avg' 정렬은 없앴다 — 환산 합계 = 1인 평균 × TEAM_BASE 라 순서가 똑같다.
+       1인 평균은 표의 열로만 남겨 둔다. */
     return rows.slice().sort((a, b) =>
       (b.score - a.score) || (a.avgTime - b.avgTime) || (b.solved - a.solved) || (a.wrong - b.wrong) || (a.id - b.id));
   }
@@ -1168,10 +1168,12 @@
     let view = node.dataset.view || pref.view || (hasTeams ? 'team' : 'solo');
     if (view === 'team' && !hasTeams && !opts.keepTeamTab) view = 'solo';
     let sort = node.dataset.sort || pref.sort || 'score';
-    if (view === 'solo' && sort === 'avg') sort = 'score';
+    /* 팀 합계를 3명 기준으로 환산하면서 「1인 평균」 정렬은 합계와 같은 순서가 되어 없앴다.
+       예전 설정이 브라우저에 남아 있을 수 있으니 합계로 되돌린다. */
+    if (sort === 'avg') sort = 'score';
 
     const sorts = view === 'team'
-      ? [['score', '🏆 합계 점수'], ['avg', '👤 1인 평균'], ['time', '⏱ 최단 시간']]
+      ? [['score', '🏆 합계 점수'], ['time', '⏱ 최단 시간']]
       : [['score', '🏆 점수순'], ['time', '⏱ 최단 시간순']];
 
     node.innerHTML =
