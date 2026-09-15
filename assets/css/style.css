@@ -804,8 +804,13 @@ body.chat-open .dialogue{padding-right:16px}
 .doc-uvlayer{position:absolute;inset:0;pointer-events:none}
 .doc-uvtext{
   position:absolute;transform:translate(-50%,-50%);
-  font-size:18px;color:#c9a3ff;opacity:0;letter-spacing:1px;
+  font-size:18px;color:#e9dcff;opacity:0;letter-spacing:1px;
   text-shadow:0 0 8px #8a4bff,0 0 16px #6a2bd0;white-space:nowrap;
+  /* 종이의 인쇄 글씨 위에 겹쳐도 읽히도록 어두운 바탕을 깐다.
+     이게 없으면 머리글·표 위에 놓인 글씨가 뭉개져 보인다
+     (r2h2 의 「취소됨」 처럼 10,000점이 걸린 글씨도 있다). */
+  background:rgba(10,8,24,.86);padding:3px 11px;border-radius:7px;
+  box-shadow:0 0 14px rgba(138,75,255,.45);
 }
 .doc-stage.uv-on .doc-uvtext{opacity:1}
 
