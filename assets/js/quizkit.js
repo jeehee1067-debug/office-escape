@@ -68,7 +68,15 @@
       '</div><div class="quiz-input-row"><button id="qsub" class="pk-btn pk-btn-main">제출</button></div>';
 
     const ins = Array.from(host.querySelectorAll('.slot-in'));
-    const val = () => ins.map(i => i.value.trim()).join('');
+    /* 숫자만 적은 칸은 칸 길이에 맞춰 앞에 0 을 채운다.
+       「인원 5명」 을 5 로 적어도 05 로 읽어 준다 — 답을 맞히고도
+       자릿수 때문에 오답 처리되는 일을 막기 위한 것이다.
+       글자가 섞인 칸(좌석 번호 C2 등)은 건드리지 않는다. */
+    const padSlot = (v, i) => {
+      const len = (slots[i] && slots[i].len) || 4;
+      return (v && /^\d+$/.test(v) && v.length < len) ? v.padStart(len, '0') : v;
+    };
+    const val = () => ins.map((i, n) => padSlot(i.value.trim(), n)).join('');
     ins.forEach((inp, i) => {
       inp.addEventListener('input', () => {
         const max = +inp.getAttribute('maxlength');

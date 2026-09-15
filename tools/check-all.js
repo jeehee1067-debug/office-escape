@@ -75,6 +75,7 @@ step('js 문법', () => {
 
 /* 3~6. 개별 점검 도구 */
 step('문제은행 ↔ 자료 정답 대조', () => run(['node', path.join(__dirname, 'check-bank.js')]).split('\n').slice(-1)[0]);
+step('정답 입력 가능 여부', () => run(['node', path.join(__dirname, 'check-answers.js')]).split('\n').filter(Boolean).slice(-1)[0]);
 step('방 안 클릭 영역', () => run(['node', path.join(__dirname, 'check-spots.js')]).split('\n').filter(Boolean).slice(-1)[0]);
 step('팀 구성 전수 점검', () => { run(['node', path.join(__dirname, 'check-teams.js')]); return '✅ 1~48명 모든 조합 통과'; });
 step('캐시 버전(?v=)', () => run(['node', path.join(__dirname, 'check-cache.js')]).split('\n').filter(Boolean).slice(-1)[0]);
