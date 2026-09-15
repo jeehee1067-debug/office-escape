@@ -1063,7 +1063,10 @@
     return sortSolo(rows, 'score');
   }
 
-  /** 팀 합산 기록 — 팀원 점수를 모두 더한다 */
+  /** 팀 합산 기록 — 팀원 점수를 더한 뒤 CONFIG.TEAM_BASE(3명) 기준으로 환산한다.
+      인원이 안 나눠떨어져 4명 팀이 생겨도 사람 수로 유리해지지 않게 하려는 것이다.
+      · score : 환산 합계 (순위·시상대에 쓰는 값)
+      · raw   : 실제 팀원 점수 합 (표에 함께 보여 준다) */
   function computeTeamBoard() {
     const runs = S.allRuns || {};
     const players = S.players || {};
@@ -1080,8 +1083,12 @@
         names.push(p.name || m.name);
       });
       const n = mem.length || 1;
+      const base = CONFIG.TEAM_BASE || 3;
       return {
-        id: t.id, n: mem.length, names, score, time, solved, wrong, sr3, s1l, online: on,
+        id: t.id, n: mem.length, names, time, solved, wrong, sr3, s1l, online: on,
+        score: Math.round(score * base / n),   // 3명 기준 환산 합계
+        raw: score,                            // 실제 합계
+        base: base,
         avg: Math.round(score / n), avgTime: Math.round(time / n)
       };
     }), 'score');
@@ -1125,16 +1132,20 @@
   function teamTableHTML(rows) {
     if (!rows.length) return '<p class="board-empty">아직 팀이 구성되지 않았습니다.<br>관리자가 팀을 만들면 여기에 팀 순위가 나옵니다.</p>';
     const mine = S.myTeam;
+    const base = CONFIG.TEAM_BASE || 3;
     let h = '<div class="scroll-y"><table class="pk-table"><thead><tr>' +
-      '<th>#</th><th>팀</th><th class="col-opt">인원</th><th>합계</th>' +
+      '<th>#</th><th>팀</th><th class="col-opt">인원</th><th>합계<span class="board-mem">' + base + '명 환산</span></th>' +
       '<th class="col-opt">1인 평균</th><th>평균 시간</th><th class="col-opt">단서</th>' +
       '</tr></thead><tbody>';
     rows.forEach((r, i) => {
       const cls = (r.id === mine ? 'me-row' : (i < 3 ? 'rank-' + (i + 1) : ''));
+      /* 인원이 기준과 다른 팀만 실제 합계를 함께 보여 준다 — 환산했다는 걸 숨기지 않는다 */
+      const rawNote = (r.n && r.n !== base)
+        ? '<span class="board-mem">실제 ' + r.raw.toLocaleString() + '</span>' : '';
       h += '<tr class="' + cls + '"><td>' + (i + 1) + '</td>' +
         '<td><b>' + r.id + '팀</b><span class="board-mem">' + esc(r.names.join(', ')) + '</span></td>' +
         '<td class="col-opt">' + r.n + '명<span class="board-mem">SR3 ' + r.sr3 + '·S1L ' + r.s1l + '</span></td>' +
-        '<td><b>' + r.score.toLocaleString() + '</b></td>' +
+        '<td><b>' + r.score.toLocaleString() + '</b>' + rawNote + '</td>' +
         '<td class="col-opt">' + r.avg.toLocaleString() + '</td>' +
         '<td>' + mmss(r.avgTime) + '</td><td class="col-opt">' + r.solved + '</td></tr>';
     });
@@ -1179,7 +1190,8 @@
                        : soloTableHTML(sortSolo(computeBoard(), sort))) +
       '</div>' +
       (view === 'team'
-        ? '<p class="board-note">팀 점수는 <b>팀원 점수의 합</b>입니다. 인원이 다른 팀끼리는 <b>1인 평균</b>으로도 볼 수 있습니다.</p>'
+        ? '<p class="board-note">팀 점수는 팀원 점수를 더한 뒤 <b>' + (CONFIG.TEAM_BASE || 3) + '명 기준으로 환산</b>한 값입니다 — '
+          + '4명 팀이 생겨도 사람 수로 유리해지지 않습니다. 인원이 다른 팀은 실제 합계를 함께 적어 두었습니다.</p>'
         : '<p class="board-note">같은 점수면 <b>총 소요 시간이 짧은 사람</b>이 앞섭니다.</p>');
 
     node.dataset.view = view; node.dataset.sort = sort;
@@ -1271,7 +1283,7 @@
     const mine = '<div class="result-sum">' +
       '<div class="result-cell"><span>우리 팀 순위</span><b>' +
         (myTeamRow ? (myTeamRank + 1) + '위 (' + myTeamRow.id + '팀)' : '-') + '</b></div>' +
-      '<div class="result-cell"><span>팀 합계 점수</span><b>' +
+      '<div class="result-cell"><span>팀 합계 (' + (CONFIG.TEAM_BASE || 3) + '명 환산)</span><b>' +
         (myTeamRow ? myTeamRow.score.toLocaleString() : '-') + '</b></div>' +
       '<div class="result-cell"><span>내 순위</span><b>' + (myRank < 0 ? '-' : (myRank + 1) + '위') + '</b></div>' +
       '<div class="result-cell"><span>내 점수</span><b>' + sc.score.toLocaleString() + '</b></div>' +
