@@ -162,7 +162,12 @@
     if (joining) return;
     const name = $('#name-input').value.trim();
     if (!name) { toast('이름을 입력해주세요.', 'bad'); $('#name-input').focus(); return; }
-    if (name.length > 8) { toast('이름은 8자 이내로 입력해주세요.', 'bad'); return; }
+    if (name.length > 14) { toast('이름은 14자 이내로 입력해주세요.', 'bad'); return; }
+    /* 「파트_이름」 형식을 권한다. 강제하지는 않는다 —
+       행사 중에 입력이 막히면 진행이 멈추는 게 더 큰 손해다. */
+    if (name.indexOf('_') < 0) {
+      toast('「파트_이름」 형식으로 적어주세요. 예) EFA1_김도현', 'info', 3200);
+    }
 
     joining = true;
     const btn = $('#join-btn');

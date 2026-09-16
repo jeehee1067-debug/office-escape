@@ -217,6 +217,7 @@ button,input,select{font-family:inherit}
 }
 .scene-title.fade{opacity:0}
 
+.panel-sub{font-size:11px;font-weight:500;color:var(--ink-2,#5b6879);letter-spacing:0}
 .stage-overlay{
   position:absolute;inset:0;z-index:60;background:rgba(20,24,33,.82);
   display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;
