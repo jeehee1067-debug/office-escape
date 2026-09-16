@@ -698,6 +698,31 @@ body.chat-open .dialogue{padding-right:16px}
 }
 .chat-msg.mine .chat-bubble{background:var(--gold)}
 .chat-time{font-size:12px;color:#8f95a3;margin-top:2px;padding:0 2px}
+
+/* 관리자가 고정한 공지 — 대화가 아무리 올라와도 맨 위에 붙어 있는다 */
+.chat-pinned{
+  position:sticky;top:-8px;z-index:3;align-self:stretch;
+  margin:-8px -8px 2px;padding:6px 9px 8px;
+  background:#fff7d6;border-bottom:3px solid var(--ink);
+  box-shadow:0 3px 0 rgba(0,0,0,.18);
+}
+.chat-pin-head{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:800;color:#8a5a12;line-height:1.5;
+}
+.chat-pin-by{margin-left:auto;font-weight:600;color:#a08050;font-size:11px}
+.chat-pin-off{
+  font-family:inherit;font-size:12px;line-height:1;padding:2px 5px;margin-left:4px;
+  border:2px solid var(--ink);border-radius:5px;background:var(--paper);color:var(--ink);cursor:pointer;
+}
+.chat-pin-off:active{transform:translateY(1px)}
+.chat-pin-text{font-size:15px;line-height:1.6;color:var(--ink);word-break:break-word;margin-top:3px}
+/* 자기 말풍선에만 붙는 고정 단추 (관리자 화면) */
+.chat-pin-btn{
+  font-family:inherit;font-size:12px;line-height:1;padding:2px 4px;margin-left:6px;vertical-align:1px;
+  border:2px solid var(--ink);border-radius:5px;background:var(--paper);cursor:pointer;
+}
+.chat-pin-btn:active{transform:translateY(1px)}
 .chat-note{
   font-size:13px;line-height:1.6;color:#8a5a12;background:#fff7d6;
   border-top:2px solid var(--gold);padding:5px 8px;
