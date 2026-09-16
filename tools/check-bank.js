@@ -131,6 +131,45 @@ const MONITORS = 3;                       // 4관 배경 그림 속 책상 위 �
 ok(plan.rows.length >= MONITORS, 'r4e1  계획표에 ' + MONITORS + '번째 줄이 있음 (' + plan.rows.length + '줄)');
 eq('r4e1', (plan.rows[MONITORS - 1] || [])[2], q(4, 'r4e1').ans[0]);
 
+/* ---------- 4-1) 1관 세 문제가 서로 다른 사람을 가리키는가 ----------
+   한 팀은 1관에서 고난도 1 + 일반 1 을 같이 받는다. r1h1(목요일 야간)과
+   r1e1(야간 두 번)이 같은 사람이면, 한쪽을 푼 팀에게 다른 쪽이 공짜가 된다.
+   당직표를 고칠 때 이 조건이 깨지기 쉬워 여기서 막는다.               */
+console.log('\n[3-1] 1관 — 문제끼리 같은 사람을 가리키지 않는가');
+{
+  const night = d => (shift.rows.find(r => r[0] === d) || [])[2];
+  const twiceName = twice[0];
+  const h1 = nightOf(today);                       // r1h1 이 가리키는 사람
+  const h2 = [night('월'), night('금')];           // r1h2 가 가리키는 두 사람
+  ok(h1 !== twiceName,
+    'r1h1(' + h1 + ') 과 r1e1(' + twiceName + ') 이 다른 사람');
+  ok(h2.indexOf(twiceName) < 0,
+    'r1h2(' + h2.join(' · ') + ') 에 r1e1 의 정답이 섞이지 않음');
+  ok(h2.indexOf(h1) < 0, 'r1h1 의 사람이 r1h2 에도 쓰이지 않음');
+
+  /* 주간까지 합쳐 세면 한 사람으로 확정되지 않아야 한다 —
+     잘못 센 팀이 엉뚱한 이름을 확신하고 적지 않도록.                   */
+  const all = {};
+  shift.rows.forEach(r => { all[r[1]] = (all[r[1]] || 0) + 1; all[r[2]] = (all[r[2]] || 0) + 1; });
+  const top = Math.max.apply(null, Object.values(all));
+  const tops = Object.keys(all).filter(n => all[n] === top);
+  ok(tops.length > 1,
+    '주간까지 합쳐 세면 답이 갈림 (' + tops.join(' · ') + ' 각 ' + top + '회)');
+
+  /* 야간을 선 사람이 바로 다음 날 주간에 또 나오지 않는가 (참가자가 트집 잡을 자리) */
+  const days = shift.rows.map(r => r[0]);
+  const bad = [];
+  shift.rows.forEach((r, i) => {
+    const nxt = shift.rows[i + 1];
+    if (nxt && r[2] === nxt[1]) bad.push(r[0] + ' 야간 → ' + nxt[0] + ' 주간 (' + r[2] + ')');
+  });
+  ok(bad.length === 0, '야간 다음 날 주간을 서는 사람 없음' + (bad.length ? ' — ' + bad.join(', ') : ''));
+
+  /* 같은 날 주간·야간을 혼자 다 서지 않는가 */
+  const both = shift.rows.filter(r => r[1] === r[2]).map(r => r[0]);
+  ok(both.length === 0, '같은 날 주간·야간을 겸하는 사람 없음' + (both.length ? ' — ' + both.join(', ') : ''));
+}
+
 /* ---------- 5) 사무실 실물 문제 — 묻는 차례가 게시물 차례와 같아지지 않게 ----------
    벽에 붙은 순서대로 물어보면 색을 맞춰 볼 것 없이 위에서 아래로 베끼면 끝난다.
    게시물을 바꿨으면 아래 배열도 실물에 맞춰 고칠 것.                              */
