@@ -811,6 +811,7 @@ tools/extract-sprite.py    스크린샷에서 캐릭터를 뽑아내는 도구
 tools/check-all.js         ★ 배포 전 한 번에 점검 (node tools/check-all.js)
 tools/check-bank.js        ★ 문제은행·자료 자가 점검 (node tools/check-bank.js)
 tools/check-answers.js     ★ 정답을 화면에서 입력할 수 있는지 점검 (앞자리 0·칸 길이·순서 겹침)
+tools/check-name.js        ★ 이름 글자 수가 접속 화면과 서버 규칙에서 같은지 점검
 tools/check-spots.js       ★ 방 안 클릭 영역이 화면 밖으로 나가는지 점검
 tools/check-cache.js       ★ index.html 의 ?v= 를 올려야 하는지 점검
 tools/print-rules.js       ★ Firebase 규칙 탭에 붙여넣을 내용 출력
