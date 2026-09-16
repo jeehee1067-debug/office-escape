@@ -36,7 +36,7 @@ ok(new Set(server).size === 1, '서버 규칙 안에서도 값이 하나로 통�
 
 /* 실제로 쓸 이름이 들어가는지 */
 console.log('\n[「파트_이름99」 가 들어가는가]');
-['EFA1_김도현98', 'VSEM_남궁민수98', 'EFA1_황보지희98', 'PFA_김재현98'].forEach(n => {
+['EFA1_손승준98', 'VSEM_남궁민수98', 'EFA1_황보지희98', 'PFA_김재현98'].forEach(n => {
   ok(n.length <= srvMin, n + ' — ' + n.length + '자');
 });
 
