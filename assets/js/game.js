@@ -1686,8 +1686,13 @@
     });
     NET.onRuns(all => { S.allRuns = all; });
     NET.onPlayers(ps => {
+      const before = Object.keys(ps || {}).map(k => k + ':' + ((ps[k] || {}).name || '')).join('|');
+      const was = S.__nameSig;
       S.players = ps;
+      S.__nameSig = before;
       if (S.phase === 'lobby' || S.phase === 'intermission') drawLobbyCrowd();
+      /* 누군가 이름을 바꾸면 열려 있는 대화창의 이름도 따라 바뀌어야 한다 */
+      if (was !== undefined && was !== before && g.CHAT) g.CHAT.refresh();
     });
     /* 팀이 없을 때 쓸 기본 출제 — 반드시 팀 구독보다 먼저 (팀 배정을 덮어쓰지 않도록).
        미리 받아둔 팀이 있으면 그 시드로 시작해 첫 화면부터 팀 문제가 나오게 한다. */
