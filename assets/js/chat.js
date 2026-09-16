@@ -384,8 +384,15 @@
       if (S.subs[p]) return;
       S.subs[p] = NET.onChat(p, list => {
         const prev = (S.msgs[p] || []).length;
+        const firstLoad = S.seen[p] == null;
         S.msgs[p] = list;
-        if (S.seen[p] == null) S.seen[p] = list.length;      // 처음 들어올 땐 다 읽은 것으로
+        if (firstLoad) S.seen[p] = list.length;              // 처음 들어올 땐 다 읽은 것으로
+        /* 대기실에 서 있는 사람 머리 위에 말풍선을 띄운다.
+           처음 받아 오는 기록까지 띄우면 들어오자마자 말풍선이 쏟아지므로
+           그때는 건너뛴다.                                              */
+        if (!firstLoad && list.length > prev && g.GAME && g.GAME.saySomething) {
+          list.slice(prev).forEach(m => { try { g.GAME.saySomething(m); } catch (e) { } });
+        }
         if (list.length > prev && S.open && pathOf(S.tab) === p) renderLog();
         else if (list.length > prev) {
           const last = list[list.length - 1];
