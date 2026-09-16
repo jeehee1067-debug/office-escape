@@ -196,7 +196,10 @@ button,input,select{font-family:inherit}
   box-shadow:0 6px 0 rgba(0,0,0,.5);background:#000;
   width:100%;align-self:center;
 }
-#stage{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;touch-action:none}
+/* isolation:isolate — 무대 안의 층 번호가 무대 밖(모달·HUD)과 다투지 않게
+   가둔다. 대기실 이름표 층을 올렸더니 관리자 패널·문제 창 위로 이름이
+   떠오르는 일이 있었다. 무대 안에서만 서로 비교되면 그럴 일이 없다.   */
+#stage{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;touch-action:none;isolation:isolate}
 #bg-canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
 .bg-image{
   position:absolute;inset:0;background-size:100% 100%;
@@ -403,16 +406,64 @@ body.chat-open .dialogue{padding-right:16px}
   margin-top:2px;font-size:12px;background:var(--paper);border:2px solid var(--ink);
   border-radius:6px;padding:1px 5px;white-space:nowrap;color:var(--ink);
 }
-/* 대기실 : 닉네임은 캐릭터보다 위 레이어에 따로 그려 항상 보이게 */
+/* 대기실 : 닉네임은 캐릭터보다 위 레이어에 따로 그려 항상 보이게.
+   네모 상자를 씌우면 사람 수만큼 상자가 생겨 배경과 얼굴을 다 가린다.
+   글씨에 검은 테두리만 둘러 어느 바닥색 위에서도 읽히게 한다.          */
 .crowd-name{
   position:absolute;transform:translate(-50%,-100%);
-  font-size:12px;line-height:1.3;white-space:nowrap;
-  background:rgba(251,251,247,.97);color:var(--ink);
-  border:2px solid var(--ink);border-radius:6px;padding:0 5px;
-  box-shadow:0 2px 0 rgba(0,0,0,.4);pointer-events:none;
-  max-width:26%;overflow:hidden;text-overflow:ellipsis;
+  font-size:var(--crowd-font,12.5px);font-weight:700;line-height:1.2;white-space:nowrap;
+  letter-spacing:.01em;color:#fff;pointer-events:none;
+  text-shadow:
+    -1.6px 0 0 #17132b,  1.6px 0 0 #17132b,  0 -1.6px 0 #17132b,  0 1.6px 0 #17132b,
+    -1.6px -1.6px 0 #17132b, 1.6px -1.6px 0 #17132b,
+    -1.6px 1.6px 0 #17132b,  1.6px 1.6px 0 #17132b,
+    0 2px 5px rgba(0,0,0,.55);
+  max-width:30%;overflow:hidden;text-overflow:ellipsis;
 }
-.crowd-name.is-me{background:var(--gold);font-weight:700}
+.crowd-name.below{transform:translate(-50%,0)}
+.crowd-name.is-me{color:var(--gold)}
+/* 말하는 사람 이름표는 잠깐 도드라지게 — 말풍선 꼬리만으로는
+   누가 말했는지 한눈에 안 들어온다. 이름과 말풍선을 이어 준다. */
+.crowd-name.talking{
+  color:var(--gold);
+  animation:nameTalk 1.3s ease-in-out infinite;
+}
+@keyframes nameTalk{
+  0%,100%{filter:drop-shadow(0 0 2px rgba(255,209,92,.75))}
+  50%    {filter:drop-shadow(0 0 6px rgba(255,209,92,1))}
+}
+
+/* 대기실 : 채팅을 보내면 그 사람 머리 위에 잠깐 뜨는 말풍선.
+   이름은 테두리만 두른 글씨라, 말풍선은 상자로 두어 서로 구분된다.     */
+.crowd-bubble{
+  position:absolute;transform:translate(-50%,-100%);
+  max-width:38%;padding:3px 8px;border-radius:9px;
+  background:var(--paper);border:2px solid var(--ink);
+  box-shadow:0 3px 0 rgba(0,0,0,.35);
+  font-size:var(--crowd-font,12.5px);line-height:1.3;color:var(--ink);
+  white-space:normal;word-break:break-all;overflow-wrap:anywhere;
+  pointer-events:none;
+}
+.crowd-bubble.pop{animation:bubblePop .16s ease-out}
+/* 아래로 뻗는 꼬리 — 테두리(::after)와 속(::before)을 겹쳐 말풍선과
+   같은 색으로 채운다. 예전에는 통째로 검은 삼각형이라 배경에 묻혔다. */
+.crowd-bubble::after{
+  content:'';position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);
+  border-left:7px solid transparent;border-right:7px solid transparent;
+  border-top:11px solid var(--ink);
+}
+.crowd-bubble::before{
+  content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:8px solid var(--paper);z-index:1;
+}
+.crowd-bubble.is-me::before{border-top-color:var(--gold)}
+.crowd-bubble.is-me{background:var(--gold)}
+.crowd-bubble .bl + .bl{margin-top:2px;padding-top:2px;border-top:1px dashed rgba(19,28,39,.22)}
+.crowd-bubble .bl.old{opacity:.5}      /* 앞말은 흐리게 — 방금 한 말이 또렷하게 */
+.crowd-bubble.fade{opacity:0;transition:opacity .45s ease}
+@keyframes bubblePop{from{transform:translate(-50%,-100%) scale(.7);opacity:0}
+                     to{transform:translate(-50%,-100%) scale(1);opacity:1}}
 .crowd-badge{
   position:absolute;left:2.5%;top:4%;z-index:300;font-size:13px;font-weight:700;
   background:var(--paper);border:3px solid var(--ink);border-radius:8px;

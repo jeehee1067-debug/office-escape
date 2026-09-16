@@ -276,6 +276,8 @@
 
   /* ---------- 관리자 로그인 ---------- */
   function adminLogin() {
+    /* password:true — 방송 화면에 띄워 놓고 진행하는 경우가 있어
+       비밀번호가 글자 그대로 보이면 안 된다.                            */
     g.UI.prompt('👑 관리자 로그인', '관리자 비밀번호를 입력하세요.', async (pw) => {
       if (!pw) return;
       let res;

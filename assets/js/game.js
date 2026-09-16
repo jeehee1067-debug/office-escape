@@ -309,7 +309,16 @@
     a.style.left = pctX(x - uw / 2);
     a.style.top = pctY(yFeet - uh);
     a.style.width = pctX(uw);
-    c.forEach(cc => { cc.style.width = '100%'; cc.style.height = 'auto'; });
+    if (dispH) {
+      /* 높이를 직접 정하고 그림이 그 높이를 채우게 한다.
+         가로 폭으로만 맞추면 dataset.uw 의 반올림(캐릭터마다 그림 비율이
+         다르다) 때문에 발 높이가 사람마다 1~2px 씩 어긋난다.
+         대기실처럼 여럿이 줄지어 설 때 그 어긋남이 눈에 띈다.            */
+      a.style.height = pctY(uh);
+      c.forEach(cc => { cc.style.height = '100%'; cc.style.width = 'auto'; });
+    } else {
+      c.forEach(cc => { cc.style.width = '100%'; cc.style.height = 'auto'; });
+    }
     $('#actor-layer').appendChild(a);
     return a;
   }
@@ -491,6 +500,150 @@
     say(msg || '대기실이다. 관리자가 게임을 시작할 때까지 기다리자!\n다른 참가자들도 속속 도착하고 있다.');
     drawLobbyCrowd();
   }
+  /* 이름표를 캐릭터 아래에 둘지 위에 둘지.
+     대기실 바닥이 얕아 줄 간격이 사람 키보다 좁다. 아래에 두면 그 이름이
+     바로 앞줄 사람의 「얼굴」 위에 얹히고, 위에 두면 뒷줄 사람의 「다리」
+     위에 얹힌다. 다리를 가리는 쪽이 낫다 — 얼굴로 서로를 알아본다.
+     (scratchpad/name-pos.js 로 두 가지를 재서 고른 값이다)             */
+  const NAME_BELOW = false;
+
+  /* 말풍선이 떠 있는 시간 — 채팅 한 줄을 읽기에 충분한 만큼 */
+  const BUBBLE_MS = 4500;
+
+  /* 이어서 한 말은 몇 줄까지 같이 띄울지. 채팅 사이 간격이 1.2초라
+     4.5초 안에 넉넉히 세 마디까지 들어온다.                             */
+  const BUBBLE_LINES = 3;
+
+  /* 지금 떠 있어야 할 말풍선 : uid → [{ text, at }, ...] (오래된 것이 앞).
+     대기실은 누가 들어오고 나갈 때마다 통째로 다시 그려진다(그때 화면의
+     겹레이어가 비워진다). 그래서 말풍선을 화면에만 두면 방금 뜬 것이
+     곧바로 사라진다 — 여기에 담아 두고 다시 그릴 때마다 되살린다.       */
+  const said = {};
+  let bubbleTimer = null;
+
+  /** 채팅이 오면 대기실에 선 그 사람 머리 위에 말풍선을 띄운다.
+      chat.js 가 새 메시지마다 불러 준다. */
+  function saySomething(msg) {
+    if (!msg || !msg.uid || !msg.text) return;
+    if (S.phase !== 'lobby' && S.phase !== 'intermission') return;
+    if (!(S.crowdSpots || {})[msg.uid]) return;   // 지금 대기실에 안 서 있는 사람
+    const line = { text: String(msg.text).slice(0, 60), at: Date.now() };
+    const lines = (said[msg.uid] || []).concat(line);
+    said[msg.uid] = lines.slice(-BUBBLE_LINES);   // 아직 살아 있는 앞말과 같이 띄운다
+    drawBubbles(msg.uid);
+  }
+
+  /** 담아 둔 말풍선을 화면에 맞춘다. onlyUid 를 주면 그 사람 것만 새로 띄운다. */
+  function drawBubbles(onlyUid) {
+    const fx = $('#fx-layer');
+    if (!fx) return;
+    const spots = S.crowdSpots || {}, now = Date.now();
+    const live = {};
+    $$('.crowd-bubble', fx).forEach(b => { live[b.dataset.uid] = b; });
+    let nextAt = Infinity;                        // 다음에 지워야 할 시각
+
+    Object.keys(said).forEach(uid => {
+      const spot = spots[uid];
+      /* 시간이 다 된 줄은 떨어뜨린다 — 오래된 것부터 하나씩 사라진다 */
+      const lines = (said[uid] || []).filter(l => now - l.at < BUBBLE_MS);
+      if (!lines.length || !spot) {               // 남은 말이 없거나 나간 사람
+        delete said[uid];
+        if (live[uid]) live[uid].remove();
+        return;
+      }
+      said[uid] = lines;
+      lines.forEach(l => { nextAt = Math.min(nextAt, l.at + BUBBLE_MS); });
+
+      /* 이어서 한 말은 아래로 쌓는다(채팅과 같은 차례). 앞말은 흐리게 두어
+         어느 것이 방금 한 말인지 바로 보이게 한다.                       */
+      const html = lines.map((l, i) =>
+        '<div class="bl' + (i < lines.length - 1 ? ' old' : '') + '">' + esc(l.text) + '</div>').join('');
+
+      let b = live[uid];
+      if (!b) {
+        b = el('div', 'crowd-bubble' + (spot.me ? ' is-me' : ''), html);
+        b.dataset.uid = uid;
+        fx.appendChild(b);
+        if (uid === onlyUid) b.classList.add('pop');
+      } else if (b.dataset.lines !== String(lines.length) || uid === onlyUid) {
+        b.innerHTML = html;                       // 줄이 늘거나 줄었을 때만 다시 그린다
+      }
+      b.dataset.lines = String(lines.length);
+      placeBubble(b, spot);
+    });
+
+    /* 말풍선끼리 겹치면 뒤쪽(위에 선 사람) 것을 위로 올려 피한다.
+       가만 두면 앞사람 말풍선이 뒷사람 말을 통째로 덮어 못 읽는다.
+       자리는 offset* 으로 잰다 — getBoundingClientRect 는 튀어나오는
+       동작(transform) 중이면 줄어든 크기를 돌려준다.                    */
+    const rectOf = e => {                       // translate(-50%,-100%) 를 되짚은 자리
+      const w = e.offsetWidth, h = e.offsetHeight;
+      return { left: e.offsetLeft - w / 2, right: e.offsetLeft + w / 2,
+               top: e.offsetTop - h, bottom: e.offsetTop };
+    };
+    const bubs = $$('.crowd-bubble', fx)
+      .sort((a, b) => (+b.style.zIndex) - (+a.style.zIndex));   // 앞(아래)에 선 사람부터
+    const keep = [];
+    bubs.forEach(b => {
+      b.style.marginTop = '';
+      let r = rectOf(b);
+      const wide = fx.clientWidth;
+      for (let k = 0; k < 6; k++) {
+        const hit = keep.find(q =>
+          Math.min(q.right, r.right) - Math.max(q.left, r.left) > 2 &&
+          Math.min(q.bottom, r.bottom) - Math.max(q.top, r.top) > 2);
+        if (!hit) break;
+        const up = (r.bottom - hit.top) + 6;
+        if (r.top - up >= 2) {                              // ① 위로 올려 피한다
+          b.style.marginTop = (parseFloat(b.style.marginTop || '0') - up).toFixed(1) + 'px';
+        } else {
+          /* ② 폰처럼 화면이 낮으면 올릴 자리가 없다 — 옆으로 비킨다 */
+          const toLeft = (r.right - hit.left) + 6, toRight = (hit.right - r.left) + 6;
+          const canL = r.left - toLeft >= 2, canR = r.right + toRight <= wide - 2;
+          const dx = canL && (!canR || toLeft <= toRight) ? -toLeft : canR ? toRight : 0;
+          if (!dx) break;
+          b.style.marginLeft = (parseFloat(b.style.marginLeft || '0') + dx).toFixed(1) + 'px';
+        }
+        r = rectOf(b);
+      }
+      keep.push(r);
+    });
+
+    /* 말하는 사람 이름표를 도드라지게 한다 (말이 끝나면 되돌린다) */
+    $$('.crowd-name', fx).forEach(t => {
+      t.classList.toggle('talking', !!said[t.dataset.uid]);
+    });
+
+    /* 다음 줄이 사라질 때 한 번만 다시 그린다 (줄마다 타이머를 두지 않는다) */
+    if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
+    if (nextAt < Infinity) {
+      bubbleTimer = setTimeout(() => { bubbleTimer = null; drawBubbles(); },
+        Math.max(120, nextAt - Date.now()));
+    }
+  }
+
+  /** 말풍선을 그 사람 머리 위에 놓는다 (새로 띄울 때도, 다시 그릴 때도) */
+  function placeBubble(b, spot) {
+    const fx = b.parentNode;
+    if (!fx) return;
+    b.style.marginLeft = '';
+    b.style.left = ((spot.x / PX.W) * 100) + '%';
+    /* 머리 꼭대기보다 조금 더 위. 이름표를 머리 위에 둘 때는 이름표 높이와
+       한 칸씩 어긋나게 올린 몫(최대 5)까지 비켜야 한다 — 10 으로 두었더니
+       꼬리가 이름 글씨를 가로질렀다.                                     */
+    const lift = spot.h + (NAME_BELOW ? 3 : 14);
+    b.style.top = ((Math.max(3, spot.y - lift) / PX.H) * 100) + '%';
+    b.style.zIndex = String(3000 + Math.round(spot.y));   // 이름표보다도 위
+    /* 화면 밖으로 잘리면 안쪽으로 민다.
+       크기는 offsetWidth 로 잰다 — getBoundingClientRect 는 튀어나오는
+       동작(transform) 중이면 줄어든 크기를 돌려주어 보정이 빗나간다.    */
+    const w = b.offsetWidth, half = w / 2;
+    const mid = b.offsetLeft, wide = fx.clientWidth;   // mid : translate(-50%) 기준 중심
+    const dx = mid - half < 2 ? 2 - (mid - half)
+      : mid + half > wide - 2 ? (wide - 2) - (mid + half) : 0;
+    if (dx) b.style.marginLeft = dx.toFixed(1) + 'px';
+  }
+
   function drawLobbyCrowd() {
     if (S.phase !== 'lobby' && S.phase !== 'intermission') return;
     const layer = $('#actor-layer'), fx = $('#fx-layer');
@@ -498,6 +651,9 @@
     layer.innerHTML = '';
     $$('.crowd-name', fx).forEach(n => n.remove());
     $$('.crowd-badge', fx).forEach(n => n.remove());
+    /* 말풍선은 지우지 않는다. 대기실은 누가 들어오고 나갈 때마다 다시
+       그려지는데, 그때마다 지우면 방금 뜬 말풍선이 곧바로 사라진다.
+       자리만 새로 잡아 주고, 주인이 나간 것만 치운다. (아래에서) */
 
     /* 접속한 사람 전원 (관리자 제외). 들어온 순서로 정렬해 자리가 흔들리지 않게 */
     const all = Object.values(S.players || {}).filter(p => p && p.uid && !p.isAdmin);
@@ -507,32 +663,169 @@
 
     /* 인원이 많아질수록 촘촘하게 — 몇 명이든 모두 그린다 */
     const n = online.length;
-    const perRow = n <= 6 ? 4 : n <= 14 ? 6 : n <= 28 ? 8 : n <= 48 ? 10 : 12;
+    let perRow = n <= 6 ? 4 : n <= 14 ? 6 : n <= 28 ? 8 : n <= 48 ? 10 : 12;
+    /* 바닥 띠가 얕아 줄이 다섯을 넘으면 줄 간격이 키보다 훨씬 좁아진다.
+       그러면 어긋나게 세워도 앞사람 머리에 발이 얹힌다 — 줄을 넷으로
+       묶고 한 줄에 더 많이 세운다.                                      */
+    const MAX_ROWS = 4;
+    if (Math.ceil(n / perRow) > MAX_ROWS) perRow = Math.ceil(n / MAX_ROWS);
     const rows = Math.ceil(n / perRow);
     const dispH = n <= 6 ? 44 : n <= 14 ? 36 : n <= 28 ? 28 : n <= 48 ? 24 : 20;
     const stepX = (PX.W - 20) / perRow;
-    const botY = 150;                       // 맨 아랫줄 발 위치 (이름표 잘림 방지)
-    const topY = Math.max(86, botY - 15 * (rows - 1));
-    const stepY = rows > 1 ? (botY - topY) / (rows - 1) : 0;
+
+    /* 발 위치가 놓이는 바닥 띠. 예전에는 줄 간격을 15 로 묶어 두어
+       바닥을 절반만 쓰고 있었다 — 사람 키(24~44)보다 줄 간격이 좁으니
+       앞사람 머리가 뒷사람 발밑에 그대로 들어가 「밟고 선」 모양이 됐다.
+       바닥을 끝까지 쓰면 줄 간격이 키만큼 벌어진다.                      */
+    const BACK_Y = 92, FRONT_Y = 150;       // FRONT_Y : 이름표가 안 잘리는 맨 앞
+    const stepY = rows > 1 ? (FRONT_Y - BACK_Y) / (rows - 1) : 0;
+
+    /* 사람마다 늘 같은 흔들림 값(-1~1). 이름이 같으면 값도 같으므로
+       누가 들어오고 나가도 자기 자리는 그대로다.                        */
+    const wobble = (key, salt) => {
+      let h = (2166136261 ^ salt) >>> 0;
+      for (let i = 0; i < key.length; i++) {
+        h = (h ^ key.charCodeAt(i)) >>> 0;
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+      return (h / 4294967295) * 2 - 1;
+    };
+    const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+    const tags = [], spots = {};
+
+    /* 이름 글씨 크기를 화면에 맞춘다. 폰에서는 화면이 작은데 글씨만 그대로면
+       이름표가 사람보다 커져 서로 겹쳐 읽히지 않는다.                    */
+    const stageW = fx.getBoundingClientRect().width || 640;
+    fx.style.setProperty('--crowd-font',
+      clamp(stageW * 0.0092, 9, 13).toFixed(1) + 'px');
+
+    /* 「밟고 선」 모양 : 뒷사람 발이, 가로로 거의 겹친 앞사람 머리 위에 얹힌 것.
+       옆으로 비껴 겹치는 것은 인파에서 자연스러우므로 그대로 둔다.        */
+    const stomps = (a, b) => {
+      if (Math.abs(a.x - b.x) > Math.min(a.halfW, b.halfW) * 1.1) return false;
+      const back = a.y < b.y ? a : b, front = a.y < b.y ? b : a;
+      const headTop = front.y - front.h;
+      return back.y > headTop && back.y < headTop + front.h * 0.45;
+    };
+    const placed = [];
 
     online.forEach((p, i) => {
       const row = Math.floor(i / perRow), col = i % perRow;
       const inRow = Math.min(perRow, n - row * perRow);
-      const x = (PX.W - stepX * inRow) / 2 + stepX * (col + 0.5);
-      const y = topY + stepY * row;
+      const key = String(p.uid || p.name || i);
+
+      /* 뒤에 선 사람은 멀리 있으니 조금 작게 — 겹쳐도 깊이로 읽힌다 */
+      const depth = rows > 1 ? row / (rows - 1) : 1;   // 0 맨 뒤 ~ 1 맨 앞
+      const h = dispH * (0.80 + 0.20 * depth);
+      const halfW = h * 0.32;                          // 캐릭터 폭의 절반 (38:60)
+
+      /* 한 줄 걸러 반 칸씩 어긋나게 세운다 — 앞사람이 뒷사람 둘 사이에 선다.
+         줄 전체를 ±¼칸만 밀어 가운데 정렬은 그대로 둔다.                */
+      const stagger = (row % 2 ? 0.25 : -0.25) * stepX;
+      const baseX = (PX.W - stepX * inRow) / 2 + stepX * (col + 0.5) + stagger;
+      const y = BACK_Y + stepY * row + wobble(key, 2) * Math.min(3.5, stepY * 0.14);
+      const loX = halfW + 4, hiX = PX.W - halfW - 4;
+      let x = clamp(baseX + wobble(key, 1) * stepX * 0.16, loX, hiX);
+
+      /* 마지막 줄은 인원이 모자라 다시 가운데로 모이므로 어긋남이 풀린다.
+         줄 계산만 믿지 말고, 실제로 밟는 짝이 생기면 옆으로 비켜 세운다.  */
+      const dir = wobble(key, 3) < 0 ? -1 : 1;
+      const mine = { x, y, h, halfW };
+      for (let t = 1; t <= 10 && placed.some(q => stomps(q, mine)); t++) {
+        const away = dir * (t % 2 ? 1 : -1) * stepX * 0.16 * Math.ceil(t / 2);
+        mine.x = x = clamp(x + away, loX, hiX);
+      }
+      placed.push(mine);
       const me = p.uid === NET.uid;
 
-      const a = addActor(AVATARS[p.avatar] || AVATARS[0], x, y, null, me ? 'me' : '', 3, dispH);
-      a.style.zIndex = String(20 + row * 2 + (me ? 60 : 0));
+      const a = addActor(AVATARS[p.avatar] || AVATARS[0], x, y, null, me ? 'me' : '', 3, h);
+      /* 발이 아래인 사람이 반드시 앞에 온다. 「나」 라고 앞으로 끌어내지
+         않는다 — 그러면 내 앞에 선 사람을 내가 뚫고 서 버린다.
+         나를 찾는 것은 금색 이름표가 맡는다.                            */
+      a.style.zIndex = String(20 + Math.round(y * 4));
+
+      /* 어디에 서 있는지 기억해 둔다 — 채팅 말풍선을 머리 위에 띄울 때 쓴다 */
+      spots[p.uid] = { x, y, h, me };
 
       /* 이름표는 캐릭터보다 위 레이어에 따로 그린다 — 겹쳐도 이름은 다 보이게 */
-      const tag = el('div', 'crowd-name' + (me ? ' is-me' : ''), esc(p.name) + (me ? ' (나)' : ''));
+      const tag = el('div', 'crowd-name' + (NAME_BELOW ? ' below' : '') + (me ? ' is-me' : ''),
+        esc(p.name) + (me ? ' (나)' : ''));
+      /* 자리가 모자라면 파트 이름을 떼고 사람 이름만 남긴다 (EFA1_손승준 → 손승준) */
+      tag.dataset.full = esc(p.name) + (me ? ' (나)' : '');
+      tag.dataset.short = esc(String(p.name).split('_').pop()) + (me ? ' (나)' : '');
+      if (me) tag.dataset.me = '1';
+      tag.dataset.uid = p.uid;          // 말할 때 도드라지게 하려고 짝지어 둔다
       tag.style.left = ((x / PX.W) * 100) + '%';
-      // 같은 줄에서 이웃끼리 겹치지 않도록 한 칸씩 높이를 어긋나게
-      const lift = dispH + 2 + (col % 2 ? 6 : 0);
-      tag.style.top = (((y - lift) / PX.H) * 100) + '%';
-      tag.style.zIndex = String(200 + row * 2 + (col % 2) + (me ? 60 : 0));
+      // 이웃끼리 이름표가 겹치지 않도록 한 칸씩 높이를 어긋나게
+      const off = (col % 2 ? 5 : 0);
+      tag.style.top = ((clamp(NAME_BELOW ? y + 1 + off : y - h - 2 - off, 2, PX.H - 2) / PX.H) * 100) + '%';
+      /* 이름표 층은 사람 층(최대 20 + 160×4 = 660) 보다 반드시 위에 둔다.
+         예전 200 대는 앞줄 사람에게 이름이 가려졌다.                     */
+      tag.style.zIndex = String(1000 + Math.round(y * 2) + (col % 2) + (me ? 400 : 0));
       fx.appendChild(tag);
+      tags.push(tag);
+    });
+    S.crowdSpots = spots;
+
+    drawBubbles();        // 다시 그리면서 지워진 말풍선을 되살린다
+
+    /* 이름표 자리 다듬기 — 이름 길이가 제각각이라 좌표만으로는 미리 알 수
+       없다. 다 붙인 뒤 한 번에 재서 옮긴다.
+         ① 가장자리 사람의 이름표가 화면 밖으로 잘리지 않게 안쪽으로 민다
+         ② 이름표끼리 겹치면 위로 한 칸씩 올려 피한다 (누가 누군지 읽혀야
+            하므로, 겹쳐서 가리는 것보다 조금 떨어져 뜨는 게 낫다)        */
+    const box = fx.getBoundingClientRect();
+    tags.forEach(t => {
+      const r = t.getBoundingClientRect();
+      const dx = r.left < box.left + 2 ? box.left + 2 - r.left
+        : r.right > box.right - 2 ? box.right - 2 - r.right : 0;
+      if (dx) t.style.marginLeft = dx.toFixed(1) + 'px';
+    });
+    const hits = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 2 &&
+      Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 2;
+    const anyHit = () => {
+      const rs = tags.map(t => t.getBoundingClientRect());
+      for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++)
+        if (hits(rs[i], rs[j])) return true;
+      return false;
+    };
+    /* ② 폰처럼 좁은 화면에서 40명이 서면 이름이 다 들어갈 자리가 없다.
+       먼저 파트 이름을 떼어 짧게 만들어 본다.                            */
+    if (anyHit()) tags.forEach(t => { t.innerHTML = t.dataset.short; });
+
+    /* ③ 그래도 겹치면 위로 한 칸씩 올려 피한다 */
+    const kept = [];
+    tags.forEach(t => {
+      let r = t.getBoundingClientRect(), best = null;
+      for (let k = 1; k <= 6 && kept.some(q => hits(q, r)); k++) {
+        const up = (r.height + 3) * k;
+        t.style.marginTop = (-up).toFixed(1) + 'px';
+        r = t.getBoundingClientRect();
+        if (r.top < box.top + 2) {           // 화면 위로 넘치면 더 못 올린다
+          t.style.marginTop = best || '';
+          r = t.getBoundingClientRect();
+          break;
+        }
+        best = t.style.marginTop;
+      }
+      kept.push(r);
+    });
+
+    /* ④ 그래도 남는 겹침은 이름을 감춘다. 겹쳐 쌓인 글씨는 어차피 못 읽고,
+       사람은 그대로 서 있다. 「나」 는 절대 감추지 않는다 —
+       자기를 찾는 것이 이름표의 첫째 쓸모다.                             */
+    const shown = [];
+    tags.forEach(t => {
+      const r = t.getBoundingClientRect();
+      if (t.dataset.me) { shown.push(r); return; }
+      if (shown.some(q => hits(q, r))) t.style.display = 'none';
+      else shown.push(r);
+    });
+    /* 「나」 와 겹쳐 버린 이름이 남았을 수 있으니 한 번 더 훑는다 */
+    const meRect = tags.filter(t => t.dataset.me).map(t => t.getBoundingClientRect());
+    tags.forEach(t => {
+      if (t.dataset.me || t.style.display === 'none') return;
+      if (meRect.some(q => hits(q, t.getBoundingClientRect()))) t.style.display = 'none';
     });
 
     /* 접속 현황 */
@@ -1443,6 +1736,6 @@
     S, boot, enterRoom, renderLobby, showResults, openBoard, computeBoard,
     applyGlobal, finishRoom, assignQuizzes, siteForRoom, answersOf, teamCode, updateHUD,
     computeTeamBoard, mountBoard, teamSites,
-    myTeamNo, teamSeedFor, placeExit
+    myTeamNo, teamSeedFor, placeExit, saySomething
   };
 })(window);

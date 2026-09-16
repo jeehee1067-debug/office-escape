@@ -84,9 +84,7 @@
       ? '<button class="pk-btn pk-btn-gold" data-act="pause">' + (paused ? '▶ 재개' : '⏸ 일시정지') + '</button>'
       : '<button class="pk-btn pk-btn-green" data-act="resume">▶ ' + cur + '관 시작 (타이머 처음부터)</button>';
 
-    return stateHTML() +
-
-      '<h5 class="admin-h">▶ 진행 제어</h5>' +
+    return '<h5 class="admin-h">▶ 진행 제어</h5>' +
       '<div class="admin-grid">' +
       startRoomBtn +
       '<button class="pk-btn pk-btn-main" data-act="next">' + nextLabel + '</button>' +
@@ -662,23 +660,57 @@
     panel = modal({
       title: '👑 관리자 통제 패널', wide: true, closable: true,
       html: bodyHTML(),
-      onClose: () => { clearInterval(refreshTimer); panel = null; },
+      onClose: () => { clearInterval(refreshTimer); panel = null; lastBody = ''; },
       onMount: (body, back) => {
         back.dataset.keep = '1';    // 방이 바뀌어도 패널이 닫히지 않게
-        bind(body);
+        /* 누르는 동안에는 다시 그리지 않는다 — 버튼이 손 밑에서 바뀌면
+           누른 것이 그대로 날아간다.                                    */
+        body.addEventListener('pointerdown', () => { body.dataset.busy = '1'; });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(e =>
+          body.addEventListener(e, () => { delete body.dataset.busy; }));
+        render(body, true);
         clearInterval(refreshTimer);
         refreshTimer = setInterval(() => {
           if (!document.body.contains(body)) return clearInterval(refreshTimer);
-          const focus = document.activeElement;
-          body.innerHTML = bodyHTML();
-          bind(body);
-        }, 2500);
+          render(body);
+        }, 500);
       }
     });
   }
+  /* 패널 다시 그리기
+     ------------------------------------------------------------
+     예전에는 2.5초마다 패널 전체를 통째로 다시 그렸다. 두 가지가 나빴다.
+       · 방금 누른 결과가 최대 2.5초 동안 화면에 안 나타난다.
+         (「전원 대기실로」 를 눌러도 「▶ 시작」 버튼이 한참 뒤에 나타나고,
+          「다음 관」 을 누른 직후 「⬅ 이전 관으로」 가 아직 못 누르는
+          상태로 남아 있어 눌러도 아무 일이 없었다)
+       · 손이 버튼 위에 있는 순간 다시 그려지면 누른 것이 날아간다.
+     그래서 ① 자주(0.5초) 보되 ② 바뀐 게 없으면 그대로 두고
+     ③ 시시각각 변하는 남은 시간만 따로 갱신한다.                       */
+  let lastBody = '';
+  function render(body, first) {
+    if (!first && body.dataset.busy) return;         // 누르는 중에는 건드리지 않는다
+    const rest = bodyHTML();
+    if (first || rest !== lastBody) {
+      lastBody = rest;
+      body.innerHTML = '<div id="admin-state-host"></div>' + rest;
+      bind(body);
+    }
+    const host = body.querySelector('#admin-state-host');
+    if (host) host.innerHTML = stateHTML();          // 남은 시간은 매번
+  }
+
   function bind(body) {
     body.querySelectorAll('[data-act]').forEach(b => {
-      b.onclick = () => { SFX.select(); const f = ACT[b.dataset.act]; if (f) f(); };
+      b.onclick = async () => {
+        SFX.select();
+        const f = ACT[b.dataset.act];
+        if (!f) return;
+        try { await f(); } finally {
+          delete body.dataset.busy;
+          if (document.body.contains(body)) render(body);   // 누른 결과를 바로 보여 준다
+        }
+      };
     });
     body.querySelectorAll('[data-edit]').forEach(b => {
       b.onclick = () => { SFX.select(); editPlayer(b.dataset.edit); };
