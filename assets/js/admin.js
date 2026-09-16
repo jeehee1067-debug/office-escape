@@ -659,6 +659,8 @@
     if (panel && document.body.contains(panel.back)) return;
     panel = modal({
       title: '👑 관리자 통제 패널', wide: true, closable: true,
+      movable: 'admin',          // 제목 표시줄을 끌어 옮길 수 있다
+
       html: bodyHTML(),
       onClose: () => { clearInterval(refreshTimer); panel = null; lastBody = ''; },
       onMount: (body, back) => {

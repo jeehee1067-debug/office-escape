@@ -88,6 +88,7 @@
       m.appendChild(row);
     }
     back.appendChild(m);
+    if (opts.movable) makeMovable(back, m, opts.movable);
     if (opts.low) back.dataset.low = '1';      // 관리자 패널보다 아래에 깔리는 창
     if (opts.backdropClose) back.addEventListener('click', e => { if (e.target === back) { close(back); if (opts.onClose) opts.onClose(); } });
     $('#modal-root').appendChild(back);
@@ -97,8 +98,76 @@
     SFX.open();
     return { back, body, close: () => close(back) };
   }
+  /* ---------------- 끌어 옮기는 창 ----------------
+     관리자 패널처럼 「화면을 보면서 조작하는」 창을 위한 것.
+     제목 표시줄을 잡고 끌면 옮겨지고, 자리는 그 기기에 기억해 둔다.
+     두 번 누르면 가운데로 되돌아온다.                                  */
+  function makeMovable(back, m, key) {
+    const head = m.querySelector('.modal-title');
+    if (!head) return;
+    back.classList.add('movable');
+    head.title = '끌어서 옮기기 · 두 번 누르면 가운데로';
+    const KEY = 's1fa.movebox.' + key;
+
+    /* 창이 화면 밖으로 나가지 않게 가둔다 — 제목 표시줄을 못 잡으면
+       되돌릴 방법이 없어진다. */
+    const put = (x, y) => {
+      const w = m.offsetWidth, h = m.offsetHeight;
+      const maxX = Math.max(4, innerWidth - w - 4), maxY = Math.max(4, innerHeight - h - 4);
+      const p = { x: Math.min(Math.max(4, x), maxX), y: Math.min(Math.max(4, y), maxY) };
+      m.style.position = 'absolute';
+      m.style.left = p.x + 'px';
+      m.style.top = p.y + 'px';
+      return p;
+    };
+
+    let box = null;
+    try { box = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { }
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(box)); } catch (e) { } };
+
+    /* 처음에는 가운데에 둔다. 옮길 수 있는 창은 가운데 정렬(flex)을 쓰지 않으므로
+       지금 자리를 재면 왼쪽 위라, 가운데 좌표를 직접 계산해 넣어야 한다. */
+    requestAnimationFrame(() => {
+      box = box
+        ? put(box.x, box.y)
+        : put((innerWidth - m.offsetWidth) / 2, (innerHeight - m.offsetHeight) / 2);
+    });
+
+    head.addEventListener('pointerdown', e => {
+      if (e.target.closest('button, select, input, a')) return;
+      e.preventDefault();
+      const r = m.getBoundingClientRect();
+      const ox = e.clientX - r.left, oy = e.clientY - r.top;
+      head.setPointerCapture(e.pointerId);
+      back.classList.add('is-moving');
+      const move = ev => { box = put(ev.clientX - ox, ev.clientY - oy); };
+      const up = () => {
+        try { head.releasePointerCapture(e.pointerId); } catch (e2) { }
+        back.classList.remove('is-moving');
+        head.removeEventListener('pointermove', move);
+        head.removeEventListener('pointerup', up);
+        head.removeEventListener('pointercancel', up);
+        save();
+      };
+      head.addEventListener('pointermove', move);
+      head.addEventListener('pointerup', up);
+      head.addEventListener('pointercancel', up);
+    });
+
+    head.addEventListener('dblclick', e => {
+      if (e.target.closest('button, select, input')) return;
+      box = put((innerWidth - m.offsetWidth) / 2, (innerHeight - m.offsetHeight) / 2);
+      save();
+    });
+
+    /* 화면 크기가 바뀌거나 폰을 돌리면 다시 안쪽으로 */
+    back._onResize = () => { if (box) box = put(box.x, box.y); };
+    addEventListener('resize', back._onResize);
+  }
+
   function close(back) {
     if (!back) return;
+    if (back._onResize) removeEventListener('resize', back._onResize);
     back.remove();
     const i = stack.indexOf(back); if (i >= 0) stack.splice(i, 1);
     syncModalFlag();

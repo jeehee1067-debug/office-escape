@@ -509,6 +509,26 @@ body.chat-open .dialogue{padding-right:16px}
 @keyframes fadein{from{opacity:0}}
 /* 대기(정산) 창은 관리자 패널보다 아래에 깔린다 */
 .modal-back[data-low]{z-index:860}
+
+/* 끌어 옮기는 창 (관리자 패널)
+   뒤를 어둡게 덮지 않는다 — 옮길 수 있게 해 놓고 뒤가 가려져 있으면
+   옮긴 보람이 없다. 화면을 보면서 조작하라고 만든 창이다. */
+.modal-back.movable{background:transparent;display:block;padding:0;animation:none}
+.modal-back.movable .modal{
+  /* 감싼 칸의 padding 을 없앴으므로 폭에서 직접 여백을 뺀다 —
+     안 그러면 폰에서 화면 폭을 그대로 채워 오른쪽이 4px 넘친다. */
+  position:absolute;margin:0;animation:none;width:calc(100% - 8px);
+  box-shadow:0 10px 0 rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.12);
+}
+.modal-back.movable .modal-title{
+  cursor:grab;user-select:none;touch-action:none;
+  background:linear-gradient(var(--blue),var(--blue)) padding-box;
+}
+.modal-back.movable .modal-title::after{
+  content:'⠿';margin-left:auto;margin-right:8px;opacity:.75;font-size:15px;letter-spacing:-2px;
+}
+.modal-back.movable.is-moving .modal-title{cursor:grabbing}
+.modal-back.movable.is-moving .modal{box-shadow:0 14px 0 rgba(0,0,0,.5)}
 .modal{
   width:100%;max-width:480px;max-height:92dvh;overflow-y:auto;
   background:var(--paper);border:4px solid var(--ink);border-radius:12px;
