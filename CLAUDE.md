@@ -38,6 +38,7 @@ node tools/check-all.js
 |---|---|
 | `node tools/check-bank.js` | 문제 정답을 자료에서 다시 계산해 대조 |
 | `node tools/check-answers.js` | 그 정답을 화면에서 입력할 수 있는지 (앞자리 0 등) |
+| `node tools/check-name.js` | 이름 글자 수가 접속 화면과 서버 규칙에서 같은지 |
 | `node tools/check-spots.js` | 방 안 클릭 영역이 화면 밖으로 나가거나 겹치는지 |
 | `node tools/check-teams.js` | 1~48명 모든 근무지 조합에서 팀이 짜이는지 |
 | `node tools/check-cache.js` | `index.html` 의 `?v=` 를 올려야 하는지 |

@@ -162,7 +162,14 @@
     if (joining) return;
     const name = $('#name-input').value.trim();
     if (!name) { toast('이름을 입력해주세요.', 'bad'); $('#name-input').focus(); return; }
-    if (name.length > 8) { toast('이름은 8자 이내로 입력해주세요.', 'bad'); return; }
+    /* 12 는 database.rules.json 의 name 검사(length <= 12)와 같은 값이어야 한다.
+       여기만 늘리면 긴 이름이 서버에서 조용히 거부된다 — tools/check-name.js 가 지킨다. */
+    if (name.length > 12) { toast('이름은 12자 이내로 입력해주세요. 예) EFA1_김도현98', 'bad', 3200); return; }
+    /* 「파트_이름」 형식을 권한다. 강제하지는 않는다 —
+       행사 중에 입력이 막히면 진행이 멈추는 게 더 큰 손해다. */
+    if (name.indexOf('_') < 0) {
+      toast('「파트_이름」 형식으로 적어주세요. 예) EFA1_김도현', 'info', 3200);
+    }
 
     joining = true;
     const btn = $('#join-btn');

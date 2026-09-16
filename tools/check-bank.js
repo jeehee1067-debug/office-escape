@@ -100,10 +100,21 @@ eq('r3h2', cell, q(3, 'r3h2').ans[0]);
 // 3관 일반 : 가장 최근에 점검한 장비 (기록부 마지막 줄)
 eq('r3e1', lastLog[1], q(3, 'r3e1').ans[0]);
 
-// 3관 일반 : 트레이 빈칸 수 (배치도에서 다시 계산)
-const tray = DOCS.d3_tray;
-const slots = (tray.rows || []).length * (tray.cols || []).length;
-eq('r3e2', slots - Object.keys(tray.cells || {}).length, q(3, 'r3e2').ans[0]);
+// 3관 일반 : 출입복장 기준을 하나도 어기지 않은 사람 (명단에서 다시 계산)
+const entry = DOCS.d3_entry;
+const covered = t => /토시|속바지/.test(t);                 // 드러난 곳을 덮었는가
+const bare = t => /반팔|반바지|치마|민소매/.test(t) && !covered(t);
+const passOf = r => {
+  const [, top, bottom, shoes, work] = r;
+  if (bare(top) || bare(bottom)) return false;              // 피부 노출
+  if (/슬리퍼|샌들/.test(shoes)) return false;               // 발등이 안 덮이는 신발
+  if (/중량물/.test(work) && !/안전화/.test(shoes)) return false;  // 중량물은 안전화
+  return true;
+};
+const pass = (entry.rows || []).filter(passOf);
+ok(pass.length === 1, 'r3e2  기준을 다 지킨 사람이 딱 한 명 (' +
+  (pass.map(r => r[0]).join(', ') || '없음') + ')');
+eq('r3e2', (pass[0] || ['??'])[0], q(3, 'r3e2').ans[0]);
 
 // 4관 : 계획표(UV 추가 작업) + 색상 코드표
 const plan = DOCS.d4_plan;
