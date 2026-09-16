@@ -609,6 +609,11 @@
       keep.push(r);
     });
 
+    /* 말하는 사람 이름표를 도드라지게 한다 (말이 끝나면 되돌린다) */
+    $$('.crowd-name', fx).forEach(t => {
+      t.classList.toggle('talking', !!said[t.dataset.uid]);
+    });
+
     /* 다음 줄이 사라질 때 한 번만 다시 그린다 (줄마다 타이머를 두지 않는다) */
     if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
     if (nextAt < Infinity) {
@@ -623,8 +628,10 @@
     if (!fx) return;
     b.style.marginLeft = '';
     b.style.left = ((spot.x / PX.W) * 100) + '%';
-    /* 머리 꼭대기보다 조금 더 위 — 이름표를 머리 위에 둘 때는 그만큼 더 */
-    const lift = spot.h + (NAME_BELOW ? 3 : 10);
+    /* 머리 꼭대기보다 조금 더 위. 이름표를 머리 위에 둘 때는 이름표 높이와
+       한 칸씩 어긋나게 올린 몫(최대 5)까지 비켜야 한다 — 10 으로 두었더니
+       꼬리가 이름 글씨를 가로질렀다.                                     */
+    const lift = spot.h + (NAME_BELOW ? 3 : 14);
     b.style.top = ((Math.max(3, spot.y - lift) / PX.H) * 100) + '%';
     b.style.zIndex = String(3000 + Math.round(spot.y));   // 이름표보다도 위
     /* 화면 밖으로 잘리면 안쪽으로 민다.
@@ -747,6 +754,7 @@
       tag.dataset.full = esc(p.name) + (me ? ' (나)' : '');
       tag.dataset.short = esc(String(p.name).split('_').pop()) + (me ? ' (나)' : '');
       if (me) tag.dataset.me = '1';
+      tag.dataset.uid = p.uid;          // 말할 때 도드라지게 하려고 짝지어 둔다
       tag.style.left = ((x / PX.W) * 100) + '%';
       // 이웃끼리 이름표가 겹치지 않도록 한 칸씩 높이를 어긋나게
       const off = (col % 2 ? 5 : 0);

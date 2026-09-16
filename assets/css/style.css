@@ -419,6 +419,16 @@ body.chat-open .dialogue{padding-right:16px}
 }
 .crowd-name.below{transform:translate(-50%,0)}
 .crowd-name.is-me{color:var(--gold)}
+/* 말하는 사람 이름표는 잠깐 도드라지게 — 말풍선 꼬리만으로는
+   누가 말했는지 한눈에 안 들어온다. 이름과 말풍선을 이어 준다. */
+.crowd-name.talking{
+  color:var(--gold);
+  animation:nameTalk 1.3s ease-in-out infinite;
+}
+@keyframes nameTalk{
+  0%,100%{filter:drop-shadow(0 0 2px rgba(255,209,92,.75))}
+  50%    {filter:drop-shadow(0 0 6px rgba(255,209,92,1))}
+}
 
 /* 대기실 : 채팅을 보내면 그 사람 머리 위에 잠깐 뜨는 말풍선.
    이름은 테두리만 두른 글씨라, 말풍선은 상자로 두어 서로 구분된다.     */
@@ -432,11 +442,19 @@ body.chat-open .dialogue{padding-right:16px}
   pointer-events:none;
 }
 .crowd-bubble.pop{animation:bubblePop .16s ease-out}
-.crowd-bubble::after{            /* 아래로 뻗는 꼬리 */
+/* 아래로 뻗는 꼬리 — 테두리(::after)와 속(::before)을 겹쳐 말풍선과
+   같은 색으로 채운다. 예전에는 통째로 검은 삼각형이라 배경에 묻혔다. */
+.crowd-bubble::after{
+  content:'';position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);
+  border-left:7px solid transparent;border-right:7px solid transparent;
+  border-top:11px solid var(--ink);
+}
+.crowd-bubble::before{
   content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);
   border-left:5px solid transparent;border-right:5px solid transparent;
-  border-top:7px solid var(--ink);
+  border-top:8px solid var(--paper);z-index:1;
 }
+.crowd-bubble.is-me::before{border-top-color:var(--gold)}
 .crowd-bubble.is-me{background:var(--gold)}
 .crowd-bubble .bl + .bl{margin-top:2px;padding-top:2px;border-top:1px dashed rgba(19,28,39,.22)}
 .crowd-bubble .bl.old{opacity:.5}      /* 앞말은 흐리게 — 방금 한 말이 또렷하게 */
