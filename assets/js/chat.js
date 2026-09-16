@@ -334,30 +334,94 @@
     note.classList.toggle('hidden', !note.textContent);
   }
 
+  /* ---------------- 관리자 고정 공지 ----------------
+     관리자가 자기 말풍선 하나를 골라 채팅창 맨 위에 붙여 둔다.
+     붙여 둔 자리는 global/state 라서 채널을 가리지 않는다 — 방 안에서는
+     「전체」 대화가 안 보이는 참가자도 팀 대화창 맨 위에서 같은 공지를 본다. */
+  const pinned = () => (g.GAME && g.GAME.S && g.GAME.S.global && g.GAME.S.global.pin) || null;
+
+  function pinHTML() {
+    const p = pinned(); if (!p || !p.text) return '';
+    return '<div class="chat-pinned">' +
+      '<div class="chat-pin-head"><span>📌 관리자 공지</span>' +
+      '<span class="chat-pin-by">' + esc(p.name || '관리자') + ' · ' + hhmm(p.at) + '</span>' +
+      (isAdmin() ? '<button class="chat-pin-off" title="고정 해제">✕</button>' : '') +
+      '</div>' +
+      '<div class="chat-pin-text">' + esc(p.text) + '</div></div>';
+  }
+
+  function setPin(p) {
+    NET.setGlobal({ pin: p })
+      .then(() => toast(p ? '공지를 채팅창 맨 위에 고정했습니다.' : '공지 고정을 해제했습니다.', p ? 'good' : 'info'))
+      .catch(() => toast('고정하지 못했습니다. 연결을 확인하세요.', 'bad', 4000));
+  }
+
+  function bindPin(log) {
+    const off = log.querySelector('.chat-pin-off');
+    if (off) off.onclick = () => { setPin(null); SFX.select(); };
+    log.querySelectorAll('.chat-pin-btn').forEach(b => {
+      b.onclick = () => {
+        const list = S.msgs[pathOf(S.tab)] || [];
+        const m = list[+b.dataset.i]; if (!m || !m.text) return;
+        setPin({ text: m.text, name: nameOf(m), at: m.at || Date.now(), id: String(m.at || Date.now()) + '_' + (m.uid || '') });
+        SFX.select();
+      };
+    });
+  }
+
+  /* 고정된 공지가 바뀌면 열려 있는 대화창을 다시 그리고 한 번 알린다.
+     (채팅창을 닫아 둔 사람은 이 안내가 아니면 공지를 못 본다) */
+  let seenPin;                         // undefined = 아직 한 번도 못 봄
+  function syncPin() {
+    const p = pinned();
+    const id = p && p.text ? (p.id || String(p.at || '')) : null;
+    if (id === seenPin) return;
+    const first = seenPin === undefined;
+    seenPin = id;
+    if (S.open) renderLog();
+    if (!first && id && !isAdmin()) {
+      toast('📌 관리자 공지가 올라왔습니다 — 채팅창 맨 위를 봐주세요.', 'info', 4500);
+      SFX.tick();
+    }
+  }
+
+  /* ---------------- 대화 목록 ---------------- */
+  const hhmm = t => {
+    const d = new Date(t || Date.now());
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  };
+  /* 보낸 사람 이름은 「지금」 이름을 따라간다.
+     메시지에는 보낼 때 이름이 그대로 굳어 있어서, 다른 기기로 다시
+     들어와 이름을 고쳐 적거나 관리자가 ✏️ 로 바로잡아도 대화창에는
+     옛 이름이 남았다. 누가 쓴 말인지 못 알아보는 것이 더 나쁘다.     */
+  function nameOf(m) {
+    const now = (g.GAME && g.GAME.S && g.GAME.S.players) || {};
+    const p = now[m.uid];
+    return (p && p.name) || m.name || '?';
+  }
+
   function renderLog() {
     const log = $('#chat-log'); if (!log) return;
     const path = pathOf(S.tab);
     const list = (path && S.msgs[path]) || [];
-    if (!path) { log.innerHTML = '<p class="chat-empty">대화할 수 있는 채널이 없습니다.</p>'; return; }
-    if (!list.length) { log.innerHTML = '<p class="chat-empty">아직 대화가 없습니다. 먼저 말을 걸어보세요!</p>'; return; }
-    /* 보낸 사람 이름은 「지금」 이름을 따라간다.
-       메시지에는 보낼 때 이름이 그대로 굳어 있어서, 다른 기기로 다시
-       들어와 이름을 고쳐 적거나 관리자가 ✏️ 로 바로잡아도 대화창에는
-       옛 이름이 남았다. 누가 쓴 말인지 못 알아보는 것이 더 나쁘다.
-       팀 표시는 그때 그 채널의 팀이므로 기록된 값을 그대로 둔다.      */
-    const now = (g.GAME && g.GAME.S && g.GAME.S.players) || {};
-    log.innerHTML = list.map(m => {
+    let body;
+    if (!path) body = '<p class="chat-empty">대화할 수 있는 채널이 없습니다.</p>';
+    else if (!list.length) body = '<p class="chat-empty">아직 대화가 없습니다. 먼저 말을 걸어보세요!</p>';
+    else body = list.map((m, i) => {
       const mine = m.uid === NET.uid;
-      const t = new Date(m.at || Date.now());
-      const hm = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
-      const p = now[m.uid];
-      const nm = (p && p.name) || m.name || '?';
-      const who = (m.team != null ? '<b>' + m.team + '팀</b> · ' : '') + esc(nm);
+      /* 팀 표시는 그때 그 채널의 팀이므로 기록된 값을 그대로 둔다. */
+      const who = (m.team != null ? '<b>' + m.team + '팀</b> · ' : '') + esc(nameOf(m));
       return '<div class="chat-msg' + (mine ? ' mine' : '') + '">' +
         '<span class="chat-name">' + who + (mine ? ' <em>(나)</em>' : '') + '</span>' +
-        '<span class="chat-bubble">' + esc(m.text || '') + '</span>' +
-        '<span class="chat-time">' + hm + '</span></div>';
+        '<span class="chat-bubble">' + esc(m.text || '') +
+        (isAdmin() && mine && m.text
+          ? '<button class="chat-pin-btn" data-i="' + i + '" title="이 말을 채팅창 맨 위에 고정">📌</button>' : '') +
+        '</span>' +
+        '<span class="chat-time">' + hhmm(m.at) + '</span></div>';
     }).join('');
+
+    log.innerHTML = pinHTML() + body;
+    bindPin(log);
     log.scrollTop = log.scrollHeight;
     markRead(S.tab);
   }
@@ -466,5 +530,5 @@
     setInterval(refresh, 4000);      // 팀/화면 상태 변화를 따라간다
   }
 
-  g.CHAT = { init, toggle, refresh, setOpen, setMin, resetBox, toggleMax };
+  g.CHAT = { init, toggle, refresh, setOpen, setMin, resetBox, toggleMax, syncPin };
 })(window);
