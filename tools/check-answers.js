@@ -126,7 +126,7 @@ for (let r = 1; r <= CONFIG.ROOM_COUNT; r++) {
     (map[k] = map[k] || []).push(q.id);
   }));
   const clash = Object.entries(map).filter(([, ids]) => new Set(ids).size > 1);
-  /* r1sr3·r1s1l 은 일부러 같은 문제(both) 이므로 겹쳐도 된다 */
+  /* both:true 로 둔 쌍(같은 문제를 두 사이트에 두는 경우)은 겹쳐도 된다. 지금은 쓰는 곳이 없다 */
   const real = clash.filter(([, ids]) => !(ids.length === 2 && ids.every(i => /^r\dsr3$|^r\ds1l$/.test(i))
     && bank.find(q => q.id === ids[0]).both));
   ok(real.length === 0, r + '관 : 서로 다른 문제끼리 정답이 겹치지 않음' +
