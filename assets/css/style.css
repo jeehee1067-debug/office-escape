@@ -196,7 +196,10 @@ button,input,select{font-family:inherit}
   box-shadow:0 6px 0 rgba(0,0,0,.5);background:#000;
   width:100%;align-self:center;
 }
-#stage{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;touch-action:none}
+/* isolation:isolate — 무대 안의 층 번호가 무대 밖(모달·HUD)과 다투지 않게
+   가둔다. 대기실 이름표 층을 올렸더니 관리자 패널·문제 창 위로 이름이
+   떠오르는 일이 있었다. 무대 안에서만 서로 비교되면 그럴 일이 없다.   */
+#stage{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;touch-action:none;isolation:isolate}
 #bg-canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
 .bg-image{
   position:absolute;inset:0;background-size:100% 100%;
