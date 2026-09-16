@@ -340,11 +340,19 @@
     const list = (path && S.msgs[path]) || [];
     if (!path) { log.innerHTML = '<p class="chat-empty">대화할 수 있는 채널이 없습니다.</p>'; return; }
     if (!list.length) { log.innerHTML = '<p class="chat-empty">아직 대화가 없습니다. 먼저 말을 걸어보세요!</p>'; return; }
+    /* 보낸 사람 이름은 「지금」 이름을 따라간다.
+       메시지에는 보낼 때 이름이 그대로 굳어 있어서, 다른 기기로 다시
+       들어와 이름을 고쳐 적거나 관리자가 ✏️ 로 바로잡아도 대화창에는
+       옛 이름이 남았다. 누가 쓴 말인지 못 알아보는 것이 더 나쁘다.
+       팀 표시는 그때 그 채널의 팀이므로 기록된 값을 그대로 둔다.      */
+    const now = (g.GAME && g.GAME.S && g.GAME.S.players) || {};
     log.innerHTML = list.map(m => {
       const mine = m.uid === NET.uid;
       const t = new Date(m.at || Date.now());
       const hm = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
-      const who = (m.team != null ? '<b>' + m.team + '팀</b> · ' : '') + esc(m.name || '?');
+      const p = now[m.uid];
+      const nm = (p && p.name) || m.name || '?';
+      const who = (m.team != null ? '<b>' + m.team + '팀</b> · ' : '') + esc(nm);
       return '<div class="chat-msg' + (mine ? ' mine' : '') + '">' +
         '<span class="chat-name">' + who + (mine ? ' <em>(나)</em>' : '') + '</span>' +
         '<span class="chat-bubble">' + esc(m.text || '') + '</span>' +
