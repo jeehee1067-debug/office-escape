@@ -10,6 +10,8 @@
    3) 크레도 문제 정답이 만들어지는지  (CREDO.lines)
    4) 고난도 문제의 정답을 자료에서 다시 계산해 ans 와 비교
       → 계획표·좌석표를 고치면 여기서 바로 어긋난 곳을 알려줍니다.
+   5) 사무실 실물을 보고 푸는 문제가, 게시물에 적힌 차례 그대로 묻고 있지는 않은지
+      → 그대로 물으면 색·짝을 맞출 것 없이 베끼면 끝나 문제가 사라집니다.
    ============================================================ */
 'use strict';
 const path = require('path');
@@ -128,6 +130,22 @@ eq('r4h2', color(at('00')[3]) + color(at('02')[3]), q(4, 'r4h2').ans[0]);
 const MONITORS = 3;                       // 4관 배경 그림 속 책상 위 모니터 수
 ok(plan.rows.length >= MONITORS, 'r4e1  계획표에 ' + MONITORS + '번째 줄이 있음 (' + plan.rows.length + '줄)');
 eq('r4e1', (plan.rows[MONITORS - 1] || [])[2], q(4, 'r4e1').ans[0]);
+
+/* ---------- 5) 사무실 실물 문제 — 묻는 차례가 게시물 차례와 같아지지 않게 ----------
+   벽에 붙은 순서대로 물어보면 색을 맞춰 볼 것 없이 위에서 아래로 베끼면 끝난다.
+   게시물을 바꿨으면 아래 배열도 실물에 맞춰 고칠 것.                              */
+console.log('\n[4] 사무실 실물 문제 — 베끼기 방지');
+const WALL = {
+  r3s1l: { room: 3, wall: ['알칼리', '유기', '산'], where: 'S1L 사무실 문 「분석실 관리 수칙」 9번' }
+};
+Object.keys(WALL).forEach(id => {
+  const w = WALL[id], asked = (q(w.room, id) || {}).order || [];
+  const same = arr => asked.join('') === arr.join('');
+  ok(asked.length === w.wall.length, id + '  성상 수가 게시물과 같음 (' + asked.length + '개)');
+  ok(!same(w.wall), id + '  묻는 차례 ' + asked.join('→') +
+    ' 가 ' + w.where + ' 에 적힌 차례와 다름');
+  ok(!same(w.wall.slice().reverse()), id + '  게시물을 거꾸로 읽은 차례도 아님');
+});
 
 console.log(fail ? '\n❌ 어긋난 항목 ' + fail + '개 — 위 ❌ 줄을 확인하세요.\n'
   : '\n✅ 문제은행과 자료가 모두 맞아떨어집니다.\n');
