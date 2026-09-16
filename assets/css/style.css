@@ -438,6 +438,8 @@ body.chat-open .dialogue{padding-right:16px}
   border-top:7px solid var(--ink);
 }
 .crowd-bubble.is-me{background:var(--gold)}
+.crowd-bubble .bl + .bl{margin-top:2px;padding-top:2px;border-top:1px dashed rgba(19,28,39,.22)}
+.crowd-bubble .bl.old{opacity:.5}      /* 앞말은 흐리게 — 방금 한 말이 또렷하게 */
 .crowd-bubble.fade{opacity:0;transition:opacity .45s ease}
 @keyframes bubblePop{from{transform:translate(-50%,-100%) scale(.7);opacity:0}
                      to{transform:translate(-50%,-100%) scale(1);opacity:1}}

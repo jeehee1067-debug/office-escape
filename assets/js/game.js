@@ -510,11 +510,16 @@
   /* 말풍선이 떠 있는 시간 — 채팅 한 줄을 읽기에 충분한 만큼 */
   const BUBBLE_MS = 4500;
 
-  /* 지금 떠 있어야 할 말풍선 : uid → { text, at }.
+  /* 이어서 한 말은 몇 줄까지 같이 띄울지. 채팅 사이 간격이 1.2초라
+     4.5초 안에 넉넉히 세 마디까지 들어온다.                             */
+  const BUBBLE_LINES = 3;
+
+  /* 지금 떠 있어야 할 말풍선 : uid → [{ text, at }, ...] (오래된 것이 앞).
      대기실은 누가 들어오고 나갈 때마다 통째로 다시 그려진다(그때 화면의
      겹레이어가 비워진다). 그래서 말풍선을 화면에만 두면 방금 뜬 것이
      곧바로 사라진다 — 여기에 담아 두고 다시 그릴 때마다 되살린다.       */
   const said = {};
+  let bubbleTimer = null;
 
   /** 채팅이 오면 대기실에 선 그 사람 머리 위에 말풍선을 띄운다.
       chat.js 가 새 메시지마다 불러 준다. */
@@ -522,7 +527,9 @@
     if (!msg || !msg.uid || !msg.text) return;
     if (S.phase !== 'lobby' && S.phase !== 'intermission') return;
     if (!(S.crowdSpots || {})[msg.uid]) return;   // 지금 대기실에 안 서 있는 사람
-    said[msg.uid] = { text: String(msg.text).slice(0, 60), at: Date.now() };
+    const line = { text: String(msg.text).slice(0, 60), at: Date.now() };
+    const lines = (said[msg.uid] || []).concat(line);
+    said[msg.uid] = lines.slice(-BUBBLE_LINES);   // 아직 살아 있는 앞말과 같이 띄운다
     drawBubbles(msg.uid);
   }
 
@@ -533,33 +540,81 @@
     const spots = S.crowdSpots || {}, now = Date.now();
     const live = {};
     $$('.crowd-bubble', fx).forEach(b => { live[b.dataset.uid] = b; });
+    let nextAt = Infinity;                        // 다음에 지워야 할 시각
 
     Object.keys(said).forEach(uid => {
-      const left = BUBBLE_MS - (now - said[uid].at);
       const spot = spots[uid];
-      if (left <= 0 || !spot) {                    // 시간이 다 됐거나 나간 사람
+      /* 시간이 다 된 줄은 떨어뜨린다 — 오래된 것부터 하나씩 사라진다 */
+      const lines = (said[uid] || []).filter(l => now - l.at < BUBBLE_MS);
+      if (!lines.length || !spot) {               // 남은 말이 없거나 나간 사람
         delete said[uid];
         if (live[uid]) live[uid].remove();
         return;
       }
+      said[uid] = lines;
+      lines.forEach(l => { nextAt = Math.min(nextAt, l.at + BUBBLE_MS); });
+
+      /* 이어서 한 말은 아래로 쌓는다(채팅과 같은 차례). 앞말은 흐리게 두어
+         어느 것이 방금 한 말인지 바로 보이게 한다.                       */
+      const html = lines.map((l, i) =>
+        '<div class="bl' + (i < lines.length - 1 ? ' old' : '') + '">' + esc(l.text) + '</div>').join('');
+
       let b = live[uid];
-      if (b && uid === onlyUid) { b.remove(); b = null; }   // 새 말이면 새로 띄운다
       if (!b) {
-        b = el('div', 'crowd-bubble' + (spot.me ? ' is-me' : ''), esc(said[uid].text));
+        b = el('div', 'crowd-bubble' + (spot.me ? ' is-me' : ''), html);
         b.dataset.uid = uid;
         fx.appendChild(b);
-        placeBubble(b, spot);
-        /* 튀어나오는 동작은 자리를 다 잡은 뒤에 켠다 — 동작 중에 크기를
-           재면 작게 줄어든 상태가 잡혀 가장자리 보정이 빗나간다.        */
         if (uid === onlyUid) b.classList.add('pop');
-        b._off = setTimeout(() => {
-          b.classList.add('fade');
-          setTimeout(() => { delete said[uid]; b.remove(); }, 480);
-        }, left);
-      } else {
-        placeBubble(b, spot);                      // 이미 떠 있으면 자리만 새로
+      } else if (b.dataset.lines !== String(lines.length) || uid === onlyUid) {
+        b.innerHTML = html;                       // 줄이 늘거나 줄었을 때만 다시 그린다
       }
+      b.dataset.lines = String(lines.length);
+      placeBubble(b, spot);
     });
+
+    /* 말풍선끼리 겹치면 뒤쪽(위에 선 사람) 것을 위로 올려 피한다.
+       가만 두면 앞사람 말풍선이 뒷사람 말을 통째로 덮어 못 읽는다.
+       자리는 offset* 으로 잰다 — getBoundingClientRect 는 튀어나오는
+       동작(transform) 중이면 줄어든 크기를 돌려준다.                    */
+    const rectOf = e => {                       // translate(-50%,-100%) 를 되짚은 자리
+      const w = e.offsetWidth, h = e.offsetHeight;
+      return { left: e.offsetLeft - w / 2, right: e.offsetLeft + w / 2,
+               top: e.offsetTop - h, bottom: e.offsetTop };
+    };
+    const bubs = $$('.crowd-bubble', fx)
+      .sort((a, b) => (+b.style.zIndex) - (+a.style.zIndex));   // 앞(아래)에 선 사람부터
+    const keep = [];
+    bubs.forEach(b => {
+      b.style.marginTop = '';
+      let r = rectOf(b);
+      const wide = fx.clientWidth;
+      for (let k = 0; k < 6; k++) {
+        const hit = keep.find(q =>
+          Math.min(q.right, r.right) - Math.max(q.left, r.left) > 2 &&
+          Math.min(q.bottom, r.bottom) - Math.max(q.top, r.top) > 2);
+        if (!hit) break;
+        const up = (r.bottom - hit.top) + 6;
+        if (r.top - up >= 2) {                              // ① 위로 올려 피한다
+          b.style.marginTop = (parseFloat(b.style.marginTop || '0') - up).toFixed(1) + 'px';
+        } else {
+          /* ② 폰처럼 화면이 낮으면 올릴 자리가 없다 — 옆으로 비킨다 */
+          const toLeft = (r.right - hit.left) + 6, toRight = (hit.right - r.left) + 6;
+          const canL = r.left - toLeft >= 2, canR = r.right + toRight <= wide - 2;
+          const dx = canL && (!canR || toLeft <= toRight) ? -toLeft : canR ? toRight : 0;
+          if (!dx) break;
+          b.style.marginLeft = (parseFloat(b.style.marginLeft || '0') + dx).toFixed(1) + 'px';
+        }
+        r = rectOf(b);
+      }
+      keep.push(r);
+    });
+
+    /* 다음 줄이 사라질 때 한 번만 다시 그린다 (줄마다 타이머를 두지 않는다) */
+    if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
+    if (nextAt < Infinity) {
+      bubbleTimer = setTimeout(() => { bubbleTimer = null; drawBubbles(); },
+        Math.max(120, nextAt - Date.now()));
+    }
   }
 
   /** 말풍선을 그 사람 머리 위에 놓는다 (새로 띄울 때도, 다시 그릴 때도) */
