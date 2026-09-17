@@ -403,7 +403,7 @@
   function teamsCSV(teams) {
     let s = '팀,인원,근무지,이름\n';
     teams.forEach(t => (t.members || []).forEach(m => {
-      s += t.id + ',' + (t.members || []).length + ',' + (m.loc || '') + ',' + m.name + '\n';
+      s += t.id + ',' + (t.members || []).length + ',' + cell(m.loc || '') + ',' + cell(m.name) + '\n';
     }));
     return s;
   }
@@ -628,16 +628,23 @@
     }).catch(() => { });
   }
 
-  /* ---------- CSV ---------- */
+  /* ---------- CSV ----------
+     이름에 쉼표·따옴표가 섞여 들어와도 칸이 밀리지 않게 감싼다. */
+  function cell(v) {
+    const t = String(v == null ? '' : v);
+    return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
   function exportCSV() {
     const rows = g.GAME.computeBoard();
     const runs = g.GAME.S.allRuns || {};
-    let s = '순위,이름,근무지,총점,총시간(초),맞춘단서';
+    /* 팀은 시상 단위라 개인 줄마다 함께 적는다 — 엑셀에서 팀으로 묶어 볼 수 있게. */
+    let s = '순위,이름,팀,근무지,총점,총시간(초),맞춘단서';
     for (let r = 1; r <= CONFIG.ROOM_COUNT; r++) s += ',' + r + '관점수,' + r + '관시간';
     s += '\n';
     rows.forEach((r, i) => {
       const sc = NET.scoreOf(runs[r.uid]);
-      s += [i + 1, r.name, r.loc || '', r.score, r.time, r.solved].join(',');
+      s += [i + 1, cell(r.name), r.team != null ? r.team + '팀' : '미배정',
+            cell(r.loc || ''), r.score, r.time, r.solved].join(',');
       for (let n = 1; n <= CONFIG.ROOM_COUNT; n++) {
         const rec = ((runs[r.uid] || {}).rooms || {})[n] || {};
         s += ',' + (sc.rooms[n] || 0) + ',' + ((rec.done && rec.done.sec) || 0);
